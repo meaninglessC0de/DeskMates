@@ -225,7 +225,7 @@ Errors: non-2xx with `{ "error": { "code": string, "message": string } }`. `mess
 | `POST /api/employees/:id/read` | | `204` | clears `unread` |
 | `POST /api/approvals/:id` | `{ decision: 'approve' \| 'deny', scope?: 'once' \| 'task', note?: string }` | `Approval` | |
 | `GET /api/employees/:id/thumbnail.jpg` | | JPEG, 480 px wide | cached 3 s; 404 when offline |
-| `POST /api/employees/:id/stream` | `{ mode: 'view' \| 'control' }` | `{ kind: 'cua-media', wsUrl: string, ticket: string, mediaSessionId: string, expiresMs: number } \| { kind: 'frames', url: string }` | `frames` is the fallback: `url` is `/api/employees/:id/frame.jpg` |
+| `POST /api/employees/:id/stream` | `{ mode: 'view' \| 'control' }` | `{ kind: 'cua-media', wsUrl: string, ticket: string, mediaSessionId: string, expiresMs: number } \| { kind: 'frames', url: string }` | `expiresMs` is an absolute time (epoch milliseconds), like every `*Ms` field. `frames` is the fallback: `url` is `/api/employees/:id/frame.jpg` |
 | `GET /api/employees/:id/frame.jpg` | | JPEG, full size | a fresh screenshot on every GET (office limits it to 4 per second per employee); served in mock mode too |
 | `POST /api/employees/:id/screen-grant` | `{ minutes: number \| null }` | `Employee` | user lends their real screen. `null` minutes = until stopped. 409 `screen_busy` when another employee holds it; 409 `host_off` when `capabilities.hostScreen` is false |
 | `DELETE /api/employees/:id/screen-grant` | | `Employee` | take it back |
