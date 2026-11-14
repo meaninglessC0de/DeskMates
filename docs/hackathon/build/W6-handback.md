@@ -1,0 +1,44 @@
+# W6 hand-back: live desktop view (Part A)
+
+Status: Part A done and proven against a real Cua Space. Part B (real office endpoint, 2-minute soak) waits for your message.
+
+## Files (all under `src/renderer/src/media/`)
+- `cua-viewer/{mediaSession,mediaWire,h264,audio}.ts`, `audioWorklet.js`, `NOTICE.md`: byte-identical copies (commit `0147fb8d`, FSL-1.1-MIT). They import only each other and compile under `tsconfig.web.json` with no edits (no `@ts-nocheck`). `audio.ts` loads the worklet with `new URL('./audioWorklet.js', import.meta.url)`, which Vite handles; audio is off anyway (`audio: false`).
+- `SpaceView.tsx`: props unchanged (`employeeId`, `mode`, `onState?`) plus optional `onFallback?(reason)`. Also exports `h264Supported()`.
+- `AvatarVideo.tsx`: props unchanged plus optional `videoRef`; exports `captureStill(video): Promise<Blob>` (JPEG of the current frame; the poster image if no frame has decoded yet).
+- `live.html` + `live.tsx`: test page that mounts only `SpaceView` against the real API (no fixtures). `/src/media/live.html?id=<employee>&mode=view|control` on the web dev server. Exposes `window.__space = { state, fallback }`.
+- `shots.ts`: exports an empty list. A `media/live` fixture shot is not possible: in `?shot=` mode `api/client.ts` answers every route from fixtures (the stream call included) and `App.tsx` (W3) has no `media` area. `live.html` is the substitute. If you want `media/live` in `npm run shots`, W3 would have to render `<SpaceView>` for `area === 'media'`; the shot still could not show real motion.
+
+## How SpaceView works
+1. Keyed on `employeeId:mode`, so a mode change opens a new session.
+2. Checks `VideoDecoder.isConfigSupported(avc1.42E01F)`. Unsupported: frames fallback, `onFallback('h264 not supported here')`.
+3. `POST /api/employees/:id/stream {mode}`. `kind:'frames'` shows `<img>` polling `url` twice a second (once, in shot mode). `kind:'cua-media'` builds `MediaTicket { wsUrl, ticketExpiresAt: new Date(expiresMs).toISOString(), mediaSessionId }` and starts a `MediaSession` on a `<canvas>` in `AspectRatio` (ratio follows the stream geometry, so pointer mapping has no letterbox). `control` mode sets `interactive: true` (the session wires pointer, wheel, keyboard itself; Mac Command is sent as Control; scroll only after the canvas has focus, which it takes on first frame).
+4. State: `connecting` until the first decoded frame, then `live`. `offline` when the stream request fails with 404 or 409, `error` otherwise.
+5. Expiry and drops (handled by `MediaSession`, with `reopen` = a fresh `POST /stream`): a drop with a still-valid ticket re-attaches with the same ticket (no new ticket); an expired ticket, close codes 4401/4400/4500 get a fresh ticket. A live socket does not need the ticket after attach: it stayed up past expiry for the whole soak. I did not add a proactive renewal timer; it would only add a second media session per renewal.
+6. Our extra rules: two attach failures in a row (without a good run between) fall back to frames; no decoded frame within 6 s of `session_opened` falls back to frames; session gone (4404/4410/closed) asks for a fresh stream up to 2 times then frames; after a failure fallback (not codec, not `frames` from office) it tries the stream again after 30 s.
+7. Hidden: on `visibilitychange` hidden the media session is closed (no decode, no socket); on visible a new ticket is requested. Frames polling also pauses while hidden.
+8. High density: the canvas bitmap is the stream's pixel size (W1 asks for `maxDimension` 1280); CSS scales it; pointer mapping uses CSS rects, so it is DPR-independent.
+
+## Evidence (real Space `test-w6-view`, created and deleted by `scratchpad/w6/server.mjs`; ticket TTL 60 s, `maxFps 15`, 1280x800)
+Test endpoint served `POST /api/employees/test/stream` in the contract shape and `GET .../frame.jpg` (PNG screenshot). Vite on 4336 proxied to 4326. Scripts: `/private/tmp/claude-502/-Users-suhaan-Desktop-imperial-ai-hack/e8cda6e2-1ab7-4114-b736-8a443be0d374/scratchpad/w6/{server,check,reconnect,control2,control3,fb,cpu}.mjs`.
+- **Codec:** Playwright's bundled Chromium 159.0.8154.6: `VideoDecoder` present, `isConfigSupported(avc1.42E01F)` = `true` (H.264 decodes). `channel:'chrome'` 157.0.8103.51 also `true`. So no Chrome fallback was needed; both ran the same checks. Electron ships H.264 too.
+- **Live motion:** canvas 1280x800; a terminal printing `date` every 0.5 s: canvas hash 677931229 then 1619550734 two seconds apart (`pixelsChanged true`), and a different hash after an `xmessage` window opened. PNGs: `shots/media/live-1.png`, `live-2.png` (Chrome run; also `chrome-live-*` is not kept), `live-3-xmessage.png`. First frame about 1.5 s after page load.
+- **Soak with expiry (Chrome):** 90 s, 16 samples every 5 s, state `live` in all, 0 identical consecutive hashes; the original 60 s ticket expired mid-run and the socket stayed up.
+- **Reconnect (`reconnect.mjs`, `control.mjs`):** drop with 4408 while ticket valid: `connecting, live` in 1.4 s, tickets unchanged (same-ticket re-attach), pixels moving. Hidden then visible: media socket closed while hidden (readyState 3), new ticket on show, `live` again, pixels moving. Drop 4500 after expiry: fresh ticket (6th), live in 1.4 s. Wait 62 s then drop 4408: ticket count 9 to 10 (expired ticket gives a fresh one).
+- **Control mode (`control2/3.mjs`, policy `allow_activation`):** pointer mapping exact (`xdotool getmouselocation` after Playwright moves: (640,400), (320,599), (1023,240) for the three targets). Typed `hello w6` + Enter into a guest terminal: `/tmp/typed.txt` = `hello w6`. Clicking an Xaw button works only with a hover first (move, 300 ms, then click); an instant move-and-click does not trigger it. Guest-side quirk, not the viewer. PNGs `control-before.png`, `control-after.png`, `control-click.png`.
+- **Frames fallback:** with `VideoDecoder` deleted before load: `{"state":"live","fallback":"h264 not supported here"}`, `<img>` present, no canvas, `src` changes (polling); `frames-fallback.png`. With the endpoint answering `{kind:'frames'}`: img, no canvas, `live`.
+- **CPU, one live view (Chrome, whole process tree of 7 processes including GPU and media decode, `ps` over 15 s):** about 3.6% of one core (3.2% in an earlier sample). CDP `Performance.getMetrics` renderer main thread: 0.5 to 1.1% (`TaskDuration`/s 0.005 to 0.011). Headless Chrome, software decode may differ from Electron's. `ps` has coarse resolution.
+- Checks: `npm run typecheck:area -- src/renderer` clean; `npm run purity -- src/renderer/src/media` clean (3 files with JSX; raw elements only `<canvas>`, `<img>`, `<video>` inside `AspectRatio`); `npm run shots -- desktop` 20 written, 0 failed (frames path in shot mode unchanged).
+- Rule 9: one Space, `delete_` at the end (`list after []`), no daemon, no `cua` CLI. Nothing of mine is running.
+
+## Not verified / notes
+- Not tried: real office endpoint (`stream.ts` of W1), mock office's `frames` through the Vite proxy with real W3 `DesktopPanel` (only the fixture path), Electron's own renderer, audio, a drop of the Cua spacesd side (server-initiated 4404/4410; the code path is the viewer's), more than one live view at once.
+- `frame.jpg` in my test endpoint was a PNG; W1's must be JPEG per the contract (`<img>` shows either).
+- The 404 console error on `live.html` is the missing favicon.
+- Console warning "Multiple readback operations using getImageData" comes from my test script's pixel hashing, not from SpaceView.
+
+## Part B still needs
+The orchestrator's message that office's Cua desktops landed; `DESKTOPS=cua MOCK_LLM=1 OFFICE_PORT=4326 DATA_DIR=data-w6 npm run office:once`, one hired employee; then `live.html?id=<emp_...>` or the thread's desktop panel through 4336, the same pixel check, a 2-minute soak with at least one ticket renewal (W1's ticket TTL is 10 minutes, so force the renewal with a 4500 drop or by shortening the TTL in the test; a live socket does not need renewal), and the report of renderer CPU.
+
+## Addendum: mock office check (after the orchestrator's note)
+`MOCK_LLM=1 DESKTOPS=mock OFFICE_PORT=4326 DATA_DIR=data-w6 npm run office:once` + seed, Vite on 4336: `POST /api/employees/emp_01M7.../stream` returned `{"kind":"frames","url":".../frame.jpg"}`; `frame.jpg` 200 `image/jpeg` 34584 B. `live.html?id=emp_01M7...` showed `{"state":"live","fallback":null,"img":true,"canvas":false}` with a 1280 px wide image whose `src` changes (polling). PNG `shots/media/mock-office-frames.png`. The vite on 4336 had been killed once by an orchestrator `pkill`; restarted. No zustand selectors in `media/**`. All my processes (office, vite) stopped.
