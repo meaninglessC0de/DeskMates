@@ -25,6 +25,9 @@ const FRAMES_RETRY_MS = 30_000;
 const FIRST_FRAME_MS = 6_000;
 const MAX_RESTARTS = 2;
 const DEFAULT_RATIO = 16 / 10;
+const RENEW_BEFORE_MS = 30_000;
+const RENEW_MIN_MS = 5_000;
+const SPARE_MARGIN_MS = 5_000;
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 let h264Check: Promise<boolean> | null = null;
@@ -41,6 +44,18 @@ export function h264Supported(): Promise<boolean> {
     }
   })();
   return h264Check;
+}
+
+/** Test only: `?mediaRenewMs=<n>` renews every n ms instead of shortly before the ticket expires. */
+function renewOverrideMs(): number | null {
+  if (typeof location === 'undefined') return null;
+  const n = Number(new URLSearchParams(location.search).get('mediaRenewMs'));
+  return Number.isFinite(n) && n >= 1000 ? n : null;
+}
+
+/** When to fetch the next ticket: `RENEW_BEFORE_MS` ahead of the absolute expiry `expiresMs` (epoch ms), never sooner than `RENEW_MIN_MS`. */
+export function renewDelayMs(expiresMs: number, nowMs: number = Date.now()): number {
+  return renewOverrideMs() ?? Math.max(RENEW_MIN_MS, expiresMs - nowMs - RENEW_BEFORE_MS);
 }
 
 function toTicket(r: Cua): MediaTicket {
@@ -82,9 +97,33 @@ function SpaceSession({ employeeId, mode, onState, onFallback }: SpaceViewProps)
     let restarts = 0;
     let restartTimer: ReturnType<typeof setTimeout> | undefined;
     let frameTimer: ReturnType<typeof setTimeout> | undefined;
+    let renewTimer: ReturnType<typeof setTimeout> | undefined;
+    let spare: Cua | null = null;
+
+    // A live socket does not need its ticket, but a drop does. Keep a fresh one in hand, so that
+    // a re-attach after the old ticket has expired does not wait for a round trip.
+    const scheduleRenew = (expiresMs: number): void => {
+      clearTimeout(renewTimer);
+      renewTimer = setTimeout(async () => {
+        if (stopped) return;
+        let next = Date.now() + 15_000;
+        try {
+          const r = await api.stream(employeeId, { mode });
+          if (r.kind === 'cua-media' && !stopped) {
+            spare = r;
+            next = r.expiresMs;
+          }
+        } catch {
+          // try again on the next round
+        }
+        if (!stopped) scheduleRenew(next);
+      }, renewDelayMs(expiresMs));
+    };
 
     const end = (): void => {
       clearTimeout(frameTimer);
+      clearTimeout(renewTimer);
+      spare = null;
       session?.stop();
       session = null;
     };
@@ -121,6 +160,9 @@ function SpaceSession({ employeeId, mode, onState, onFallback }: SpaceViewProps)
         wholeCommandChords: IS_MAC,
         scrollNeedsFocus: true,
         reopen: async () => {
+          const held = spare;
+          spare = null;
+          if (held && held.expiresMs - Date.now() > SPARE_MARGIN_MS) return toTicket(held);
           const r = await api.stream(employeeId, { mode });
           if (r.kind !== 'cua-media') throw new Error('stream unavailable');
           return toTicket(r);
@@ -157,6 +199,7 @@ function SpaceSession({ employeeId, mode, onState, onFallback }: SpaceViewProps)
       });
       session = s;
       s.start();
+      scheduleRenew(first.expiresMs);
     };
 
     const begin = async (): Promise<void> => {
