@@ -243,7 +243,8 @@ export const useStore = create<Store>()((set, get) => {
     },
 
     async sendMessage(id, text) {
-      const m = await attempt(() => api.sendMessage(id, text));
+      // no toast: the composer shows "Couldn't send" itself and keeps the text
+      const m = await api.sendMessage(id, text).catch(() => null);
       if (!m) return false;
       set((s) => ({ threads: { ...s.threads, [id]: { ...(s.threads[id] ?? emptyThread()), messages: mergeMessages((s.threads[id] ?? emptyThread()).messages, [m]) } } }));
       return true;

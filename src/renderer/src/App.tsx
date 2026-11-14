@@ -10,6 +10,7 @@ import { useStore, selectSelected } from './api/store';
 import { getShot, isShot } from './fixtures/shot';
 import { loadShot } from './fixtures/load';
 import { AppFrame } from './shell/AppFrame';
+import { applyShotState } from './shell/shotState';
 import { FirstRun } from './shell/FirstRun';
 import { Conversation } from './thread/Conversation';
 import { TeamView } from './team/TeamView';
@@ -22,7 +23,10 @@ import { SummonPicker } from './stage/SummonPicker';
 /** Called once before the first render. In `?shot=` mode this loads the store from the fixtures. */
 export function initApp(): void {
   const shot = getShot();
-  if (shot) loadShot(shot);
+  if (shot) {
+    loadShot(shot);
+    applyShotState(shot);
+  }
 }
 
 function ToastBridge() {
@@ -95,7 +99,7 @@ export function App() {
     body = (
       <>
         <AppFrame>
-          {employees.length === 0 ? <FirstRun /> : ui.view === 'team' ? <TeamView /> : selected ? <Conversation employeeId={selected.id} /> : null}
+          {employees.length === 0 ? <FirstRun /> : ui.view === 'team' ? <TeamView /> : selected ? <Conversation key={selected.id} employeeId={selected.id} /> : null}
         </AppFrame>
         <HireDialog isOpen={ui.hireOpen} onOpenChange={(o) => setUi({ hireOpen: o })} />
         <SettingsDialog isOpen={ui.settingsOpen} onOpenChange={(o) => setUi({ settingsOpen: o })} />

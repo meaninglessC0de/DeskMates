@@ -1,4 +1,16 @@
 export const shots: { name: string; query?: string }[] = [
   { name: 'maya' },
+  { name: 'maya-desktop', query: 'open=desktop' },
+  { name: 'approved', query: 'approval=approved' },
+  { name: 'typing', query: 'select=priya&typing=1' },
+  { name: 'working', query: 'select=priya' },
+  { name: 'history', query: 'select=jonas' },
+  { name: 'empty', query: 'select=ines&thread=empty' },
+  { name: 'send-failed', query: 'select=priya&sendfail=1' },
   { name: 'loading', query: 'thread=loading' },
+  { name: 'error', query: 'thread=error' },
+  { name: 'stuck', query: 'as=stuck' },
+  { name: 'offline', query: 'select=jonas&as=offline' },
+  { name: 'paused', query: 'select=jonas&as=paused' },
+  { name: 'in-control', query: 'select=priya&control=1&open=desktop' },
 ];

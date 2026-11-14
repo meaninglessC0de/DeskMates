@@ -96,7 +96,7 @@ function msg(n: number, eid: string, from: Message['from'], text: string, create
 function step(n: number, eid: string, taskId: string, sentence: string, startedMs: number, status: ActivityStep['status'] = 'ok', o: Partial<ActivityStep> = {}): ActivityStep {
   return {
     id: id('evt', `${eid.slice(4, 8)}${n}`), employeeId: eid, taskId, sentence, status,
-    startedMs, endedMs: status === 'running' ? null : startedMs + 40_000, ...o,
+    startedMs, endedMs: status === 'running' ? null : startedMs + 60_000, ...o,
   };
 }
 function task(tag: string, eid: string, o: Partial<Task>): Task {
@@ -184,7 +184,7 @@ export const threads: Record<string, ThreadFixture> = {
     messages: [
       msg(1, EMP.priya, 'user', 'Write the launch email for the new pricing page.', ago(40 * MIN), { taskId: priyaTask.id }),
       msg(2, EMP.priya, 'employee', 'Happy to. I will look at three competitor emails first.', ago(39 * MIN), { taskId: priyaTask.id }),
-      msg(3, EMP.priya, 'employee', 'Two directions so far: plain and friendly, or short and bold. Which do you prefer?', ago(HOUR - 20 * MIN), { taskId: priyaTask.id, kind: 'question' }),
+      msg(3, EMP.priya, 'employee', 'Two directions so far: plain and friendly, or short and bold. Which do you prefer?', ago(20 * MIN), { taskId: priyaTask.id, kind: 'question' }),
     ],
     steps: [
       step(1, EMP.priya, priyaTask.id, 'Read the product notes', ago(38 * MIN)),

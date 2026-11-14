@@ -1,15 +1,23 @@
+import { useState } from 'react';
 import { LayoutHeader } from '@astryxdesign/core/Layout';
 import { HStack } from '@astryxdesign/core/HStack';
-import { VStack } from '@astryxdesign/core/VStack';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Avatar } from '@astryxdesign/core/Avatar';
+import { AlertDialog } from '@astryxdesign/core/AlertDialog';
 import { Button } from '@astryxdesign/core/Button';
-import { ToggleButton } from '@astryxdesign/core/ToggleButton';
+import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
+import { Divider } from '@astryxdesign/core/Divider';
+import { IconButton } from '@astryxdesign/core/IconButton';
 import { Icon } from '@astryxdesign/core/Icon';
+import { Item } from '@astryxdesign/core/Item';
+import { Kbd } from '@astryxdesign/core/Kbd';
 import { Text } from '@astryxdesign/core/Text';
-import { Monitor, Users } from 'lucide-react';
+import { Timer } from '@astryxdesign/core/Timer';
+import { ToggleButton } from '@astryxdesign/core/ToggleButton';
+import { Monitor, MoreHorizontal, Users, Video } from 'lucide-react';
 import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
+import { topBarLine } from './presence';
 
 export interface TopBarProps {
   employee: Employee;
@@ -17,28 +25,91 @@ export interface TopBarProps {
 
 export function TopBar({ employee }: TopBarProps) {
   const desktopOpen = useStore((s) => s.ui.desktopOpen[employee.id] ?? false);
-  const { toggleDesktop, setUi } = useStore.getState();
+  const peers = useStore((s) => s.employees.length);
+  const callsOff = useStore((s) => s.capabilities?.calls === 'off');
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const s = useStore.getState();
+  const { firstName, name, portraitUrl } = employee.persona;
+  const line = topBarLine(employee);
+  const paused = employee.state === 'paused';
+
   return (
     <LayoutHeader hasDivider>
       <HStack gap={3} vAlign="center">
         <StackItem size="fill">
-          <HStack gap={3} vAlign="center">
-            <Avatar name={employee.persona.name} src={employee.persona.portraitUrl} size={32} onClick={() => setUi({ profileOpen: true })} />
-            <VStack gap={0.5}>
-              <Text type="large">{employee.persona.name}</Text>
-              <Text type="supporting">{`${employee.persona.role} · ${employee.stateDetail}`}</Text>
-            </VStack>
+          <HStack>
+            <StackItem size="static">
+              <Item
+                density="compact"
+                onClick={() => s.setUi({ profileOpen: true })}
+                startContent={<Avatar name={name} src={portraitUrl || undefined} size={32} tooltip={false} />}
+                label={<Text type="large">{name}</Text>}
+                description={
+                  <Text type="supporting">
+                    {line.prefix}
+                    {line.timer ? <Timer startTime={employee.stateSinceMs} type="inherit" color="inherit" /> : null}
+                  </Text>
+                }
+              />
+            </StackItem>
           </HStack>
         </StackItem>
-        <ToggleButton
-          label="Desktop"
-          isIconOnly
-          icon={<Icon icon={Monitor} size="sm" />}
-          isPressed={desktopOpen}
-          onPressedChange={(on) => toggleDesktop(employee.id, on)}
+        <HStack gap={1} vAlign="center">
+          <IconButton
+            label="Call"
+            tooltip={callsOff ? 'Calls are off' : 'Call (⇧⌘V)'}
+            variant="ghost"
+            isDisabled={callsOff}
+            icon={<Icon icon={Video} size="sm" />}
+            onClick={() => void s.startCall([employee.id])}
+          />
+          <ToggleButton
+            label="Desktop"
+            tooltip="Desktop (⇧⌘D)"
+            isIconOnly
+            icon={<Icon icon={Monitor} size="sm" />}
+            isPressed={desktopOpen}
+            onPressedChange={(on) => s.toggleDesktop(employee.id, on)}
+          />
+          <DropdownMenu
+            hasChevron={false}
+            menuWidth={220}
+            alignment="end"
+            renderTrigger={(props) => <IconButton {...props} label="More" variant="ghost" icon={<Icon icon={MoreHorizontal} size="sm" />} />}
+            items={[
+              { label: 'Profile', endContent: <Kbd keys="mod+i" />, onClick: () => s.setUi({ profileOpen: true }) },
+              {
+                label: paused ? 'Resume' : 'Pause',
+                endContent: <Kbd keys="mod+shift+p" />,
+                onClick: () => void (paused ? s.resumeEmployee(employee.id) : s.pauseEmployee(employee.id)),
+              },
+              { label: 'Restart desktop', onClick: () => void s.desktopAction(employee.id, 'restart') },
+              { type: 'divider' },
+              { label: 'Remove employee', variant: 'destructive', onClick: () => setRemoveOpen(true) },
+            ]}
+          />
+        </HStack>
+        <Divider orientation="vertical" />
+        <Button
+          label="Summon meeting"
+          variant="primary"
+          isDisabled={peers < 2}
+          tooltip={peers < 2 ? 'Hire another employee to start a meeting' : undefined}
+          icon={<Icon icon={Users} size="sm" color="inherit" />}
+          onClick={() => s.setUi({ summonOpen: true })}
         />
-        <Button label="Summon meeting" variant="primary" icon={<Icon icon={Users} size="sm" color="inherit" />} onClick={() => setUi({ summonOpen: true })} />
       </HStack>
+      <AlertDialog
+        isOpen={removeOpen}
+        onOpenChange={setRemoveOpen}
+        title={`Remove ${firstName}?`}
+        description="Their desktop and conversation will be deleted."
+        actionLabel="Remove"
+        onAction={async () => {
+          setRemoveOpen(false);
+          await s.removeEmployee(employee.id);
+        }}
+      />
     </LayoutHeader>
   );
 }

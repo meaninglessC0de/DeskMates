@@ -1,54 +1,161 @@
+import { useState } from 'react';
 import { Layout, LayoutContent } from '@astryxdesign/core/Layout';
+import { Avatar } from '@astryxdesign/core/Avatar';
+import { Button } from '@astryxdesign/core/Button';
+import { ChatComposer, ChatLayout, ChatMessageList } from '@astryxdesign/core/Chat';
+import { Drawer } from '@astryxdesign/core/Drawer';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
-import { Text } from '@astryxdesign/core/Text';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { VStack } from '@astryxdesign/core/VStack';
-import { Spinner } from '@astryxdesign/core/Spinner';
-import { Center } from '@astryxdesign/core/Center';
+import { useHotkeys, useMediaQuery } from '@astryxdesign/core/hooks';
 import { useStore } from '../api/store';
+import { getShot } from '../fixtures/shot';
 import { TopBar } from '../shell/TopBar';
-import { DesktopPanel } from '../desktop/DesktopPanel';
+import { DesktopExpanded, DesktopPanel, DesktopSide } from '../desktop/DesktopPanel';
+import { Messages } from './Messages';
+import { StateBanner } from './StateBanner';
+import { buildTimeline } from './model';
 
 export interface ConversationProps {
   employeeId: string;
 }
 
-/** Placeholder: top bar, a labelled empty state with live thread data, and the docked desktop panel. */
+function LoadingBubbles() {
+  return (
+    <VStack gap={4} padding={6}>
+      <HStack gap={3}>
+        <Skeleton width={32} height={32} radius="rounded" />
+        <Skeleton width={320} height={56} />
+      </HStack>
+      <HStack hAlign="end">
+        <Skeleton width={240} height={40} />
+      </HStack>
+      <HStack gap={3}>
+        <Skeleton width={32} height={32} radius="rounded" />
+        <Skeleton width={380} height={72} />
+      </HStack>
+    </VStack>
+  );
+}
+
 export function Conversation({ employeeId }: ConversationProps) {
   const employee = useStore((s) => s.employees.find((e) => e.id === employeeId));
   const thread = useStore((s) => s.threads[employeeId]);
   const desktopOpen = useStore((s) => s.ui.desktopOpen[employeeId] ?? false);
+  const narrow = useMediaQuery('(max-width: 1099px)');
+  const failedShot = getShot()?.params.get('sendfail') === '1';
+  const [draft, setDraft] = useState(failedShot ? 'Use the blue version.' : '');
+  const [sendFailed, setSendFailed] = useState(failedShot);
+  const [expandedState, setExpanded] = useState(() => getShot()?.params.get('expand') === '1');
+  const expanded = expandedState && desktopOpen && !narrow;
+
+  useHotkeys([
+    { keys: 'mod+shift+enter', allowInInputs: true, isDisabled: !desktopOpen || narrow, onPress: () => setExpanded((v) => !v) },
+    { keys: 'escape', isDisabled: !expanded, onPress: () => setExpanded(false) },
+  ]);
+
   if (!employee) return null;
+  const s = useStore.getState();
+  const first = employee.persona.firstName;
 
-  const pending = thread?.approvals.filter((a) => a.status === 'pending').length ?? 0;
-  const last = thread?.messages[thread.messages.length - 1];
+  const send = async (text: string): Promise<void> => {
+    const t = text.trim();
+    if (!t) return;
+    setDraft('');
+    setSendFailed(false);
+    if (!(await s.sendMessage(employeeId, t))) {
+      setDraft(t);
+      setSendFailed(true);
+    }
+  };
 
-  return (
-    <Layout
-      height="fill"
-      header={<TopBar employee={employee} />}
-      content={
-        <LayoutContent>
-          {thread?.loading && !thread.loaded ? (
-            <Center height="100%">
-              <Spinner label="Loading" />
-            </Center>
-          ) : thread?.error ? (
-            <EmptyState title={thread.error} actions={undefined} />
-          ) : (
+  const items = thread ? buildTimeline(thread, Date.now()) : [];
+  const newest = thread?.messages[thread.messages.length - 1] ?? null;
+  const newestEmployee = newest && newest.from === 'employee' ? newest : null;
+  const newestUser = [...(thread?.messages ?? [])].reverse().find((m) => m.from === 'user') ?? null;
+  const offline = employee.state === 'offline';
+
+  let chat;
+  if (thread?.loading && !thread.loaded) {
+    chat = (
+      <VStack height="100%">
+        <LoadingBubbles />
+      </VStack>
+    );
+  } else if (thread?.error) {
+    chat = (
+      <EmptyState
+        title={thread.error}
+        actions={<Button label="Try again" variant="secondary" onClick={() => void s.loadThread(employeeId)} />}
+      />
+    );
+  } else {
+    chat = (
+      <VStack height="100%">
+        <StateBanner employee={employee} panelOpen={desktopOpen && !narrow} />
+        <ChatLayout
+          composer={
+            <ChatComposer
+              value={draft}
+              onChange={(v) => {
+                setDraft(v);
+                if (sendFailed) setSendFailed(false);
+              }}
+              onSubmit={(v) => void send(v)}
+              placeholder={offline ? `Message ${first}. Delivered when the desktop is on` : `Message ${first}`}
+              isStopShown={false}
+              status={sendFailed ? { type: 'error', message: "Couldn't send. Check your connection." } : undefined}
+            />
+          }
+          emptyState={
             <EmptyState
-              title={`Conversation with ${employee.persona.firstName}`}
-              description={`${thread?.messages.length ?? 0} messages, ${thread?.steps.length ?? 0} steps, ${pending} to approve`}
+              icon={<Avatar name={employee.persona.name} src={employee.persona.portraitUrl || undefined} size={128} tooltip={false} />}
+              title={`Say hi to ${first}`}
+              description="Give them a first task."
               actions={
-                <VStack gap={1} hAlign="center">
-                  <Text type="supporting">{thread?.task ? `Task: ${thread.task.title}` : 'No task yet'}</Text>
-                  {last ? <Text type="supporting" maxLines={1}>{last.text}</Text> : null}
-                </VStack>
+                <HStack gap={2} wrap="wrap" hAlign="center">
+                  {employee.persona.starters.slice(0, 3).map((label) => (
+                    <Button key={label} label={label} variant="ghost" onClick={() => setDraft(label)} />
+                  ))}
+                </HStack>
               }
             />
-          )}
-        </LayoutContent>
-      }
-      end={desktopOpen ? <DesktopPanel employeeId={employeeId} /> : undefined}
-    />
+          }>
+          {items.length > 0 || thread?.typing ? (
+            <ChatMessageList density="balanced" scrollToTopAction={thread?.hasMore ? () => s.loadOlder(employeeId) : undefined}>
+              <Messages items={items} employee={employee} typing={thread?.typing ?? false} newest={newestEmployee} newestUser={newestUser} />
+            </ChatMessageList>
+          ) : null}
+        </ChatLayout>
+      </VStack>
+    );
+  }
+
+  if (expanded) {
+    return (
+      <Layout
+        height="fill"
+        header={<TopBar employee={employee} />}
+        content={<DesktopExpanded employeeId={employeeId} onBack={() => setExpanded(false)} />}
+        end={<DesktopSide employeeId={employeeId} />}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Layout
+        height="fill"
+        header={<TopBar employee={employee} />}
+        content={<LayoutContent padding={0}>{chat}</LayoutContent>}
+        end={desktopOpen && !narrow ? <DesktopPanel employeeId={employeeId} onExpand={() => setExpanded(true)} /> : undefined}
+      />
+      {narrow ? (
+        <Drawer isOpen={desktopOpen} onOpenChange={(o) => s.toggleDesktop(employeeId, o)} label="Desktop" width={440} hasScrim={false}>
+          <DesktopPanel employeeId={employeeId} isInDrawer />
+        </Drawer>
+      ) : null}
+    </>
   );
 }
