@@ -9,6 +9,7 @@ import { useToast } from '@astryxdesign/core/Toast';
 import { useStore, selectSelected } from './api/store';
 import { getShot, isShot } from './fixtures/shot';
 import { loadShot } from './fixtures/load';
+import { startShellBridge } from './api/shellBridge';
 import { AppFrame } from './shell/AppFrame';
 import { applyShotState } from './shell/shotState';
 import { FirstRun } from './shell/FirstRun';
@@ -22,6 +23,7 @@ import { SummonPicker } from './stage/SummonPicker';
 
 /** Called once before the first render. In `?shot=` mode this loads the store from the fixtures. */
 export function initApp(): void {
+  startShellBridge(useStore);
   const shot = getShot();
   if (shot) {
     loadShot(shot);

@@ -32,3 +32,14 @@ Status: done for the brief, checked against fixtures and a live seeded mock offi
 - Any store hook must return a stable reference (see `decisions.md`, 2026-11-14 W3).
 - `useHotkeys` registers `mod+...` combos with `allowInInputs`, so they work while the composer has focus.
 - `npm run shots` is slow while other agents also run it (3 to 4 minutes per area).
+
+## Follow-up pass (orchestrator review)
+- **Shell bridge wired.** `api/shellBridge.ts`, started from `initApp()` with `startShellBridge(useStore)`; everything is a no-op when `window.shell` is undefined.
+  - Tray and badge: `setTray(rows, lent)` and `setBadge(n)` on every change to the employees (rows in sidebar order, label = the sidebar's state label, `lent` = first name of the holder or null; skipped when nothing changed).
+  - `onNotificationClick` selects the employee and shows the thread. `onTrayAction`: `open`, `summon`, `hire`, `take_back` (revokes the holder's grant), `pause_all` (pauses everyone not already paused or offline), `resume_all` (resumes the paused ones).
+  - `notify` goes through `notifyShell`. The rule is unchanged and already tested in `reducer.ts`: notify unless the window is focused on that employee's thread.
+  - `askMicrophone()` is awaited at the top of `store.startCall` (via `prepareCall()`), so nothing in `stage/` needs to change.
+- **Tests:** `api/shellBridge.test.ts` (fake `window.shell`: tray rows and badge on state changes, lent name, click, each tray action, no-op in a browser, notify rule, microphone before call) and `shell/elapsedFormat.test.ts`. `npx vitest run src/renderer/src`: 69 pass. typecheck:area and purity clean.
+- **Lent banner is neutral:** `shell/LentBanner.tsx` (muted `Section`, ink `StatusDot`, title, countdown, "Take it back"). The stuck banner stays an error banner.
+- **Elapsed time:** `shell/Elapsed.tsx` plus `elapsedFormat.ts`: "42 s" under a minute, then "40 min", "1 h 12 min", ticking each second and then each minute. Used in the top bar, the panel header and the running activity row. (macOS is case-insensitive: the pure file is `elapsedFormat.ts` because `elapsed.ts` collided with `Elapsed.tsx`.)
+- **Live check (no `?shot`, office 4323 seeded):** 0 console errors, no error boundary through send, approve, screen grant, lend and take back, take control and give back. Evidence `shots/live/10-lent-live.png` (neutral banner), `13-elapsed.png` ("Working · 40 min"). Shell shots re-run (light and dark). My office and Vite are stopped.

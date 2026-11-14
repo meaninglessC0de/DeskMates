@@ -5,6 +5,7 @@ import type {
 } from '../../../shared';
 import { api, ApiClientError } from './client';
 import { connectWs } from './ws';
+import { notifyShell, prepareCall } from './shellBridge';
 import { isShot } from '../fixtures/shot';
 import {
   THREAD_PAGE, emptyThread, initialData, mergeApprovals, mergeMessages, mergeThread, reduceEvent,
@@ -87,9 +88,7 @@ export const useStore = create<Store>()((set, get) => {
   const runEffects = (effects: Effect[]): void => {
     for (const fx of effects) {
       if (fx.type === 'markRead') void get().markRead(fx.employeeId);
-      else if (typeof window !== 'undefined') {
-        window.shell?.notify({ employeeId: fx.employeeId, title: fx.title, body: fx.body, portraitUrl: fx.portraitUrl });
-      }
+      else notifyShell({ employeeId: fx.employeeId, title: fx.title, body: fx.body, portraitUrl: fx.portraitUrl });
     }
   };
 
@@ -264,6 +263,7 @@ export const useStore = create<Store>()((set, get) => {
 
     // calls
     async startCall(employeeIds) {
+      await prepareCall();
       const placeholder: CallSlice = {
         id: null, info: null, employeeIds, state: 'connecting', mode: 'audio', participants: {},
         speaker: { employeeId: null, phase: 'idle' }, captions: [], captionSeq: 0, hands: [],

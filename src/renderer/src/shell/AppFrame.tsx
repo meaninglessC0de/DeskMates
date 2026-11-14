@@ -1,10 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { AppShell } from '@astryxdesign/core/AppShell';
-import { Banner } from '@astryxdesign/core/Banner';
-import { Button } from '@astryxdesign/core/Button';
 import { useHotkeys } from '@astryxdesign/core/hooks';
 import { useStore, selectSelected } from '../api/store';
-import { Countdown } from './Countdown';
+import { LentBanner } from './LentBanner';
 import { Sidebar } from './Sidebar';
 
 export interface AppFrameProps {
@@ -54,15 +52,7 @@ function useLentScreen() {
 export function AppFrame({ children }: AppFrameProps) {
   useShortcuts();
   const lent = useLentScreen();
-  const banner = lent ? (
-    <Banner
-      status="info"
-      container="section"
-      title={`${lent.persona.firstName} is using your screen`}
-      description={lent.screenGrant?.untilMs ? <>Ends in <Countdown untilMs={lent.screenGrant.untilMs} /></> : 'Until you take it back'}
-      endContent={<Button label="Take it back" variant="secondary" size="sm" onClick={() => void useStore.getState().revokeScreen(lent.id)} />}
-    />
-  ) : undefined;
+  const banner = lent ? <LentBanner employee={lent} /> : undefined;
 
   return (
     <AppShell variant="elevated" contentPadding={0} sideNav={<Sidebar />} banner={banner}>

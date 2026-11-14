@@ -59,7 +59,7 @@ export function rowLine(e: Pick<Employee, 'state' | 'stateDetail' | 'persona'>):
   }
 }
 
-/** The top bar's second line, as parts so the caller can put a live `Timer` where `timer` is true. */
+/** The top bar's second line, as parts so the caller can put a live `Elapsed` where `timer` is true. */
 export function topBarLine(e: Pick<Employee, 'state' | 'persona'>): { prefix: string; timer: boolean } {
   const role = e.persona.role;
   switch (e.state) {

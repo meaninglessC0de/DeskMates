@@ -9,13 +9,13 @@ import { Selector } from '@astryxdesign/core/Selector';
 import { Spinner } from '@astryxdesign/core/Spinner';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { Text } from '@astryxdesign/core/Text';
-import { Timer } from '@astryxdesign/core/Timer';
 import { VStack } from '@astryxdesign/core/VStack';
 import { Circle } from 'lucide-react';
 import type { Employee, PlanStep } from '../../../shared';
 import { useStore } from '../api/store';
 import { getShot } from '../fixtures/shot';
 import { SpaceView, type SpaceState } from '../media/SpaceView';
+import { Elapsed } from '../shell/Elapsed';
 import { STATE_LABEL } from '../shell/presence';
 
 const DOT: Partial<Record<Employee['state'], 'success' | 'warning' | 'error'>> = { working: 'success', needs_you: 'warning', stuck: 'error' };
@@ -32,7 +32,7 @@ export function StateLine({ employee }: { employee: Employee }) {
       <Text type="supporting">
         {label}
         {employee.state === 'working' && !controlling ? ' · ' : ''}
-        {employee.state === 'working' && !controlling ? <Timer startTime={employee.stateSinceMs} type="inherit" color="inherit" /> : null}
+        {employee.state === 'working' && !controlling ? <Elapsed startMs={employee.stateSinceMs} /> : null}
       </Text>
     </HStack>
   );

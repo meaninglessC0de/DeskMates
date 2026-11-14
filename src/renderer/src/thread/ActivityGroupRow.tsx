@@ -6,9 +6,9 @@ import { Icon } from '@astryxdesign/core/Icon';
 import { Item } from '@astryxdesign/core/Item';
 import { Spinner } from '@astryxdesign/core/Spinner';
 import { Text } from '@astryxdesign/core/Text';
-import { Timer } from '@astryxdesign/core/Timer';
 import { VStack } from '@astryxdesign/core/VStack';
 import type { ActivityStep } from '../../../shared';
+import { Elapsed } from '../shell/Elapsed';
 import { formatWorked, type ActivityGroup } from './model';
 
 const MAX_ROWS = 8;
@@ -31,7 +31,9 @@ export function ActivityGroupRow({ group }: { group: ActivityGroup }) {
       <Text type="supporting" color="primary" maxLines={1}>
         {group.latest}
       </Text>
-      <Timer startTime={group.startedMs} />
+      <Text type="supporting">
+        <Elapsed startMs={group.startedMs} />
+      </Text>
     </HStack>
   ) : (
     <Text type="supporting">{`Worked for ${formatWorked(group.workedMs)}`}</Text>

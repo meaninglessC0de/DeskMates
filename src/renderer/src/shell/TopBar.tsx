@@ -12,11 +12,11 @@ import { Icon } from '@astryxdesign/core/Icon';
 import { Item } from '@astryxdesign/core/Item';
 import { Kbd } from '@astryxdesign/core/Kbd';
 import { Text } from '@astryxdesign/core/Text';
-import { Timer } from '@astryxdesign/core/Timer';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
 import { Monitor, MoreHorizontal, Users, Video } from 'lucide-react';
 import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
+import { Elapsed } from './Elapsed';
 import { topBarLine } from './presence';
 
 export interface TopBarProps {
@@ -47,7 +47,7 @@ export function TopBar({ employee }: TopBarProps) {
                 description={
                   <Text type="supporting">
                     {line.prefix}
-                    {line.timer ? <Timer startTime={employee.stateSinceMs} type="inherit" color="inherit" /> : null}
+                    {line.timer ? <Elapsed startMs={employee.stateSinceMs} /> : null}
                   </Text>
                 }
               />
