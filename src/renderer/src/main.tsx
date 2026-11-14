@@ -7,7 +7,9 @@ import { themes, defaultThemeSlug } from './theme';
 import { App, initApp } from './App';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useStore } from './api/store';
+import { installStyles } from './ui/styles';
 
+installStyles();
 initApp();
 
 function Root() {

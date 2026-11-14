@@ -42,6 +42,8 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 
 - **D-032 · 2026-11-14 · user** · The orchestrator may commit locally and push as progress is made. Spending cap on the Anthropic key for the night: $50. Submission deadline: 12:00 on 2026-11-15; the app should be fully functional by 08:00; the demo is a video, not live. Closes Q-005 (deadline and format), Q-010 (cap) and Q-012. · User's reply after the build started.
 
+- **D-033 · 2026-11-14 · user** · After seeing the build: the front end must be taken further, "all out" for the Figma prize, across the whole app. Keep Astryx. **Custom components are allowed where we need them.** The call layout is wrong: the type box must sit at the bottom, not mid-column. No change to functionality. An Opus sub-agent may be used for this design work (an exception to D-011, which keeps build agents on Sonnet). · User's feedback during the build. Direction in `design/polish-brief.md`; custom visuals are built from Astryx components plus token-only CSS attached through `data-am-*` attributes, so `astryx doctor` stays at zero findings.
+
 ## Open questions
 
 - **Q-001 · What does the app do?** ~~The user will brief us.~~ **Answered 2026-11-14 by D-008, see [brief.md](brief.md).**
@@ -59,3 +61,28 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **Q-013 · Does Synthesia give hackathon teams Interactive Avatar access, and more than one concurrent session?** Ask the sponsor. Owner: user.
 - **Q-014 · Does the Databricks bounty require the app to run on Databricks, or is building on its data platform from a local app enough? Does the sponsor hand out workspaces?** Ask the sponsor. Owner: user.
 - **Q-015 · May one project enter bounties from two tracks (ElevenLabs, Anam, fal are in the other track)?** Ask the organisers (aisociety@imperial.ac.uk). Owner: user.
+
+## 2026-11-14 · W6 (build agent): live desktop view
+- `media/cua-viewer/` holds the five Cua viewer files byte-identical (commit `0147fb8d`); `SpaceView` plays `cua-media` on a canvas and falls back to polled `frame.jpg` on unsupported H.264, two failed attaches, no decoded frame in 6 s, or a `frames` answer. Details and evidence: `build/W6-handback.md`.
+- No `media/live` fixture shot: shot mode fakes the stream call and `App.tsx` has no `media` area. The real check is `src/renderer/src/media/live.html`.
+
+## 2026-11-14 · W3 (build agent): UI core
+- **Presence dots are `StatusDot` for every state** (8 px, one size). `AvatarStatusDot` is 20 px and has no amber, so mixing it with the amber needs-you `StatusDot` looked uneven. On a call is the ink `accent` dot, paused and idle are grey. No icons in the dots (unreadable at 8 px).
+- **Activity group rule:** the steps since your last message, an approval, a system line, a new day or a 20 minute gap form one group, shown where its newest step is (just above the reply it led to; a running group is always last). Label "Worked for N min" is the sum of the steps' own durations. Fixture steps are now 60 s each so Maya's group reads "Worked for 6 min".
+- **Selectors:** any store hook must return a stable reference (select the slice, derive with `useMemo`, module-level empty constants). `PlanSection` had `?? []` and crashed against a live office; fixed.
+- `sendMessage` in the store no longer toasts on failure; the composer shows "Couldn't send. Check your connection." and keeps the text.
+- Shot-only state lives in `shell/shotState.ts` (`as=stuck|offline|paused|on_call|starting|working|idle`, `control=1`, `lent=1|forever`, `myscreen=1`, `typing=1`, `approval=approved|denied`, `plan=none`; `expand=1`, `popover=lend`, `screen=connecting|error` are read in the thread and desktop areas).
+
+- 2026-11-14 (W5, build agent) R10 resolved: `SelectableCard isSelected` is the speaking ring. On the dark stage it renders a 2 px near-white ring that reads clearly at 1280 x 800 and 1728 x 1117, so the `Card` variant swap and `StatusDot isPulsing` fallback was not needed. Stage chips: scrim only over real media (video, portrait, desktop); tiles showing initials have an unscrimmed name. Summon picker is a compact `Dialog` (a `Popover` needs the top-bar button as its trigger and that button is W3's).
+
+## 2026-11-14 (night) · assistant: Synthesia key and cast ids
+- **D-SYN-1 · user said** the team was not given a Synthesia API key and was told to "use the key from LiveKit". **Finding:** the LiveKit gateway on our project lists only LemonSlice, so no LiveKit key can drive Synthesia (see research-log, night entry). `SYNTHESIA_API_KEY` stays empty; calls stay audio-only with a still portrait until a real Synthesia key exists. Do not put the LiveKit key in `SYNTHESIA_API_KEY`.
+- **D-SYN-2 · user said** to fill the 8 cast avatar ids with any good, slightly varied ones. **Done partly:** `config/cast-ids.txt` holds the 3 real, published ids (Jenny, Kenji, Mei), marked unverified. The other 5 are left unfilled on purpose: no public source lists more interactive ids and inventing UUIDs would only fail with `UNKNOWN_AVATAR`. Needed: 3 women and 2 men.
+- **Q-SYN-1 · open, owner user:** ask the Synthesia sponsor for an API key with Interactive Avatar access (the Synthesia bounty needs Synthesia's own API) and the 5 missing interactive ids. Show them the gateway answer above. Also ask whether they meant a different LiveKit project or gateway URL.
+- **Q-SYN-2 · open, owner user:** do we want LemonSlice through the LiveKit key as a working moving-face fallback for calls tonight? It works with credentials we already have and can animate a generated face, but it would not count toward the Synthesia bounty and needs a change in `voice/agent.py`.
+
+## 2026-11-14 (late night) · assistant: correction and ElevenLabs
+- **Supersedes D-SYN-1.** The user shared the sponsor card. It does not say to use the LiveKit key for Synthesia: it says (1) Synthesia adds participants to a trial workspace on Saturday morning, and (2) copy the LiveKit keys into `.env`. The `LIVEKIT_*` keys are already in `.env.local` and match the card. The Synthesia key must come from the trial workspace (Developers, API keys). `SYNTHESIA_API_KEY` stays empty until the user creates it. Do not put the LiveKit key there.
+- **D-EL-1 · recommendation, awaiting user:** do NOT replace Synthesia with ElevenLabs. Synthesia is a targeted bounty inside our own main track (50,000 credits) and is the only source of a moving face; ElevenLabs gives voice only and its bounty sits in Track 03, which may not be open to us. Do USE the user's ElevenLabs key for the employees' voices alongside Synthesia: it is already wired and needs only `ELEVENLABS_API_KEY`. If Synthesia access never arrives, the fallback ladder is audio-only calls with the ElevenLabs voice and the still portrait.
+- **Q-EL-1 · open, owner user:** ask the organisers whether a Track 02 team may also enter the ElevenLabs bounty (it rewards real-time voice agents with agentic depth and interaction design). If yes, deepen the ElevenLabs use; if no, keep it as the voice only.
+- **Q-SYN-1 (updated):** instead of asking for a key, check the hackathon sign-up inbox (and spam) for a Synthesia workspace invite. The invite was due Saturday morning. If none arrived, ask Synthesia to add the sign-up email. Then create the key and copy 5 more interactive ids (3 women, 2 men).
