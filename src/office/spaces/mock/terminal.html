@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>terminal</title>
+<style>
+  html,body{margin:0;width:1280px;height:800px;background:#c9c9c9;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+  .bar{position:absolute;left:0;top:0;right:0;height:28px;background:#e4e4e4;border-bottom:1px solid #b5b5b5;font-size:13px;color:#555;line-height:28px;padding-left:16px}
+  .win{position:absolute;left:96px;top:72px;width:1088px;height:656px;background:#2b2b2b;border-radius:10px;border:1px solid #8c8c8c;overflow:hidden}
+  .title{height:36px;background:#3a3a3a;display:flex;align-items:center;padding:0 14px;gap:8px;color:#bdbdbd;font-size:13px}
+  .dot{width:12px;height:12px;border-radius:50%;background:#7a7a7a}
+  .title span{margin-left:14px}
+  pre{margin:0;padding:18px 20px;color:#d6d6d6;font:15px/1.55 Menlo,Monaco,"Courier New",monospace;white-space:pre-wrap}
+  .dim{color:#8f8f8f}.ok{color:#b9b9b9}
+</style></head><body>
+<div class="bar">Desktop</div>
+<div class="win"><div class="title"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>Terminal</span></div><pre id="t"></pre></div>
+<script>
+const v = new URLSearchParams(location.search).get('v') || '1';
+const screens = {
+ '1': `<span class="dim">~/work $</span> ls
+notes.md  site  tests
+
+<span class="dim">~/work $</span> cat notes.md
+- build the landing page
+- keep copy short
+- check on a narrow screen
+
+<span class="dim">~/work $</span> <span class="dim">_</span>`,
+ '2': `<span class="dim">~/work/site $</span> npm test
+
+ <span class="ok">PASS</span>  layout.test.js
+ <span class="ok">PASS</span>  header.test.js
+ <span class="ok">PASS</span>  forms.test.js
+
+Tests: 14 passed, 14 total
+Time:  2.318 s
+
+<span class="dim">~/work/site $</span> <span class="dim">_</span>`,
+ '3': `<span class="dim">~/work/site $</span> git status
+On branch main
+Changes not staged for commit:
+  modified:   index.html
+  modified:   styles.css
+
+<span class="dim">~/work/site $</span> git diff --stat
+ index.html | 24 ++++++++++++++++------
+ styles.css | 11 +++++++----
+ 2 files changed, 23 insertions(+), 12 deletions(-)
+
+<span class="dim">~/work/site $</span> <span class="dim">_</span>`
+};
+document.getElementById('t').innerHTML = screens[v] || screens['1'];
+</script></body></html>

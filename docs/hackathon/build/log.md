@@ -32,3 +32,4 @@ Read this first after any context loss. The plan is `../plan.md`; briefs are `..
 - 22:40 Build started. Launched W0a.
 - 22:46 User replied: commit and push as progress is made; $50 cap; functional by 08:00, submission 12:00, video demo. Recorded as D-032.
 - 22:58 W0a done and verified by the orchestrator (typecheck, exact pins, scripts). Committed and pushed. Notes: Electron binary needed `node node_modules/electron/install.js`; purity script scans the given folder (`--built .` would scan vendor clones); src/shared uses `import type` and `.ts` extensions. Launched W0b and W0c.
+- 23:05 W0c done and verified (typecheck, 30 tests, purity clean, shots render with the neutral theme, Electron window smoke). Added root vitest.config.ts excluding vendor. Committed and pushed. Launched W3, W4, W5, W6 against fixtures while W0b finishes; W1, W2, W7, W8, W9 wait for W0b.

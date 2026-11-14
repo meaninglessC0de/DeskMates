@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>browser</title>
+<style>
+  html,body{margin:0;width:1280px;height:800px;background:#c9c9c9;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;overflow:hidden}
+  .bar{position:absolute;left:0;top:0;right:0;height:28px;background:#e4e4e4;border-bottom:1px solid #b5b5b5;font-size:13px;color:#555;line-height:28px;padding-left:16px}
+  .win{position:absolute;left:64px;top:56px;width:1152px;height:704px;background:#f4f4f4;border-radius:10px;border:1px solid #8c8c8c;overflow:hidden}
+  .tabs{height:38px;background:#dcdcdc;display:flex;align-items:flex-end;padding:0 14px;gap:6px;font-size:13px;color:#555}
+  .tab{padding:9px 18px;background:#f4f4f4;border-radius:8px 8px 0 0}
+  .tab.off{background:#cfcfcf}
+  .addr{height:42px;background:#f4f4f4;border-bottom:1px solid #cfcfcf;display:flex;align-items:center;padding:0 16px}
+  .addr div{flex:1;height:26px;border-radius:13px;background:#e6e6e6;font-size:13px;color:#666;line-height:26px;padding-left:14px}
+  .page{padding:48px 96px;color:#333}
+  h1{font-size:40px;margin:0 0 12px;font-weight:600}
+  p{font-size:17px;line-height:1.6;color:#555;max-width:640px}
+  .row{display:flex;gap:24px;margin-top:36px}
+  .box{flex:1;height:150px;border-radius:10px;background:#e1e1e1;padding:20px;box-sizing:border-box;color:#666;font-size:15px}
+  .btn{display:inline-block;margin-top:22px;padding:11px 22px;border-radius:8px;background:#444;color:#eee;font-size:15px}
+  .line{height:12px;border-radius:6px;background:#dcdcdc;margin:14px 0;width:70%}
+</style></head><body>
+<div class="bar">Desktop</div>
+<div class="win">
+  <div class="tabs"><div class="tab" id="t1"></div><div class="tab off">New tab</div></div>
+  <div class="addr"><div id="u"></div></div>
+  <div class="page" id="p"></div>
+</div>
+<script>
+const v = new URLSearchParams(location.search).get('v') || '1';
+const pages = {
+ '1': {tab:'Our team', url:'staging.example.test/team', html:`<h1>Meet the team</h1><p>Four people, one small office. We build things carefully and ship them calmly.</p><span class="btn">Get in touch</span><div class="row"><div class="box">Engineering</div><div class="box">Marketing</div><div class="box">Research</div></div>`},
+ '2': {tab:'Launch notes', url:'staging.example.test/launch', html:`<h1>Launch notes</h1><div class="line"></div><div class="line" style="width:56%"></div><div class="line" style="width:64%"></div><div class="line" style="width:48%"></div><p>Draft copy for review. Nothing here is published yet.</p><div class="row"><div class="box">Audience</div><div class="box">Channels</div></div>`}
+};
+const pg = pages[v] || pages['1'];
+document.getElementById('t1').textContent = pg.tab;
+document.getElementById('u').textContent = pg.url;
+document.getElementById('p').innerHTML = pg.html;
+</script></body></html>
