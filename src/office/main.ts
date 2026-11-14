@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { readEnv } from '../shared/index.ts';
 import { Bus } from './bus.ts';
 import { createCalls } from './calls/index.ts';
+import type { RoleClient } from './employees/hiring.ts';
 import { Office } from './employees/office.ts';
 import { createRuntimeFactory } from './runtime/index.ts';
 import { buildServer } from './routes/server.ts';
@@ -20,6 +21,8 @@ export interface BootOptions {
   dbFile?: string;
   /** Tests: replace the runtime factory. */
   createRuntime?: Awaited<ReturnType<typeof createRuntimeFactory>>;
+  /** Tests: a fake for the model call that turns a described role into a profile. */
+  roleClient?: RoleClient;
 }
 
 export async function createOffice(opts: BootOptions = {}) {
@@ -32,7 +35,7 @@ export async function createOffice(opts: BootOptions = {}) {
   const hostDriver = await createHostDriver({ dataDir, env });
   const createRuntime = opts.createRuntime ?? (await createRuntimeFactory(env));
   const sync = await createSync({ env, data: store });
-  const office = new Office({ env, store, bus, spaces, hostDriver, createRuntime, sync, dataDir });
+  const office = new Office({ env, store, bus, spaces, hostDriver, createRuntime, sync, dataDir, roleClient: opts.roleClient });
   const calls = await createCalls(env, office.callsHost());
   office.attachCalls(calls);
   return { office, env, dataDir };

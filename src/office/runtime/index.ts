@@ -10,3 +10,4 @@ export async function createRuntimeFactory(env: Env): Promise<RuntimeFactory> {
 }
 
 export type { RuntimeFactory, EmployeeRuntime, RuntimeHost, RuntimeDeps, InboxItem, TurnResult, ApprovalOutcome, ToolFamily } from './types.ts';
+export { RuntimeUnavailable, isRuntimeUnavailable } from './errors.ts';

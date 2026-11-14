@@ -6,6 +6,7 @@ import type {
 import type { Bus } from '../bus.ts';
 import { OfficeError } from '../errors.ts';
 import { newId } from '../ids.ts';
+import { isRuntimeUnavailable } from '../runtime/errors.ts';
 import type { EmployeeRuntime, InboxItem, RuntimeFactory, RuntimeHost, ToolFamily, TurnResult, ApprovalOutcome } from '../runtime/types.ts';
 import type { HostDriver, Spaces } from '../spaces/types.ts';
 import type { Store } from '../store/store.ts';
@@ -79,6 +80,8 @@ export class EmployeeSupervisor implements RuntimeHost {
   private activity: string | null = null;
   private workingSince: number | null = null;
   private turnTaskId: string | null = null;
+  private inTurn = false;
+  private messaged = new Map<string, number>();
   private flags = { asked: false, finished: false, stuck: false };
   private nudges = 0;
   private errorRestarts = 0;
@@ -275,6 +278,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     if (this.desktop === 'down') void this.startDesktop();
     if (!this.task && !wasQuestion && !this.paused) this.setTyping(true);
     this.deliver({ kind: 'manager', text, messageId: m.id, via: 'chat' });
+    this.ensureRuntime();
     this.patch(this.touch());
     this.refresh();
     return m;
@@ -288,7 +292,8 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   receiveColleague(from: EmployeeSupervisor, text: string): void {
     const p = from.employee().persona;
-    this.addStep(`${p.firstName} asked something`, { peer: { employeeId: from.id, direction: 'from', text } });
+    const replied = this.now() - (this.messaged.get(from.id) ?? 0) < 10 * 60_000;
+    this.addStep(`${p.firstName} ${replied ? 'replied' : 'asked something'}`, { peer: { employeeId: from.id, direction: 'from', text } });
     this.deliver({ kind: 'colleague', fromId: from.id, fromName: p.firstName, fromRole: p.role, text });
     if (this.desktop === 'down') void this.startDesktop();
   }
@@ -456,6 +461,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     }
     const refusal = this.ctx.colleagueGuard(this.id, target.id);
     if (refusal) return refusal;
+    this.messaged.set(target.id, this.now());
     this.addStep(`Messaged ${target.firstName}`, { status: 'ok', peer: { employeeId: target.id, direction: 'to', text } });
     target.receiveColleague(this, text);
     return `Sent to ${target.firstName}.`;
@@ -511,10 +517,17 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.lastSdkMs = this.now();
   }
 
+  /**
+   * The runtime has taken waiting items into the model's hands. Called again for a message that steers a turn already
+   * running: that only marks it seen and leaves the turn's flags alone.
+   */
   turnStarted(): void {
     this.noteSdkMessage();
-    this.turnTaskId = this.task?.id ?? null;
-    this.flags = { asked: false, finished: false, stuck: false };
+    if (!this.inTurn) {
+      this.inTurn = true;
+      this.turnTaskId = this.task?.id ?? null;
+      this.flags = { asked: false, finished: false, stuck: false };
+    }
     const now = this.now();
     for (const m of this.ctx.store.markSeen(this.id, now)) {
       this.ctx.bus.emit({ type: 'message_seen', id: m.id, employeeId: this.id, seenMs: now });
@@ -553,6 +566,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       this.turnEndedInner(result);
     } finally {
       this.turnTaskId = null;
+      this.inTurn = false;
     }
   }
 
@@ -676,7 +690,12 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.abort = abort;
     this.runtime = runtime;
     await runtime.setPaused(this.paused || this.employee().controlledByUser);
-    await runtime.start();
+    try {
+      await runtime.start();
+    } catch (err) {
+      this.pendingItems.unshift(...intro);
+      throw err;
+    }
     if (markUp) {
       this.desktop = 'up';
       this.refresh();
@@ -695,6 +714,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.runtime = null;
     this.abort?.abort();
     this.abort = null;
+    this.inTurn = false;
     this.setTyping(false);
     if (rt) await rt.dispose().catch(() => {});
     this.expirePending('The desktop was stopped.');
@@ -729,6 +749,13 @@ export class EmployeeSupervisor implements RuntimeHost {
       await this.startRuntime(intro, true);
       if (kind === 'hire') this.setTyping(true);
     } catch (err) {
+      if (isRuntimeUnavailable(err) && !this.removed) {
+        // the desktop is up but the brain cannot start: she is stuck with a sentence the manager can read
+        await this.disposeRuntime();
+        this.desktop = 'up';
+        this.runtimeUnavailable(err.message);
+        return;
+      }
       console.error(`[office] ${this.id} could not start:`, (err as Error).message);
       await this.disposeRuntime();
       this.desktop = 'down';
@@ -737,6 +764,26 @@ export class EmployeeSupervisor implements RuntimeHost {
       this.ctx.bus.emit({ type: 'toast', text: `Couldn't start ${this.firstName}'s desktop.`, tone: 'error' });
       this.refresh();
     }
+  }
+
+  private runtimeUnavailable(reason: string): void {
+    this.setStuck(reason);
+    this.postEmployee('text', reason, 'stuck');
+  }
+
+  /** The desktop is up but no runtime is: try to start one (a message, "Try again"). Held items go in when it starts. */
+  private ensureRuntime(): void {
+    if (this.runtime || this.desktop !== 'up' || this.removed) return;
+    void this.enqueue(async () => {
+      if (this.runtime || this.desktop !== 'up' || this.removed) return;
+      try {
+        await this.startRuntime([]);
+      } catch (err) {
+        await this.disposeRuntime();
+        if (isRuntimeUnavailable(err)) this.runtimeUnavailable(err.message);
+        else console.error(`[office] ${this.id} could not start the runtime:`, (err as Error).message);
+      }
+    });
   }
 
   private introFor(kind: StartKind): InboxItem[] {
@@ -855,6 +902,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     }
     void this.runtime?.setPaused(this.employee().controlledByUser);
     if (this.desktop === 'down') void this.startDesktop();
+    this.ensureRuntime();
     return this.refresh();
   }
 

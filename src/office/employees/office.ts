@@ -16,7 +16,7 @@ import type { InboxItem, RuntimeFactory } from '../runtime/types.ts';
 import type { HostDriver, Spaces } from '../spaces/types.ts';
 import type { Store } from '../store/store.ts';
 import { SyncError, type Sync } from '../sync/types.ts';
-import { decodeToken, makeCandidate, type CandidateInput } from './hiring.ts';
+import { decodeToken, makeCandidate, type CandidateInput, type RoleClient } from './hiring.ts';
 import { EmployeeSupervisor, type SupervisorContext } from './supervisor.ts';
 
 export interface OfficeDeps {
@@ -29,6 +29,8 @@ export interface OfficeDeps {
   sync: Sync;
   /** Absolute DATA_DIR. */
   dataDir: string;
+  /** Tests: a fake for the Haiku call that turns a described role into a profile. */
+  roleClient?: RoleClient;
 }
 
 export interface DevSeedBody {
@@ -62,6 +64,7 @@ export class Office implements SupervisorContext {
   readonly createRuntime: RuntimeFactory;
   readonly sync: Sync;
   readonly dataDir: string;
+  private readonly roleClient?: RoleClient;
   calls!: Calls;
 
   private sups = new Map<string, EmployeeSupervisor>();
@@ -85,6 +88,7 @@ export class Office implements SupervisorContext {
     this.createRuntime = d.createRuntime;
     this.sync = d.sync;
     this.dataDir = d.dataDir;
+    this.roleClient = d.roleClient;
     this.presets = buildPresets(d.env);
     this.store.onWrite = (table, row) => this.sync.record(table, row);
   }
@@ -251,7 +255,7 @@ export class Office implements SupervisorContext {
   }
 
   candidate(input: CandidateInput): Promise<Candidate> {
-    return makeCandidate(input, { env: this.env, store: this.store, presets: this.presets, maxTeam: this.env.MAX_TEAM });
+    return makeCandidate(input, { env: this.env, store: this.store, presets: this.presets, maxTeam: this.env.MAX_TEAM, roleClient: this.roleClient });
   }
 
   async hire(token: string, overrides?: { name?: string; personality?: string; permissions?: Partial<Permissions> }): Promise<Employee> {
