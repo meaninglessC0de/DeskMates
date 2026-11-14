@@ -7,7 +7,7 @@ import { Collapsible } from '@astryxdesign/core/Collapsible';
 import { Divider } from '@astryxdesign/core/Divider';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { HStack } from '@astryxdesign/core/HStack';
-import { Item } from '@astryxdesign/core/Item';
+import { List, ListItem } from '@astryxdesign/core/List';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { StackItem } from '@astryxdesign/core/Stack';
@@ -24,8 +24,10 @@ import { useStore } from '../api/store';
 import type { TeamRange } from '../api/store';
 import { ApiClientError } from '../api/client';
 import { useShot } from '../fixtures/shot';
+import { portraitSrc } from '../profile/shotState';
 
 const HOUR = 3_600_000;
+const ANSWER_ROWS = 5;
 const PERIOD: Record<TeamRange, string> = { today: 'yesterday', week: 'last week', month: 'last month' };
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -93,7 +95,7 @@ function PeopleTable({ report }: { report: TeamReport }) {
     <Table
       data={sortedData}
       idKey="employeeId"
-      density="balanced"
+      density="compact"
       hasHover
       dividers="rows"
       plugins={{ sortable }}
@@ -103,13 +105,14 @@ function PeopleTable({ report }: { report: TeamReport }) {
           header: 'Employee',
           sortable: true,
           renderCell: (r: Row) => (
-            <Item
-              density="compact"
-              label={r.name}
-              description={r.role}
-              startContent={<Avatar name={r.name} src={r.portraitUrl || undefined} size={32} tooltip={false} />}
-              onClick={() => void select(r.employeeId)}
-            />
+            <List density="compact" edge="flush">
+              <ListItem
+                label={r.name}
+                description={r.role}
+                startContent={<Avatar name={r.name} src={portraitSrc(r.portraitUrl)} size={32} tooltip={false} />}
+                onClick={() => void select(r.employeeId)}
+              />
+            </List>
           ),
         },
         { key: 'hours', header: 'Hours', align: 'end', sortable: true, renderCell: (r: Row) => <Text hasTabularNumbers>{r.hours.toFixed(1)}</Text> },
@@ -130,7 +133,7 @@ function Ask() {
           answer: 'Maya closed the most tasks this week, with 10 of the 25.',
           sql: "SELECT name, SUM(tasks_done) AS tasks FROM team_runs WHERE week = current_week() GROUP BY name ORDER BY tasks DESC",
           columns: ['Employee', 'Tasks done'],
-          rows: [['Maya Okafor', '10'], ['Priya Raman', '5'], ['Jonas Weber', '5'], ['Ines Moreau', '5']],
+          rows: [['Maya Okafor', '10'], ['Priya Raman', '5'], ['Jonas Weber', '5'], ['Ines Moreau', '5'], ['Kenji Watanabe', '4'], ['Amara Diallo', '3'], ['Marcus Reyes', '2']],
           conversationId: 'shot',
         }
       : null,
@@ -152,7 +155,7 @@ function Ask() {
   };
 
   return (
-    <VStack gap={4}>
+    <VStack gap={3}>
       <TextInput
         label="Ask about your team"
         isLabelHidden
@@ -165,19 +168,20 @@ function Ask() {
       />
       {error ? <Banner status="error" title={error} container="section" /> : null}
       {answer ? (
-        <VStack gap={3}>
+        <VStack gap={2}>
           <Text>{answer.answer}</Text>
           {answer.rows.length > 0 ? (
             <Table
               density="compact"
               dividers="rows"
-              data={answer.rows.map((r, i) => ({ id: String(i), ...Object.fromEntries(answer.columns.map((c, j) => [c, r[j] ?? ''])) }))}
+              data={answer.rows.slice(0, ANSWER_ROWS).map((r, i) => ({ id: String(i), ...Object.fromEntries(answer.columns.map((c, j) => [c, r[j] ?? ''])) }))}
               idKey="id"
               columns={answer.columns.map((c, j) => ({ key: c, header: c, align: j === 0 ? 'start' : 'end' }))}
             />
           ) : null}
+          {answer.rows.length > ANSWER_ROWS ? <Text type="supporting">{`and ${answer.rows.length - ANSWER_ROWS} more`}</Text> : null}
           {answer.sql ? (
-            <Collapsible trigger={<Text type="supporting">Show query</Text>}>
+            <Collapsible defaultIsOpen={false} trigger={<Text type="supporting">Show query</Text>}>
               <Text type="code">{answer.sql}</Text>
             </Collapsible>
           ) : null}
@@ -249,7 +253,7 @@ export function TeamView() {
     body = <EmptyState title="No work yet" description="Numbers appear once your team starts on tasks." />;
   } else {
     body = (
-      <VStack gap={8}>
+      <VStack gap={6}>
         <Figures report={report} range={range} />
         <PeopleTable report={report} />
         {ask ? <Ask /> : null}

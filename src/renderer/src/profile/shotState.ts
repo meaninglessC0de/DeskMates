@@ -12,3 +12,9 @@ export function withShotState(e: Employee | undefined): Employee | undefined {
     ...(p.get('screen') === '1' ? { permissions: { ...e.permissions, myScreen: true } } : {}),
   };
 }
+
+/** `src` for an Avatar: empty means initials. Screenshot mode can force initials with `portraits=none`. */
+export function portraitSrc(url: string): string | undefined {
+  if (getShot()?.params.get('portraits') === 'none') return undefined;
+  return url || undefined;
+}

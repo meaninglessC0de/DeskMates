@@ -15,7 +15,7 @@ import { Play, Square } from 'lucide-react';
 import type { Employee, PermissionLevel, Permissions } from '../../../shared';
 import { useStore } from '../api/store';
 import { useShot } from '../fixtures/shot';
-import { withShotState } from './shotState';
+import { portraitSrc, withShotState } from './shotState';
 
 export interface ProfileDrawerProps {
   employeeId: string;
@@ -123,7 +123,7 @@ export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawe
           <LayoutContent isScrollable>
             <VStack gap={6}>
               <VStack gap={2} hAlign="center">
-                <Avatar name={employee.persona.name} src={employee.persona.portraitUrl || undefined} size={96} tooltip={false} />
+                <Avatar name={employee.persona.name} src={portraitSrc(employee.persona.portraitUrl)} size={96} tooltip={false} />
                 {sampleUrl ? (
                   <Button
                     label={playing ? 'Playing' : `Hear ${first}`}
@@ -137,6 +137,7 @@ export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawe
 
               <TextArea
                 label="Personality"
+                hasAutoFocus
                 rows={3}
                 maxLength={280}
                 value={personality}

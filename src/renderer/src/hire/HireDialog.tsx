@@ -25,6 +25,7 @@ import type { Candidate, PermissionLevel, RolePreset } from '../../../shared';
 import { useStore } from '../api/store';
 import { ApiClientError } from '../api/client';
 import { useShot } from '../fixtures/shot';
+import { portraitSrc } from '../profile/shotState';
 
 export interface HireDialogProps {
   isOpen: boolean;
@@ -200,7 +201,11 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
     <DialogHeader
       title={loading || !candidate ? 'Meet your hire' : `Meet ${who}`}
       onOpenChange={onOpenChange}
-      startContent={<IconButton label="Back" variant="ghost" size="sm" icon={<Icon icon={ChevronLeft} size="sm" />} onClick={back} />}
+      startContent={
+        <VStack height={16} vAlign="center" hAlign="center">
+          <IconButton label="Back" variant="ghost" size="sm" icon={<Icon icon={ChevronLeft} size="sm" />} onClick={back} />
+        </VStack>
+      }
     />
   ) : (
     <DialogHeader title="Hire" onOpenChange={onOpenChange} />
@@ -270,7 +275,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
       ) : (
         <>
           <VStack gap={1} hAlign="center">
-            <Avatar name={candidate.persona.name} src={candidate.persona.portraitUrl || undefined} size={144} tooltip={false} />
+            <Avatar name={candidate.persona.name} src={portraitSrc(candidate.persona.portraitUrl)} size={144} tooltip={false} />
             <VStack gap={1} hAlign="center" paddingBlockStart={4}>
               <Text type="large">{name.trim() || candidate.persona.name}</Text>
               <Text type="supporting">{candidate.persona.role}</Text>
