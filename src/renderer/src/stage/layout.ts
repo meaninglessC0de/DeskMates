@@ -46,7 +46,8 @@ export interface GridLayout {
 export function gridLayout(n: number, s: Size): GridLayout {
   if (n <= 2) return { cols: 2, rows: 1, tile: faceTile(Math.min((s.w - GAP) / 2, (s.h * 4) / 3)) };
   if (n === 3) return { cols: 3, rows: 1, tile: faceTile(Math.min((s.w - 2 * GAP) / 3, (s.h * 4) / 3)) };
-  return { cols: 2, rows: 2, tile: faceTile(Math.min((s.w - GAP) / 2, (((s.h - GAP) / 2) * 4) / 3)) };
+  // one spacing step is taken off the height so the grid never crowds the caption line
+  return { cols: 2, rows: 2, tile: faceTile(Math.min((s.w - GAP) / 2, (((s.h - 2 * GAP) / 2) * 4) / 3)) };
 }
 
 function faceTile(w: number): Size {

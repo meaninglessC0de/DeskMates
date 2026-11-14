@@ -3,6 +3,7 @@ import { AppShell } from '@astryxdesign/core/AppShell';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { Center } from '@astryxdesign/core/Center';
+import { ChatComposer } from '@astryxdesign/core/Chat';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Grid } from '@astryxdesign/core/Grid';
 import { useHotkeys } from '@astryxdesign/core/hooks';
@@ -19,7 +20,7 @@ import { themes, defaultThemeSlug } from '../theme';
 import { Captions, useCaptionLine } from './Captions';
 import { ControlBar } from './ControlBar';
 import type { LayoutChoice } from './ControlBar';
-import { buildScenario, stageShot } from './fixtures';
+import { buildScenario, realPortraitUrl, stageShot } from './fixtures';
 import { gridLayout, oneToOneLayout, spotlightLayout, stageBox } from './layout';
 import type { OneToOneLayout } from './layout';
 import { useLastSpeaker, useRing, useThinking } from './signals';
@@ -64,8 +65,9 @@ export function Stage() {
   const byId = (id: string): Employee | undefined => employees.find((e) => e.id === id);
   const people = session.participants
     .filter((p) => p.state !== 'left')
-    .flatMap((p) => {
-      const employee = byId(p.employeeId);
+    .flatMap((p, i) => {
+      const found = byId(p.employeeId);
+      const employee = found && shot?.realPortraits ? { ...found, persona: { ...found.persona, portraitUrl: realPortraitUrl(i) } } : found;
       return employee ? [{ employee, state: p.state }] : [];
     });
   const n = people.length;
@@ -218,9 +220,17 @@ export function Stage() {
     } else {
       body = (
         <Center height="100%">
-          <HStack gap={4} vAlign="center">
+          <HStack gap={4} vAlign="start">
             {desktopLarge ? desktop(g.large, false) : faceTile(g.large, false)}
-            {desktopLarge ? faceTile(g.small, true) : desktop(g.small, true)}
+            <VStack gap={4} width={g.column}>
+              {desktopLarge ? faceTile(g.small, true) : desktop(g.small, true)}
+              <ChatComposer
+                density="compact"
+                elevation="none"
+                placeholder={`Message ${p.employee.persona.firstName}`}
+                onSubmit={(text) => void useStore.getState().sendMessage(p.employee.id, text)}
+              />
+            </VStack>
           </HStack>
         </Center>
       );

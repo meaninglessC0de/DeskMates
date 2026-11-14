@@ -14,6 +14,7 @@ export const shots: { name: string; query?: string }[] = [
   { name: 'face-focus', query: 's=face-focus' },
   { name: 'side-by-side', query: 's=side-by-side' },
   { name: 'portraits', query: 's=speaking&portraits=yes' },
+  { name: 'portraits-real', query: 's=speaking&portraits=real' },
   // meetings
   { name: 'meeting-2', query: 's=m2' },
   { name: 'meeting', query: 's=m3' },
@@ -30,6 +31,7 @@ export const shots: { name: string; query?: string }[] = [
   { name: 'meeting-3-no-answer', query: 's=m3-no-answer' },
   { name: 'meeting-3-left', query: 's=m3-left' },
   { name: 'meeting-3-portraits', query: 's=m3&portraits=yes' },
+  { name: 'meeting-3-portraits-real', query: 's=m3&portraits=real' },
   // the summon picker over the app
   { name: 'picker', query: 's=picker&open=summon' },
 ];

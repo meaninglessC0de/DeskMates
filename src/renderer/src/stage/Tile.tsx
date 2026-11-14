@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Avatar } from '@astryxdesign/core/Avatar';
 import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
 import { Center } from '@astryxdesign/core/Center';
 import { HStack } from '@astryxdesign/core/HStack';
 import { IconButton } from '@astryxdesign/core/IconButton';
@@ -11,6 +12,7 @@ import { SelectableCard } from '@astryxdesign/core/SelectableCard';
 import { Spinner } from '@astryxdesign/core/Spinner';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { Text } from '@astryxdesign/core/Text';
+import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
 import { Monitor, X, ArrowLeftRight } from 'lucide-react';
 import type { Employee } from '../../../shared';
@@ -27,19 +29,36 @@ export interface ChipState {
   action?: { label: string; onClick: () => void };
 }
 
-function Chip({ chip }: { chip: ChipState }) {
+/** Label that hugs its text. Over media it is a small Token with its own surface; on a plain tile it is just text. */
+function Label({ text, lead, end, onMedia }: { text: string; lead?: ReactNode; end?: ReactNode; onMedia: boolean }) {
   return (
-    <MediaTheme mode="dark">
-      <HStack gap={2} vAlign="center">
-        {chip.lead === 'spinner' ? <Spinner size="sm" shade="onMedia" aria-label={chip.text} /> : null}
-        {chip.lead === 'pulse' ? <StatusDot variant="accent" label="Speaking" isPulsing /> : null}
-        <Text type="label" color="primary">
-          {chip.text}
-        </Text>
-        {chip.action ? <Button label={chip.action.label} variant="secondary" size="sm" onClick={chip.action.onClick} /> : null}
-      </HStack>
-    </MediaTheme>
+    <VStack padding={3} hAlign="start">
+      {onMedia ? (
+        <MediaTheme mode="dark">
+          <Token label={text} size="md" color="gray" icon={lead} endContent={end} />
+        </MediaTheme>
+      ) : (
+        <HStack gap={2} vAlign="center">
+          {lead}
+          <Text type="label" color="primary">
+            {text}
+          </Text>
+          {end}
+        </HStack>
+      )}
+    </VStack>
   );
+}
+
+function Chip({ chip, onMedia }: { chip: ChipState; onMedia: boolean }) {
+  const lead =
+    chip.lead === 'spinner' ? (
+      <Spinner size="sm" aria-label={chip.text} />
+    ) : chip.lead === 'pulse' ? (
+      <StatusDot variant="accent" label="Speaking" isPulsing />
+    ) : undefined;
+  const end = chip.action ? <Button label={chip.action.label} variant="secondary" size="sm" onClick={chip.action.onClick} /> : undefined;
+  return <Label text={chip.text} lead={lead} end={end} onMedia={onMedia} />;
 }
 
 export interface FaceTileProps {
@@ -74,9 +93,11 @@ export function FaceTile({ employee, size, chip, hasRing, isDropped, videoTrack,
   const p = employee.persona;
   const body: ReactNode =
     hasPortrait || videoTrack ? (
-      <AvatarVideo track={videoTrack} audio={audioTrack} fallbackSrc={p.portraitUrl} name={p.name} />
+      <Card variant="transparent" padding={0} width={size.w - 4} height={size.h - 4}>
+        <AvatarVideo track={videoTrack} audio={audioTrack} fallbackSrc={p.portraitUrl} name={p.name} />
+      </Card>
     ) : (
-      <Center width={size.w} height={size.h}>
+      <Center width={size.w - 4} height={size.h - 4}>
         <Avatar name={p.name} size={avatarSize(size)} tooltip={false} />
       </Center>
     );
@@ -90,8 +111,8 @@ export function FaceTile({ employee, size, chip, hasRing, isDropped, videoTrack,
   );
 
   const tile = (
-    <SelectableCard label={label} isSelected={hasRing} onChange={onPress} padding={0} width={size.w} height={size.h} variant="default">
-      <Overlay position="bottom" align="start" scrim={hasPortrait || videoTrack ? 'dark' : false} content={<Chip chip={chip} />}>
+    <SelectableCard label={label} isSelected={hasRing} onChange={onPress} padding={0.5} width={size.w} height={size.h} variant="default">
+      <Overlay position="bottom" align="start" scrim={false} content={<Chip chip={chip} onMedia={hasPortrait || videoTrack !== null} />}>
         {dimmed}
       </Overlay>
     </SelectableCard>
@@ -135,20 +156,15 @@ export interface DesktopTileProps {
 /** An employee's live desktop, view only. */
 export function DesktopTile({ employee, size, onClose, onSwap, onState, chipText }: DesktopTileProps) {
   const chip = (
-    <MediaTheme mode="dark">
-      <HStack gap={2} vAlign="center">
-        <Text type="label" color="primary">
-          {chipText}
-        </Text>
-        {onClose ? (
-          <IconButton label="Back to grid" tooltip="Back to grid" icon={<Icon icon={X} size="sm" color="inherit" />} variant="ghost" size="sm" onClick={onClose} />
-        ) : null}
-      </HStack>
-    </MediaTheme>
+    <Label
+      text={chipText}
+      onMedia
+      end={onClose ? <IconButton label="Back to grid" tooltip="Back to grid" icon={<Icon icon={X} size="sm" color="inherit" />} variant="ghost" size="sm" onClick={onClose} /> : undefined}
+    />
   );
   const view = (
     <VStack width={size.w}>
-      <Overlay position="bottom" align="start" content={chip}>
+      <Overlay position="bottom" align="start" scrim={false} content={chip}>
         <SpaceView employeeId={employee.id} mode="view" onState={onState} />
       </Overlay>
     </VStack>

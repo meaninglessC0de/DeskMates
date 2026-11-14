@@ -10,11 +10,13 @@ describe('stageBox', () => {
   });
 });
 
+// N = 4 differs from the printed ux-spec 4.2 table (314x236, 421x316, 632x474): one spacing step is taken
+// off the height so the grid leaves room above the caption line. N = 2, 3 and the 2560 column are unchanged.
 describe('gridLayout reproduces the table in ux-spec 4.2', () => {
   const table: [number, number, number[], number[], number[]][] = [
-    [960, 640, [448, 336], [293, 220], [314, 236]],
-    [1280, 800, [608, 456], [400, 300], [421, 316]],
-    [1728, 1117, [792, 594], [522, 392], [632, 474]],
+    [960, 640, [448, 336], [293, 220], [304, 228]],
+    [1280, 800, [608, 456], [400, 300], [410, 308]],
+    [1728, 1117, [792, 594], [522, 392], [622, 467]],
     [2560, 1440, [792, 594], [522, 392], [792, 594]],
   ];
   for (const [w, h, n2, n3, n4] of table) {

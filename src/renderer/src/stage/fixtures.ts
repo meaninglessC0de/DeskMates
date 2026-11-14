@@ -92,9 +92,14 @@ export function buildScenario(name: string): CallSlice | null {
 }
 
 /** `s=<scenario>` and `portraits=none` from the shot URL, or null outside shot mode. */
-export function stageShot(): { scenario: string | null; view: StageShotView; noPortraits: boolean } | null {
+export function stageShot(): { scenario: string | null; view: StageShotView; noPortraits: boolean; realPortraits: boolean } | null {
   const shot = getShot();
   if (!shot || shot.area !== 'stage') return null;
   const scenario = shot.params.get('s');
-  return { scenario, view: scenarioView(scenario), noPortraits: shot.params.get('portraits') !== 'yes' };
+  const portraits = shot.params.get('portraits');
+  return { scenario, view: scenarioView(scenario), noPortraits: portraits !== 'yes' && portraits !== 'real', realPortraits: portraits === 'real' };
 }
+
+/** Real JPEGs from config/mock-desktops, used as stand-in portraits to check the composition once portraits exist. */
+export const realPortraitUrl = (index: number): string =>
+  new URL(`../../../../config/mock-desktops/thumb-${(index % 5) + 1}.jpg`, import.meta.url).href;
