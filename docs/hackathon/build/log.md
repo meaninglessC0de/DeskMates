@@ -19,8 +19,8 @@ Read this first after any context loss. The plan is `../plan.md`; briefs are `..
 
 | Phase | State | Notes |
 | --- | --- | --- |
-| 1a. W0a skeleton | running | started 22:40 |
-| 1b. W0b office mock, W0c renderer skeleton | waiting on W0a | |
+| 1a. W0a skeleton | done 22:58 | committed |
+| 1b. W0b office mock, W0c renderer skeleton | running | started 22:58 |
 | Gate 1 | | |
 | 2. W1 to W9 | | |
 | 3. Integration | | |
@@ -31,3 +31,4 @@ Read this first after any context loss. The plan is `../plan.md`; briefs are `..
 
 - 22:40 Build started. Launched W0a.
 - 22:46 User replied: commit and push as progress is made; $50 cap; functional by 08:00, submission 12:00, video demo. Recorded as D-032.
+- 22:58 W0a done and verified by the orchestrator (typecheck, exact pins, scripts). Committed and pushed. Notes: Electron binary needed `node node_modules/electron/install.js`; purity script scans the given folder (`--built .` would scan vendor clones); src/shared uses `import type` and `.ts` extensions. Launched W0b and W0c.
