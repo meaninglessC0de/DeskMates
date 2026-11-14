@@ -1,0 +1,3 @@
+# Synthesia cast: one line per avatar, 8 lines.
+# In Synthesia: Avatars -> pick a synthetic (AI-generated) avatar -> "..." menu -> Copy Interactive ID.
+# Format:  <interactive id>  <man|woman>  <optional note, e.g. "30s, dark hair">
