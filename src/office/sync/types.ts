@@ -1,3 +1,4 @@
+import type { DatabaseSync } from 'node:sqlite';
 import type { Employee, Env, Task, TeamAskResponse, TeamReport } from '../../shared/index.ts';
 
 /** Local data the team report is computed from. Implemented by the store. */
@@ -36,4 +37,6 @@ export interface Sync {
 export interface SyncDeps {
   env: Env;
   data: TeamData;
+  /** The store's SQLite handle (it owns the `outbox` table). Defaults to `data.db` when `data` is the Store. */
+  db?: DatabaseSync;
 }
