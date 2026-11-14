@@ -1,0 +1,19 @@
+node_modules/
+dist/
+out/
+.DS_Store
+
+# secrets: .env.local and any other .env file stay out; the template is committed
+.env
+.env.*
+!.env.example
+
+# runtime data and generated output
+data/
+data-w*/
+shots/
+voice/.venv/
+
+# research clones (not part of the product)
+vendor/_research/
+vendor/cua/
