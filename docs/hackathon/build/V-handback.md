@@ -76,8 +76,13 @@ One teammate message each way between Priya and Jonas. Total $0.47. The work is 
 - A line said in a call can reach the worker straight away: the call mind has a `tell_worker` tool, and this morning Maya used it mid-call. That is the path for "Version B. Ship it."
 - Typed lines (`say`) use the voice library's own typed-input path, which interrupts and answers aloud like speech. Read in the installed library and wired in the hook; not yet tried on a real call.
 
+## Checked since (11:35 to 11:57)
+
+- In the video session's real takes: `startCall`, `summon`, `pin`, `say` and the Approve button all worked on real calls, and the Desks view was recorded with the four live desktops in the Mac window.
+- The shell test (`npx tsx scripts/smoke/shell.ts`) passes on the new build, with "Show desks" in the tray above "Summon meeting…".
+- Found in the takes and logged in `issues.md`: I-19 (call mind denied finished work while an approval was pending: fixed in the prompt, checked offline, takes effect at the next office start), I-20 (two approvals for one push: open), I-21 (activity lines read "Ran a command": open).
+
 ## Still to do
 
-1. On a real call: `say`, `pin`, `startCall` and `summon` through the hook, the greeting after finished work, "Version B. Ship it." reaching Ines's desktop. None tried yet.
-2. Desks view with four live streams at 2560 x 1600 inside the Mac window; fall back to frames if it is not smooth.
-3. Re-run the shell test (`npx tsx scripts/smoke/shell.ts`) for the new tray item; it starts its own copy of the app, so not while a recording is in progress.
+1. Hear the I-19 fix on a live call (needs the office restarted).
+2. Desks view at 2560 x 1600 with four streams: not measured for smoothness.
