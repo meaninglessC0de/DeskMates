@@ -126,3 +126,14 @@ Format: `I-<n>`, scenario, expected, observed, evidence, best reading of the cau
 
 Also seen in the takes, by design: the microphone is on when a meeting starts, so voices near the Mac are heard as the manager and answered. Mute when recording.
 
+## I-22 · Video takes · An instruction given in a call is acknowledged aloud but never reaches the worker (high, fixed, confirmed on a live call)
+
+- Observed four times in today's real calls (`stop=max_tokens ... tools=-` in the office log), including "Version B. Ship it." to Ines and an instruction to Jonas this morning: the person says "Got it" and nothing happens.
+- Cause: the call mind's `max_tokens` was 400. Thinking, the spoken acknowledgement and the `tell_worker` call with the instruction written out did not fit, so the tool call was cut off and dropped.
+- Fix: cap 1200 (the prompt, not the cap, keeps the spoken answer short). Confirmed at 12:02 on a live call: "Got it, Sam. I'll add a small 'Shipping this week' line under Version B." then `tell_worker`, and Ines made the change on her desktop and reported it.
+- I-19 was confirmed on a live call at the same time: asked where she was, Maya said "The fix is in, the tests have run, and the change is committed…".
+
+## I-23 · Design · An employee who is waiting for a teammate is nudged and then failed (high, being fixed)
+
+- Found by reading `turnEndedInner`: with a task open and nothing to do, the office nudges twice and then fails the task as "Stopped making progress". The first demo run only worked because every reply came within a few seconds. Fix in progress: `wait_for_colleague` (D-055).
+
