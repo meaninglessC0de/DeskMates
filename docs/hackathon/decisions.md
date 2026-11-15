@@ -142,3 +142,9 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **D-038.** Stuck versus question: "stuck" means no way forward was found after two honest attempts (a site that does not exist, a missing login, a failing tool); a missing decision or preference is a question. Colleagues answer each other with a best first draft and do not send each other to the manager (I-1, I-7).
 - **D-039.** The employee uses Firefox only; desktops are prepared so Firefox opens with no first-run pages or banners (I-8).
 - **D-040.** Databricks schema is now `workspace.deskmates` (new, empty; created 01:35). The old `workspace.agent_manager` holds only test rows from the build and is left in place; it can be dropped by the user at any time. The Genie space, when the user creates it, should point at `workspace.deskmates`.
+
+## 2026-11-15 · D2 stage design agent: round two decisions
+- **D-D2-6.** Meeting tiles are ordered by desk (tint slot), so a team of four is the Deskmates mark; number keys follow the order on screen. The two-by-two uses the mark's gap (40 px).
+- **D-D2-7.** One row of two or three people gets square tiles (the video's shape); no face tile exceeds 768 px (1.5 x the 512 px source). Side by side: desktop 16:10 and a square face at one height.
+- **D-D2-8.** A call shows its calling moment (dimmed portrait, DeskLoader, "Calling Maya") for at least 600 ms. Status lines ("Maya didn't answer" with Ask again, "You're muted", "Priya left") live in the caption line; the chip carries Thinking.
+- **D-D2-9.** Not changed, with reasons in `build/D2-round2-handback.md`: top strip stays centred (Electron traffic lights), 1728 one-to-one margin (width-bound), no count in "Start meeting" (ux-spec).

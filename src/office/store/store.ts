@@ -225,7 +225,10 @@ export class Store implements TeamData {
 
   constructor(file: string) {
     this.db = new DatabaseSync(file);
-    this.db.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 2000;');
+    // The wait comes first: right after a restart the previous office may still be closing this file, and without a
+    // wait the very next statement fails with "database is locked" and the office never starts.
+    this.db.exec('PRAGMA busy_timeout = 15000;');
+    this.db.exec('PRAGMA journal_mode = WAL;');
     this.migrate();
   }
 

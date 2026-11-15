@@ -121,7 +121,11 @@ ${S} [data-am="tile"] [data-am-space] {
 
 /* The label reads on a photo, a video or a desktop through its own small capsule (below), not a scrim. */
 ${S} [data-am="tile-dim"] {
-  background: color-mix(in oklab, var(--color-background-body) 64%, transparent);
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  background: color-mix(in oklab, var(--color-background-body) 70%, transparent);
   opacity: 0;
   pointer-events: none;
 }
@@ -254,7 +258,12 @@ ${S} [data-am="pill"] [aria-label="Mute"][aria-pressed="true"] {
   background: var(--color-text-primary);
   color: var(--color-background-body);
 }
-/* Banners on the stage use the app's one banner look (data-am-banner, ui/styles/app.ts). */ .astryx-banner {
+/* Banners on the stage use the app's one banner look (data-am-banner, ui/styles/app.ts); on the dark stage the muted
+   band would equal the ground, so it is raised one tone. */
+${S} [data-am-banner],
+${S} [data-am-banner] .astryx-banner {
+  background: var(--color-background-surface);
+} .astryx-banner {
   background: var(--color-background-surface);
   color: var(--color-text-primary);
   box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--color-text-primary) 8%, transparent);

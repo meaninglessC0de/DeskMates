@@ -46,6 +46,9 @@ function listNames(names: string[]): string {
   return names.length <= 1 ? (names[0] ?? 'Meeting') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
+/** The last stage frame with people in it, shown while the stage fades out after End. */
+let lastFrame: ReactNode = null;
+
 /** The one-to-one layout choice lasts across calls (until the app restarts). */
 let savedLayout: OneToOneLayout = 'desktop';
 
@@ -396,6 +399,10 @@ export function Stage() {
       </AppShell>
     </Theme>
   );
-  if (hasCall || !lastTree.current) lastTree.current = tree;
-  return hasCall ? tree : lastTree.current;
+  // Keep the last frame that had people in it: when a call ends the slice clears while the app fades the stage out.
+  // Module-level as well as a ref, because the stage can be unmounted and mounted again for the fade (App.tsx).
+  const hasContent = hasCall && (n > 0 || failed);
+  if (hasContent) lastFrame = tree;
+  lastTree.current = hasContent || hasCall ? tree : (lastFrame ?? lastTree.current ?? tree);
+  return lastTree.current;
 }
