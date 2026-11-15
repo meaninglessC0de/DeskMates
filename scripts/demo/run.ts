@@ -2,38 +2,14 @@
 // that has a real checkout bug, sends the four tasks as Sam's messages, then waits and reports. See scripts/demo/README.md.
 //   npx tsx scripts/demo/run.ts [--only maya,ines] [--skip-hire] [--skip-seed] [--reuse] [--timeout-min 20]
 // Environment: DEMO_OFFICE_URL (default http://127.0.0.1:4317), DEMO_MIN_FREE_GB (default 4, 0 turns the memory check off).
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { Approval, Candidate, Employee, Message, TeamReport, ThreadResponse } from '../../src/shared/index.ts';
-import { readEnv } from '../../src/shared/index.ts';
-import { createCuaSpaces } from '../../src/office/spaces/cuaSpaces.ts';
-import type { Spaces } from '../../src/office/spaces/types.ts';
-import { hostMemory } from '../e2e/lib/harness.ts';
+import type { Approval, Employee, Message, TeamReport, ThreadResponse } from '../../src/shared/index.ts';
+import {
+  CAST, MANAGER, OFFICE, ROOT, api, employee, fail, hireOne, initSpaces, log, minutes, saveFrameTo, seedMaya, sh, sleep, thread,
+  type Person,
+} from './lib.ts';
 
-process.env.CUA_TELEMETRY ??= '0';
-process.env.DO_NOT_TRACK ??= '1';
-
-const ROOT = path.resolve(import.meta.dirname, '../..');
-const SEED_DIR = path.join(import.meta.dirname, 'seed');
-const OFFICE = (process.env.DEMO_OFFICE_URL ?? 'http://127.0.0.1:4317').replace(/\/$/, '');
-const MIN_FREE_GB = Number(process.env.DEMO_MIN_FREE_GB ?? 4);
-const MANAGER = 'Sam';
-
-// ---------- the cast, in desk order ----------
-
-interface Person {
-  key: 'maya' | 'priya' | 'jonas' | 'ines';
-  first: string;
-  roleKey: string;
-}
-const CAST: Person[] = [
-  { key: 'maya', first: 'Maya', roleKey: 'web_developer' },
-  { key: 'priya', first: 'Priya', roleKey: 'marketer' },
-  { key: 'jonas', first: 'Jonas', roleKey: 'researcher' },
-  { key: 'ines', first: 'Ines', roleKey: 'designer' },
-];
 
 // ---------- flags ----------
 
@@ -54,46 +30,6 @@ const skipSeed = has('skip-seed');
 const reuse = has('reuse');
 const timeoutMin = Number(val('timeout-min') ?? 20);
 if (!Number.isFinite(timeoutMin) || timeoutMin <= 0) fail('--timeout-min must be a number of minutes above zero');
-
-// ---------- small helpers ----------
-
-function fail(msg: string): never {
-  console.error(`demo: ${msg}`);
-  process.exit(1);
-}
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-const stamp = () => new Date().toLocaleTimeString('en-GB');
-const log = (s: string) => console.log(`[${stamp()}] ${s}`);
-const minutes = (ms: number) => Math.round((ms / 60_000) * 10) / 10;
-
-async function api<T>(method: string, p: string, body?: unknown, tries = 3): Promise<T> {
-  let last = '';
-  for (let i = 0; i < tries; i++) {
-    try {
-      const res = await fetch(OFFICE + p, {
-        method,
-        headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-      const text = await res.text();
-      if (res.status >= 500 && i < tries - 1) {
-        last = `${res.status} ${text.slice(0, 200)}`;
-        await sleep(1500);
-        continue;
-      }
-      if (res.status >= 400) throw new Error(`${method} ${p}: ${res.status} ${text.slice(0, 300)}`);
-      return (text ? JSON.parse(text) : null) as T;
-    } catch (e) {
-      if ((e as Error).message.startsWith(`${method} ${p}:`)) throw e;
-      last = (e as Error).message;
-      await sleep(1500);
-    }
-  }
-  throw new Error(`${method} ${p}: ${last}`);
-}
-
-const thread = (id: string) => api<ThreadResponse>('GET', `/api/employees/${id}/thread?limit=200`);
-const employee = (id: string) => api<Employee>('GET', `/api/employees/${id}`);
 
 // ---------- run state ----------
 
@@ -117,12 +53,6 @@ interface State {
 }
 const states = new Map<Person['key'], State>();
 
-let spaces: Spaces;
-
-async function sh(id: string, cmd: string, timeoutMs = 60_000): Promise<{ out: string; code: number }> {
-  const r = await spaces.exec(id, cmd, { timeoutMs });
-  return { out: (r.stdout + (r.stderr ? `\n${r.stderr}` : '')).trim(), code: r.exitCode };
-}
 
 // ---------- 1. preflight ----------
 
@@ -148,85 +78,6 @@ async function preflight(): Promise<Employee[]> {
     if (missing.length) fail(`--skip-hire: ${missing.map((m) => m.first).join(', ')} not on the team yet.`);
   }
   return existing;
-}
-
-// ---------- 3. hire ----------
-
-async function waitHello(id: string, first: string, timeoutMs = 240_000): Promise<void> {
-  const t0 = Date.now();
-  for (;;) {
-    const e = await employee(id);
-    const t = await thread(id);
-    const hello = t.messages.some((m) => m.from === 'employee' && m.kind === 'text');
-    if ((e.state === 'idle' || e.state === 'working') && hello) return;
-    if (e.state === 'stuck' || e.state === 'offline') throw new Error(`${first}'s desktop is ${e.state} (${e.stateDetail}).`);
-    if (Date.now() - t0 > timeoutMs) throw new Error(`${first} did not come up with a hello within ${Math.round(timeoutMs / 1000)} s (state ${e.state}: ${e.stateDetail}).`);
-    await sleep(2000);
-  }
-}
-
-async function hireOne(p: Person): Promise<Employee> {
-  if (MIN_FREE_GB > 0) {
-    const m = hostMemory();
-    if (m.availGb >= 0 && m.availGb < MIN_FREE_GB) {
-      fail(`Only ${m.availGb} GB of memory is free (free plus inactive), under ${MIN_FREE_GB} GB. Not hiring ${p.first}. Set DEMO_MIN_FREE_GB=0 to skip this check.`);
-    }
-  }
-  const c = await api<Candidate>('POST', '/api/candidates', { roleKey: p.roleKey });
-  if (c.persona.firstName !== p.first) {
-    fail(`The office offered ${c.persona.name} for role ${p.roleKey}, not ${p.first}. Is ${p.first} already hired, or is config/cast.json different?`);
-  }
-  log(`Hiring ${c.persona.name} (${c.persona.role})...`);
-  const e = await api<Employee>('POST', '/api/employees', { token: c.token });
-  await waitHello(e.id, p.first);
-  log(`${p.first} is at her desk and has said hello`);
-  return e;
-}
-
-// ---------- 4. seed Maya ----------
-
-function buildSeedTar(): Buffer {
-  return execFileSync('tar', ['-czf', '-', '--exclude=__pycache__', '--exclude=*.pyc', '--exclude=.DS_Store', '-C', path.join(SEED_DIR), 'shop'], {
-    env: { ...process.env, COPYFILE_DISABLE: '1' },
-    maxBuffer: 16 * 1024 * 1024,
-  });
-}
-
-async function seedMaya(id: string): Promise<void> {
-  log('Seeding Maya\'s desktop with the shop...');
-  await spaces.writeFile(id, '/tmp/shop-seed.tgz', buildSeedTar());
-  const script = [
-    'set -e',
-    'mkdir -p ~/work/remotes',
-    'rm -rf ~/work/shop ~/work/remotes/shop.git',
-    'tar -xzf /tmp/shop-seed.tgz -C ~/work',
-    'git config --global user.name "Maya Chen"',
-    'git config --global user.email "maya@deskmates.example"',
-    'git config --global init.defaultBranch main',
-    'git init -q --bare -b main ~/work/remotes/shop.git',
-    'cd ~/work/shop',
-    'git init -q -b main',
-    'git add -A',
-    'git commit -q -m "Initial commit: shop"',
-    'git remote add origin "$HOME/work/remotes/shop.git"',
-    'git push -q -u origin main',
-    'rm -f /tmp/shop-seed.tgz',
-  ].join('\n');
-  const r = await sh(id, script, 90_000);
-  if (r.code !== 0) throw new Error(`Seeding failed (exit ${r.code}): ${r.out.slice(-400)}`);
-  // verify inside the Space
-  const tests = await sh(id, 'cd ~/work/shop && python3 -m unittest 2>&1 | tail -4', 90_000);
-  const ran = tests.out.match(/Ran (\d+) tests?/);
-  const failed = tests.out.match(/failures=(\d+)/);
-  const n = ran ? Number(ran[1]) : 0;
-  const f = failed ? Number(failed[1]) : 0;
-  if (n < 40 || n > 50) throw new Error(`Seed check: expected 40 to 50 tests, saw: ${tests.out}`);
-  if (f < 3) throw new Error(`Seed check: expected several failing tests, saw: ${tests.out}`);
-  const git = await sh(id, 'cd ~/work/shop && echo "status:[$(git status --porcelain)]" && git branch --show-current && git log --oneline | wc -l && git remote get-url origin && test "$(git rev-parse HEAD)" = "$(git ls-remote origin refs/heads/main | cut -f1)" && echo remote-in-sync');
-  if (!/status:\[\]/.test(git.out) || !/remote-in-sync/.test(git.out) || !/^main$/m.test(git.out)) {
-    throw new Error(`Seed check: the repository is not as expected:\n${git.out}`);
-  }
-  log(`Seed verified in Maya's Space: ${n} tests, ${f} failing, git clean on main, origin in sync`);
 }
 
 // ---------- 5. tasks ----------
@@ -356,23 +207,12 @@ async function findArtifacts(s: State): Promise<string[]> {
 }
 
 async function saveFrame(s: State): Promise<string | null> {
-  try {
-    const res = await fetch(`${OFFICE}/api/employees/${s.id}/frame.jpg`);
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (res.status !== 200 || buf[0] !== 0xff) return null;
-    const dir = path.join(ROOT, 'shots/demo');
-    mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, `${s.person.key}.jpg`);
-    writeFileSync(file, buf);
-    return path.relative(ROOT, file);
-  } catch {
-    return null;
-  }
+  return saveFrameTo(s.id, `shots/demo/${s.person.key}.jpg`);
 }
 
 async function main(): Promise<void> {
   if (!people.length) fail('Nothing to do: --only matched nobody.');
-  spaces = createCuaSpaces({ dataDir: path.join(tmpdir(), 'deskmates-demo'), env: readEnv({ ...process.env, DESKTOPS: 'cua' }) });
+  initSpaces();
   const set = new Set(people.map((p) => p.key));
   const startedAt = Date.now();
 
