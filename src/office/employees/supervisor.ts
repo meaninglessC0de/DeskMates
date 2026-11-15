@@ -37,7 +37,7 @@ interface Waiter {
 }
 
 const HIRED_NOTE =
-  'You have just been hired. Introduce yourself to your manager in one short sentence and ask what to start on.';
+  'You have just been hired. Say hello to your manager in one short sentence with message_user: your first name, your role, and that you are ready for a first task. It is a greeting, not a question, so do not use ask_user.';
 const NUDGE =
   'You stopped without finishing or asking. If the task is complete, call finish_task with a short summary. If you need your manager, call ask_user. Otherwise carry on with the next unfinished step of your plan.';
 

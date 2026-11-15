@@ -96,7 +96,7 @@ export function Sidebar() {
                   startContent={<Portrait person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={40} presence={e.state} />}
                   endContent={
                     <VStack gap={1} hAlign="end" data-am-num="">
-                      <Timestamp value={e.lastActivityMs} format="relative_short" hasTooltip={false} />
+                      <Timestamp key={e.lastActivityMs} value={e.lastActivityMs} format="relative_short" hasTooltip={false} isLive />
                       {e.unread > 0 ? <Badge label={String(e.unread)} variant="neutral" /> : null}
                     </VStack>
                   }

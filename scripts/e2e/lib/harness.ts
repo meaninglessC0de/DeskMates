@@ -2,7 +2,7 @@
 // a Client on the WebSocket, direct access to each employee's Space (for checks the product cannot answer), cost
 // tracking with a budget, evidence files, process and memory sampling.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { embedded } from '@trycua/cua';
 import type { Employee, Message, Permissions, ServerEvent } from '../../../src/shared/index.ts';
@@ -215,9 +215,12 @@ export class Run {
       this.c.close();
       await this.office.stop();
     }
-    // whatever is still in the SDK list that is ours (by id) or new since we started: delete directly
+    // whatever is still in the SDK list that is ours: delete directly. "Ours" is a Space this run hired (by id) or one whose
+    // employee folder is in this run's data folder. Never "anything new since we started": the app or another test may be
+    // running on this machine, and its desktops are not ours to delete.
     const now = await sdkSpaceIds();
-    let left = now.filter((s) => this.spaceIds.has(s) || (!this.baselineSpaces.includes(s) && /^local:emp-/.test(s)));
+    const inOurData = (s: string): boolean => existsSync(path.join(this.office.dataDir, 'employees', `emp_${s.replace(/^local:emp-/, '').toUpperCase()}`));
+    let left = now.filter((s) => /^local:emp-/.test(s) && (this.spaceIds.has(s) || inOurData(s)));
     if (!this.opts.keep && left.length) {
       for (const s of left) {
         try {

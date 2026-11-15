@@ -290,7 +290,7 @@ export function TeamView() {
         {synced && report.syncedMs ? (
           <HStack gap={1} vAlign="center" data-am-num="" data-am-synced="">
             <Text type="supporting">{report.source === 'databricks' ? 'Synced with Databricks ·' : 'Synced ·'}</Text>
-            <Timestamp value={report.syncedMs} format="relative" />
+            <Timestamp key={report.syncedMs} value={report.syncedMs} format="relative" isLive />
             {report.experimentUrl ? (
               <>
                 <Text type="supporting">·</Text>

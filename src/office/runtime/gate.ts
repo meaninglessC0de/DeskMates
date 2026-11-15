@@ -1,6 +1,6 @@
 import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk';
 import type { Employee } from '../../shared/index.ts';
-import { desktopGroup, isAllowedDesktopTool, isRiskyShell, splitToolName } from './toolGroups.ts';
+import { desktopGroup, isAllowedDesktopTool, isRiskyShell, riskyShellStep, splitToolName } from './toolGroups.ts';
 import type { ApprovalOutcome } from './types.ts';
 
 export type Family = 'desktop' | 'shell' | 'files';
@@ -124,7 +124,9 @@ export class PermissionGate {
     const { server, tool } = splitToolName(toolName);
     if (server === 'space' && tool === 'shell') {
       const command = str(input.command);
-      return { kind: 'ask', family: isRiskyShell(command) ? null : 'shell', title: 'Run a command', detail: clip(command, 120) };
+      const step = riskyShellStep(command);
+      if (step) return { kind: 'ask', family: null, title: step.title, detail: clip(step.part, 120) };
+      return { kind: 'ask', family: 'shell', title: 'Run a command', detail: clip(command, 120) };
     }
     if (server === 'space' && tool === 'write_file') {
       return { kind: 'ask', family: 'files', title: 'Save a file', detail: clip(str(input.path), 120) };

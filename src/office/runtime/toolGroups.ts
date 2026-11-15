@@ -77,26 +77,40 @@ export function buildDisallowed(server: string, reported: readonly string[]): st
   return [...all].filter((t) => !DESKTOP_ALLOW.has(t)).sort().map((t) => fullName(server, t));
 }
 
-/** Risky shell commands (case-insensitive). employee-runtime.md section 6. */
-const RISKY_SHELL_PARTS = [
-  /\brm\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\b/,
-  /\brm\s+(?:-r\s+-f|-f\s+-r)\b/,
-  /\brm\s+(?:--recursive\s+--force|--force\s+--recursive)\b/,
-  /\bsudo\b/,
-  /\bgit\s+push\b/,
-  /\bnpm\s+publish\b/,
-  /\bdeploy/,
-  /\b(curl|wget)\b[^\n]*\|\s*(sudo\s+)?(sh|bash|zsh)\b/,
-  /\bmkfs/,
-  /\bdd\s+if=/,
-  /\bshutdown\b/,
-  /\breboot\b/,
-  /\bdrop\s+table\b/,
-  /\btruncate\s+table\b/,
-  /\bchmod\s+-r\s+777\b/,
+/** Risky shell commands (case-insensitive), each with the words the manager sees on the approval. employee-runtime.md section 6. */
+const RISKY_SHELL: [RegExp, string][] = [
+  [/\brm\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\b/, 'Delete files'],
+  [/\brm\s+(?:-r\s+-f|-f\s+-r)\b/, 'Delete files'],
+  [/\brm\s+(?:--recursive\s+--force|--force\s+--recursive)\b/, 'Delete files'],
+  [/\bgit\s+push\b/, 'Publish with git push'],
+  [/\bnpm\s+publish\b/, 'Publish a package'],
+  [/\bdeploy/, 'Deploy'],
+  [/\b(curl|wget)\b[^\n]*\|\s*(sudo\s+)?(sh|bash|zsh)\b/, 'Run a script from the internet'],
+  [/\bmkfs/, 'Erase a disk'],
+  [/\bdd\s+if=/, 'Overwrite a disk'],
+  [/\bshutdown\b/, 'Shut down the desktop'],
+  [/\breboot\b/, 'Restart the desktop'],
+  [/\bdrop\s+table\b/, 'Delete data'],
+  [/\btruncate\s+table\b/, 'Delete data'],
+  [/\bchmod\s+-r\s+777\b/, 'Open files to everyone'],
+  [/\bsudo\b/, 'Run a command as administrator'],
 ];
 
 export function isRiskyShell(command: string): boolean {
   const c = command.toLowerCase();
-  return RISKY_SHELL_PARTS.some((re) => re.test(c));
+  return RISKY_SHELL.some(([re]) => re.test(c));
+}
+
+/**
+ * What the big step in a risky command is, in the manager's words, and the part of the command that does it
+ * (a long chain shows the step that matters, not whatever happens to come first). Null when nothing is risky.
+ */
+export function riskyShellStep(command: string): { title: string; part: string } | null {
+  const parts = command.split(/&&|\|\||;|\n/).map((p) => p.trim()).filter(Boolean);
+  for (const [re, title] of RISKY_SHELL) {
+    const part = parts.find((p) => re.test(p.toLowerCase()));
+    if (part) return { title, part };
+  }
+  for (const [re, title] of RISKY_SHELL) if (re.test(command.toLowerCase())) return { title, part: command.trim() };
+  return null;
 }

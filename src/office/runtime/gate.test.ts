@@ -126,9 +126,15 @@ describe('gate order, row by row', () => {
       const { gate } = rig({ level: 'asks_big_steps' });
       const long = `git push origin main ${'x'.repeat(200)}`;
       const x = d(gate, 'mcp__space__shell', { command: long });
-      expect(x).toMatchObject({ kind: 'ask', family: null, title: 'Run a command' });
+      expect(x).toMatchObject({ kind: 'ask', family: null, title: 'Publish with git push' });
       expect((x as { detail: string }).detail.length).toBe(120);
       expect((x as { detail: string }).detail.startsWith('git push origin main')).toBe(true);
+    });
+    it('names the big step in a long chain and shows that part, not the first command', () => {
+      const { gate } = rig({ level: 'asks_big_steps' });
+      const chain = "cd ~/work/site && sed -i 's/a/b/' index.html && git add -A && git commit -m site && git push ~/remote.git main";
+      expect(d(gate, 'mcp__space__shell', { command: chain })).toEqual({ kind: 'ask', family: null, title: 'Publish with git push', detail: 'git push ~/remote.git main' });
+      expect(d(gate, 'mcp__space__shell', { command: 'cd /tmp; rm -rf build' })).toMatchObject({ title: 'Delete files', detail: 'rm -rf build' });
     });
   });
 
