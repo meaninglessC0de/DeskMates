@@ -92,9 +92,24 @@ describe('Inbox', () => {
     let busy = true;
     const inbox = new Inbox({ coalesceMs: 1, busy: () => busy });
     const r = reader(inbox);
-    inbox.push(office('Your permission level is now "independent". Internet: on.'));
+    inbox.push(office("You have your manager's screen until 10:30. Use the host tools."));
     await r.settle();
     expect(r.got).toHaveLength(1);
+    busy = false;
+    inbox.close();
+  });
+
+  it('keeps a permission notice back even while a turn is running, and sends it with the next real message', async () => {
+    let busy = true;
+    const inbox = new Inbox({ coalesceMs: 1, busy: () => busy });
+    const r = reader(inbox);
+    inbox.push(office('Your permission level is now "independent". Internet: on.'));
+    await r.settle();
+    expect(r.got).toHaveLength(0);
+    inbox.push(mgr('go on'));
+    await r.settle();
+    expect(r.got).toHaveLength(1);
+    expect(textOf(r.got[0])).toBe('<office>Your permission level is now "independent". Internet: on.</office>\n<message from="manager">go on</message>');
     busy = false;
     inbox.close();
   });

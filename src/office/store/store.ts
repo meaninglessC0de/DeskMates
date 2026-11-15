@@ -443,6 +443,12 @@ export class Store implements TeamData {
     return this.all('SELECT * FROM tasks WHERE COALESCE(finished_ms, assigned_ms) >= ? AND COALESCE(finished_ms, assigned_ms) < ?', startMs, endMs).map(taskFrom);
   }
 
+  usageWithoutTask(startMs: number, endMs: number): { employeeId: string; costUsd: number }[] {
+    return this.all(
+      'SELECT employee_id, SUM(cost_usd) AS cost FROM usage WHERE task_id IS NULL AND ts_ms >= ? AND ts_ms < ? GROUP BY employee_id', startMs, endMs,
+    ).map((r) => ({ employeeId: r.employee_id as string, costUsd: r.cost as number }));
+  }
+
   // ---- approvals
 
   insertApproval(a: Approval): void {

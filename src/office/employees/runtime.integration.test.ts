@@ -66,7 +66,7 @@ describe('hiring with the real runtime', () => {
     await h.state(e.id, 'idle');
     expect(inputs[0].startsWith('<office>\nBriefing for this session.')).toBe(true);
     expect(inputs[0]).toContain('Your manager: Sam.');
-    expect(inputs[0]).toContain('Permission level: works independently.');
+    expect(inputs[0]).toContain('Permission level: asks before big steps.');
     expect(inputs[0]).toContain('You have just been hired.');
   });
 });
@@ -361,7 +361,7 @@ describe('take control (4.9)', () => {
       t.finish({ text: 'ok' });
     });
     h!.office.control(e.id, true);
-    expect(emp()).toMatchObject({ state: 'paused', stateDetail: 'Waiting for you', controlledByUser: true });
+    expect(emp()).toMatchObject({ state: 'paused', stateDetail: 'You have control', controlledByUser: true });
     say('are you there?');
     await new Promise((r) => setTimeout(r, 100));
     expect(inputs.some((i) => i.includes('are you there?'))).toBe(false);
@@ -406,6 +406,226 @@ describe('screen grant with MockHost', () => {
     h!.office.sendMessage(e.id, 'hello');
     await h!.waitFor('turn', (x): x is Ev<'message'> => x.type === 'message' && x.message.text === 'ok' && inputs.length >= 1);
     expect(inputs.at(-1)).toContain('<office>Your permission level is now "asks first". Internet: off.');
+  });
+});
+
+describe('clean events (F1)', () => {
+  const states = (from: number, id: string) =>
+    h!.events.slice(from).filter((x): x is Ev<'employee'> => x.type === 'employee' && x.employee.id === id).map((x) => x.employee.state)
+      .filter((st, i, a) => i === 0 || a[i - 1] !== st);
+
+  it('report_stuck goes from working straight to stuck (no idle in between) and the failed task has its cost', async () => {
+    const { e, say } = await hired(async (t) => {
+      await work(t);
+      await t.tool('mcp__office__report_stuck', { reason: 'The site is down.', tried: 'Twice.' });
+      t.finish({ costUsd: 0.07, numTurns: 4 });
+    });
+    const from = h!.mark();
+    say('open the portal');
+    await h!.state(e.id, 'stuck', from);
+    await new Promise((r) => setTimeout(r, 100));
+    const seq = states(from, e.id);
+    expect(seq.slice(seq.indexOf('working'))).toEqual(['working', 'stuck']);
+    const failed = h!.events.slice(from).filter((x): x is Ev<'task'> => x.type === 'task' && x.task.status === 'failed');
+    expect(failed).toHaveLength(1);
+    expect(failed[0].task.costUsd).toBeCloseTo(0.07);
+    expect(failed[0].task.numTurns).toBe(4);
+  });
+
+  it('finish_task: the done bubble, then the closed task with its cost and idle together', async () => {
+    const { e, say } = await hired(async (t) => {
+      await work(t);
+      await t.tool('mcp__office__finish_task', { summary: 'All done.' });
+      await t.sleep(80); // the model writes its closing line
+      t.finish({ costUsd: 0.12, numTurns: 6 });
+    });
+    const from = h!.mark();
+    say('build it');
+    const doneEv = await h!.waitFor('done bubble', isMsg(e.id, 'employee', 'done'), { from });
+    await h!.state(e.id, 'idle', h!.events.indexOf(doneEv));
+    const ev = h!.events.slice(from);
+    const seq = states(from, e.id);
+    expect(seq.slice(seq.indexOf('working'))).toEqual(['working', 'idle']);
+    const done = ev.findIndex((x) => x.type === 'message' && x.message.kind === 'done');
+    const closed = ev.findIndex((x) => x.type === 'task' && x.task.status === 'done');
+    const idle = ev.findIndex((x, i) => i > done && x.type === 'employee' && x.employee.state === 'idle');
+    expect(done).toBeGreaterThan(-1);
+    expect(closed).toBeGreaterThan(done);
+    expect(idle).toBeGreaterThan(closed);
+    expect(ev.slice(done + 1, idle).some((x) => x.type === 'employee')).toBe(false);
+    const task = (ev[closed] as Ev<'task'>).task;
+    expect(task.costUsd).toBeCloseTo(0.12);
+    expect(task.numTurns).toBe(6);
+    expect(ev.filter((x) => x.type === 'task' && x.task.status === 'done')).toHaveLength(1);
+  });
+
+  it('a task whose result never arrives still closes after 3 s at the latest', async () => {
+    const { e, say } = await hired(async (t) => {
+      await work(t);
+      await t.tool('mcp__office__finish_task', { summary: 'All done.' });
+      await t.sleep(5000);
+      t.finish({});
+    });
+    const from = h!.mark();
+    say('build it');
+    await h!.waitFor('done bubble', isMsg(e.id, 'employee', 'done'), { from });
+    const t0 = Date.now();
+    await h!.state(e.id, 'idle', from);
+    expect(Date.now() - t0).toBeLessThan(4000);
+  }, 10_000);
+
+  it('a new command in a new task is a new running step, even with the same sentence', async () => {
+    const { e, say } = await hired(async (t) => {
+      await work(t);
+      await t.tool('mcp__office__finish_task', { summary: 'ok' });
+      t.finish({});
+    });
+    const from = h!.mark();
+    say('first');
+    await h!.waitFor('first done', isMsg(e.id, 'employee', 'done'), { from });
+    await h!.state(e.id, 'idle', from);
+    const mid = h!.mark();
+    say('second');
+    await h!.waitFor('second done', isMsg(e.id, 'employee', 'done'), { from: mid });
+    const running = h!.events.slice(from).filter((x): x is Ev<'step'> => x.type === 'step' && x.step.status === 'running' && x.step.sentence === 'Ran a command');
+    expect(new Set(running.map((x) => x.step.id)).size).toBe(2);
+    expect(running[1].step.taskId).not.toBe(running[0].step.taskId);
+  });
+
+  it('the same action twice in a row inside one task is one step', async () => {
+    const { e, say } = await hired(async (t) => {
+      await work(t);
+      await work(t);
+      await t.tool('mcp__office__finish_task', { summary: 'ok' });
+      t.finish({});
+    });
+    const from = h!.mark();
+    say('go');
+    await h!.waitFor('done', isMsg(e.id, 'employee', 'done'), { from });
+    const steps = h!.events.slice(from).filter((x): x is Ev<'step'> => x.type === 'step' && x.step.sentence === 'Ran a command');
+    expect(new Set(steps.map((x) => x.step.id)).size).toBe(1);
+  });
+
+  it('ends a turn with ask_user: the sentence is posted once, as the question', async () => {
+    let n = 0;
+    const { e, say } = await hired(async (t) => {
+      n++;
+      if (n === 1) {
+        await work(t);
+        t.finish({ text: 'Which colour do you want for the heading?' }); // she stops with plain text...
+      } else {
+        t.text('Let me ask.');
+        await t.sleep(5); // the runtime reads the assistant message before the tool runs, as with the real SDK
+        await t.tool('mcp__office__ask_user', { question: 'Which colour do you want for the heading?' }); // ...and the nudge makes her ask
+        t.finish({});
+      }
+    });
+    const from = h!.mark();
+    say('build it');
+    await h!.state(e.id, 'needs_you', from);
+    await new Promise((r) => setTimeout(r, 100));
+    const said = h!.events.slice(from).filter((x): x is Ev<'message'> => x.type === 'message' && x.message.from === 'employee');
+    expect(said.map((x) => x.message.kind)).toEqual(['question']);
+  });
+
+  it('keeps her plain text when the nudge turn says something different', async () => {
+    let n = 0;
+    const { e, say } = await hired(async (t) => {
+      n++;
+      if (n === 1) {
+        await work(t);
+        t.finish({ text: 'The page is at ~/work/site/index.html.' });
+      } else {
+        await t.tool('mcp__office__finish_task', { summary: 'Built the landing page with a blue heading and a team section.' });
+        t.finish({});
+      }
+    });
+    const from = h!.mark();
+    say('build it');
+    await h!.waitFor('done', isMsg(e.id, 'employee', 'done'), { from });
+    const said = h!.events.slice(from).filter((x): x is Ev<'message'> => x.type === 'message' && x.message.from === 'employee');
+    expect(said.map((x) => x.message.kind)).toEqual(['text', 'done']);
+  });
+
+  it('a permission change is not a turn of its own', async () => {
+    const inputs: string[] = [];
+    const { e } = await hired((t) => {
+      inputs.push(t.inputText);
+      t.finish({ text: 'ok' });
+    });
+    const before = inputs.length;
+    await h!.office.patchEmployee(e.id, { permissions: { level: 'asks_first' } });
+    await new Promise((r) => setTimeout(r, 200));
+    expect(inputs.length).toBe(before);
+    h!.office.sendMessage(e.id, 'hello');
+    await h!.waitFor('turn', (x): x is Ev<'message'> => x.type === 'message' && x.message.text === 'ok' && inputs.length > before);
+    expect(inputs.at(-1)).toMatch(/<office>Your permission level is now "asks first"[^\n]*<\/office>\n<message from="manager">hello/);
+  });
+
+  it('plain chat turns and the greeting add their cost to the team totals', async () => {
+    const fake = createFakeQuery((t) => {
+      t.finish({ text: /just been hired/.test(t.inputText) ? 'Hi, I am Maya.' : 'Fine, thanks.', costUsd: 0.03 });
+    });
+    h = await harness({ env: ENV, boot: { createRuntime: claudeRuntimeFactory({ query: fake.factory, coalesceMs: 1 }) } });
+    const e = await h.hire('web_developer');
+    await h.state(e.id, 'idle');
+    h.office.sendMessage(e.id, 'how are you?');
+    await h.waitFor('reply', (x): x is Ev<'message'> => x.type === 'message' && x.message.text === 'Fine, thanks.');
+    await new Promise((r) => setTimeout(r, 50));
+    const report = await h.office.team('today');
+    expect(report.totals.costUsd).toBeCloseTo(0.06);
+    expect(report.rows[0].costUsd).toBeCloseTo(0.06);
+  });
+});
+
+describe('the greeting comes before idle (F1)', () => {
+  it('stays starting until the greeting turn ends, and a message sent meanwhile is a normal task after it', async () => {
+    const turns: string[] = [];
+    const fake = createFakeQuery(async (t) => {
+      turns.push(t.inputText);
+      if (/just been hired/.test(t.inputText)) {
+        await t.sleep(250);
+        t.finish({ text: 'Hi, I am Maya.' });
+        return;
+      }
+      await work(t);
+      await t.tool('mcp__office__finish_task', { summary: 'Built it.' });
+      t.finish({});
+    });
+    h = await harness({ env: ENV, boot: { createRuntime: claudeRuntimeFactory({ query: fake.factory, coalesceMs: 1 }) } });
+    const e = await h.hire('web_developer');
+    // wait for the desktop (the runtime is up) but not for idle
+    await h.waitFor('session', (x): x is Ev<'employee'> => x.type === 'employee' && x.employee.id === e.id && !!x.employee.sessionId);
+    const early = h.office.sendMessage(e.id, 'build it');
+    expect(h.office.getEmployee(e.id).state).toBe('starting');
+    await h.waitFor('done', isMsg(e.id, 'employee', 'done'));
+    const ev = h.events;
+    const greet = ev.findIndex((x) => x.type === 'message' && x.message.from === 'employee' && x.message.text === 'Hi, I am Maya.');
+    const idle = ev.findIndex((x) => x.type === 'employee' && x.employee.id === e.id && x.employee.state === 'idle');
+    const doneAt = ev.findIndex((x) => x.type === 'message' && x.message.kind === 'done');
+    const seen = ev.findIndex((x) => x.type === 'message_seen' && x.id === early.id);
+    expect(greet).toBeGreaterThan(-1);
+    expect(idle).toBeGreaterThan(greet);
+    expect(seen).toBeGreaterThan(greet);
+    expect(doneAt).toBeGreaterThan(greet);
+    expect(turns[0]).toContain('just been hired');
+    expect(turns[0]).not.toContain('build it');
+    expect(turns[1]).toContain('<message from="manager">build it</message>');
+    expect((h.office.thread(e.id, {}).task as Task).status).toBe('done');
+  });
+
+  it('is idle only after the greeting bubble when nobody writes', async () => {
+    const fake = createFakeQuery(async (t) => {
+      await t.sleep(120);
+      t.finish({ text: 'Hi, I am Maya.' });
+    });
+    h = await harness({ env: ENV, boot: { createRuntime: claudeRuntimeFactory({ query: fake.factory, coalesceMs: 1 }) } });
+    const e = await h.hire('web_developer');
+    await h.state(e.id, 'idle');
+    const idle = h.events.findIndex((x) => x.type === 'employee' && x.employee.id === e.id && x.employee.state === 'idle');
+    const greet = h.events.findIndex((x) => x.type === 'message' && x.message.from === 'employee');
+    expect(greet).toBeGreaterThan(-1);
+    expect(idle).toBeGreaterThan(greet);
   });
 });
 

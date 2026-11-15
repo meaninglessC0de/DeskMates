@@ -3,6 +3,12 @@ import type { SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { formatItem, isActionable } from './prompt.ts';
 import type { InboxItem } from './types.ts';
 
+const PERMISSION_NOTICE = /^Your permission level is now/i;
+
+function isPermissionNotice(item: InboxItem): boolean {
+  return item.kind === 'office' && PERMISSION_NOTICE.test(item.text.trim());
+}
+
 export interface InboxOptions {
   /** True while a turn is running: then everything is released at once so it reaches the model at the next tool boundary. */
   busy?: () => boolean;
@@ -15,7 +21,7 @@ export interface InboxOptions {
 /**
  * The ordered queue of everything said to the employee, exposed as the never-ending input stream of the SDK
  * (employee-runtime.md 4.1). While paused nothing is released. While idle, passive items (the briefing, notices)
- * wait for the next item that needs an answer so they never start a turn of their own.
+ * wait for the next item that needs an answer so they never start a turn of their own. A permission notice always waits.
  */
 export class Inbox implements AsyncIterable<SDKUserMessage> {
   private queue: InboxItem[] = [];
@@ -67,7 +73,9 @@ export class Inbox implements AsyncIterable<SDKUserMessage> {
   private releasable(): boolean {
     if (this.queue.length === 0 || this.paused) return false;
     if (this.queue.some(isActionable)) return true;
-    return this.opts.busy?.() === true;
+    // while a turn runs, notices that change what she can do (the screen) steer it at once; a permission change
+    // never does: it rides along with the next real message so it cannot start a turn or invite a reply of its own
+    return this.opts.busy?.() === true && this.queue.some((i) => !isPermissionNotice(i));
   }
 
   async *[Symbol.asyncIterator](): AsyncGenerator<SDKUserMessage, void> {

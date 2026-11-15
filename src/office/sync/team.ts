@@ -37,9 +37,14 @@ export function computeTeamReport(data: TeamData, range: TeamReport['range'], no
   const tasks = data.listTasksInRange(p.startMs, p.endMs);
   const prevTasks = data.listTasksInRange(p.previousStartMs, p.previousEndMs);
 
+  const chat = (from: number, to: number) => new Map((data.usageWithoutTask?.(from, to) ?? []).map((u) => [u.employeeId, u.costUsd]));
+  const chatNow = chat(p.startMs, p.endMs);
+  const chatPrev = chat(p.previousStartMs, p.previousEndMs);
+
   const rows: TeamRow[] = data.listEmployees().map((e) => {
     const mine = tasks.filter((t) => t.employeeId === e.id);
     const t = totalsOf(mine);
+    t.costUsd += chatNow.get(e.id) ?? 0;
     return {
       employeeId: e.id,
       name: e.persona.name,
@@ -58,10 +63,15 @@ export function computeTeamReport(data: TeamData, range: TeamReport['range'], no
   const mineTasks = tasks.filter((t) => memberIds.has(t.employeeId));
   const prevMine = prevTasks.filter((t) => memberIds.has(t.employeeId));
 
+  const withChat = (totals: ReturnType<typeof totalsOf>, spend: Map<string, number>) => {
+    for (const [id, c] of spend) if (memberIds.has(id)) totals.costUsd += c;
+    return totals;
+  };
+  const prevChat = [...chatPrev.keys()].some((id) => memberIds.has(id));
   return {
     range,
-    totals: totalsOf(mineTasks),
-    previous: prevMine.length > 0 ? totalsOf(prevMine) : null,
+    totals: withChat(totalsOf(mineTasks), chatNow),
+    previous: prevMine.length > 0 || prevChat ? withChat(totalsOf(prevMine), chatPrev) : null,
     rows,
     source: 'local',
     syncedMs: null,

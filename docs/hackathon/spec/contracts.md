@@ -72,7 +72,7 @@ export interface Employee {
   screenGrant: { untilMs: number | null } | null;   // set while this employee holds the user's screen; untilMs null = until stopped
   desktopSinceMs: number | null;  // when the desktop last came up; null when off
   pendingRestart: boolean;        // a setting was changed that applies at the next desktop restart
-  controlledByUser: boolean;      // the user has taken control of the desktop (state is 'paused', stateDetail 'Waiting for you')
+  controlledByUser: boolean;      // the user has taken control of the desktop (state is 'paused', stateDetail 'You have control')
   createdMs: number;
 }
 
@@ -199,7 +199,7 @@ Who sets `stateDetail` (always at most 40 characters, cut with an ellipsis):
 | `working` | the last `set_activity` sentence, else the task title |
 | `needs_you` | the approval title, or the question text |
 | `stuck` | the `report_stuck` reason, or the supervisor's reason |
-| `paused` | "Paused by you", or "Waiting for you" while `controlledByUser` |
+| `paused` | "Paused by you", or "You have control" while `controlledByUser` |
 | `on_call` | "On a call with you" |
 
 Money is US dollars everywhere (`costUsd`), formatted in the UI with `Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })`. The UX spec's pound signs are examples only.

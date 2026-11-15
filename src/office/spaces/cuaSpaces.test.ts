@@ -54,6 +54,9 @@ class FakeSdk implements CuaBackend {
   dead = new Set<string>();
   createDelayMs = 20;
   streamFails = false;
+  /** every command run in a Space, and a switch to make the browser setup fail. */
+  commands: string[] = [];
+  failSetup = false;
 
   async list() {
     return this.entries.map((e) => ({ ...e }));
@@ -91,8 +94,10 @@ class FakeSdk implements CuaBackend {
     const fail = () => new Error(`CuaError.Runtime: local runtime: instance ${id.replace('local:', '')} not found`);
     const ok: BackendExec = { stdout: '', stderr: '', exitCode: 0, timedOut: false };
     return {
-      bash: async () => {
+      bash: async (command: string) => {
         if (dead()) throw fail();
+        this.commands.push(command);
+        if (this.failSetup && command.includes('policies.json')) throw new Error('setup broke');
         return ok;
       },
       write: async () => {},
@@ -171,6 +176,30 @@ describe('ensure', () => {
     expect(sdk.deletes).toEqual(['local:test-w1-eee']);
     expect(sdk.creates).toBe(1);
   }, 20_000);
+});
+
+describe('browser setup', () => {
+  const setups = (sdk: FakeSdk) => sdk.commands.filter((c) => c.includes('policies.json'));
+
+  it('runs once on a new desktop, writes the Firefox policy and hides the sandbox banner', async () => {
+    const sdk = new FakeSdk();
+    const spaces = make(sdk);
+    await spaces.ensure('emp_JJJ', { internet: true });
+    await spaces.ensure('emp_JJJ', { internet: true });
+    expect(setups(sdk)).toHaveLength(1);
+    const script = setups(sdk)[0]!;
+    expect(script).toContain('$FF/distribution/policies.json');
+    expect(script).toContain('security.sandbox.warn_unprivileged_namespaces');
+    expect(script).toContain('sandbox-content-disabled');
+    expect(script).toContain('x-scheme-handler/https=firefox.desktop');
+  });
+
+  it('does not fail the hire when the setup fails', async () => {
+    const sdk = new FakeSdk();
+    sdk.failSetup = true;
+    const info = await make(sdk).ensure('emp_KKK', { internet: true });
+    expect(info.state).toBe('running');
+  });
 });
 
 describe('lifecycle', () => {

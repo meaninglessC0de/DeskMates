@@ -38,7 +38,7 @@ export function applyShotState(shot: ShotRef): void {
     if (e.id !== id) return e;
     let next: Employee = e;
     if (as) next = { ...next, state: as, stateDetail: DETAIL[as] ?? next.persona.role, desktopSinceMs: as === 'offline' ? null : next.desktopSinceMs };
-    if (control) next = { ...next, state: 'paused', stateDetail: 'Waiting for you', controlledByUser: true };
+    if (control) next = { ...next, state: 'paused', stateDetail: 'You have control', controlledByUser: true };
     if (lent) next = { ...next, permissions: { ...next.permissions, myScreen: true }, screenGrant: { untilMs: lent === 'forever' ? null : Date.now() + 8 * MIN + 42_000 } };
     if (p.get('myscreen') === '1') next = { ...next, permissions: { ...next.permissions, myScreen: true } };
     return next;

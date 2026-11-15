@@ -46,7 +46,7 @@ export interface Employee {
   screenGrant: { untilMs: number | null } | null;   // set while this employee holds the user's screen; untilMs null = until stopped
   desktopSinceMs: number | null;  // when the desktop last came up; null when off
   pendingRestart: boolean;        // a setting was changed that applies at the next desktop restart
-  controlledByUser: boolean;      // the user has taken control of the desktop (state is 'paused', stateDetail 'Waiting for you')
+  controlledByUser: boolean;      // the user has taken control of the desktop (state is 'paused', stateDetail 'You have control')
   createdMs: number;
 }
 

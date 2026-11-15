@@ -537,7 +537,7 @@ export class ClaudeRuntime implements EmployeeRuntime {
 
     if (ok && !interrupted && !spoke && textAllowed && typeof r.result === 'string' && r.result.trim()) {
       const text = stripMarkdown(r.result);
-      if (text) this.host.messageUser(text);
+      if (text) this.host.messageUser(text, { final: true });
     }
 
     const base = { costUsd, inputTokens, outputTokens, numTurns: r.num_turns };

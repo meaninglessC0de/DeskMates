@@ -145,7 +145,7 @@ async function main() {
     maya = e;
     assert(ms < 1000, `hire answered after ${ms} ms`);
     assert(e.state === 'starting' && e.stateDetail === 'Starting desktop', `state ${e.state} / ${e.stateDetail}`);
-    assert(e.permissions.level === 'independent', `Maya's default level is ${e.permissions.level}`);
+    assert(e.permissions.level === 'asks_big_steps', `Maya's default level is ${e.permissions.level}`);
     await ev.waitFor('Maya starting', isEmployee(e.id, 'starting'), from, 2000);
     const up = await ev.waitFor('Maya idle', isEmployee(e.id, 'idle'), from);
     assert(up.employee.desktopSinceMs !== null && up.employee.spaceId?.startsWith('mock:'), 'desktop not recorded');
@@ -193,7 +193,8 @@ async function main() {
     const no = await api<Approval>('POST', `/api/approvals/${second.approval.id}`, { decision: 'deny', note: 'Not now' });
     assert(no.status === 200 && no.data.status === 'denied', `deny: ${no.status}`);
     const said = await ev.waitFor('her reply to the denial', (e): e is Ev<'message'> => e.type === 'message' && e.message.employeeId === priya.id && e.message.from === 'employee' && /won't|will not/i.test(e.message.text), from);
-    await ev.waitFor('Priya idle after denial', isEmployee(priya.id, 'idle'), from);
+    // idle after her reply (an earlier idle event is only the user's message touching the row)
+    await ev.waitFor('Priya idle after denial', isEmployee(priya.id, 'idle'), ev.log.findIndex((x) => x.e === said) + 1);
     return `approved run finished the 4-step plan; denied run said "${said.message.text.slice(0, 40)}..."`;
   });
 
@@ -239,7 +240,7 @@ async function main() {
     assert(resumed.data.state === 'idle', `resume: ${resumed.data.state}`);
 
     const control = await api<Employee>('POST', `/api/employees/${ines.id}/control`, { on: true });
-    assert(control.data.state === 'paused' && control.data.controlledByUser && control.data.stateDetail === 'Waiting for you', 'take control');
+    assert(control.data.state === 'paused' && control.data.controlledByUser && control.data.stateDetail === 'You have control', 'take control');
     const back = await api<Employee>('POST', `/api/employees/${ines.id}/control`, { on: false });
     assert(back.data.state === 'idle' && !back.data.controlledByUser, 'give back');
 

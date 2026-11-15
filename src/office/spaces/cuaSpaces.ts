@@ -15,6 +15,7 @@ import {
   spaceNameFor,
   withTimeout,
 } from './cuaPure.ts';
+import { BROWSER_SETUP_SCRIPT } from './browserSetup.ts';
 import { openCuaStream } from './stream.ts';
 import type { EnsureOptions, ExecResult, McpEndpoint, SpaceInfo, SpaceState, Spaces } from './types.ts';
 
@@ -31,6 +32,7 @@ const HEALTH_MS = 5_000;
 const START_MS = 30_000;
 const DELETE_MS = 30_000;
 const THUMB_WIDTH = 480;
+const BROWSER_SETUP_MS = 8_000;
 
 const OFF = 'This desktop is off.';
 const ABSENT = 'This desktop does not exist.';
@@ -146,8 +148,22 @@ export function createCuaSpaces(opts: CuaSpacesOptions): Spaces {
       await forceDelete(employeeId).catch(() => {});
       throw new Error('The new desktop did not answer.');
     }
+    await setUpBrowser(employeeId);
     say('Desktop is ready');
     return info(employeeId, 'running');
+  }
+
+  /** One clean Firefox, no popups (see browserSetup.ts). A failure is logged and never fails the hire. */
+  async function setUpBrowser(employeeId: string): Promise<void> {
+    const t0 = Date.now();
+    try {
+      const h = await running(employeeId);
+      const r = await withTimeout(h.bash(BROWSER_SETUP_SCRIPT, BROWSER_SETUP_MS), BROWSER_SETUP_MS + 1_000, 'browser setup');
+      if (r.timedOut || (r.exitCode ?? 0) !== 0) console.warn(`[spaces] ${nameOf(employeeId)}: browser setup did not finish cleanly`);
+      else console.log(`[spaces] ${nameOf(employeeId)}: browser set up in ${Date.now() - t0} ms`);
+    } catch (e) {
+      console.warn(`[spaces] ${nameOf(employeeId)}: browser setup failed: ${errorText(e)}`);
+    }
   }
 
   async function applyNetwork(employeeId: string, internet: boolean): Promise<void> {

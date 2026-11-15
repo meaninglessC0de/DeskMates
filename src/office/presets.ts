@@ -13,7 +13,7 @@ interface PresetRow {
 }
 
 const ROWS: PresetRow[] = [
-  { key: 'web_developer', role: 'Web developer', blurb: 'Builds and fixes software', icon: 'Code2', level: 'independent',
+  { key: 'web_developer', role: 'Web developer', blurb: 'Builds and fixes software', icon: 'Code2', level: 'asks_big_steps',
     workingStyle: 'Small steps, runs the tests before saying done, shows the staging link.',
     starters: ['Fix a bug', 'Build a page', 'Review my code'] },
   { key: 'marketer', role: 'Marketer', blurb: 'Plans campaigns and writes copy', icon: 'Megaphone', level: 'asks_big_steps',

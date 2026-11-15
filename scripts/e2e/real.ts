@@ -679,6 +679,12 @@ async function runDef(def: Def): Promise<void> {
     const secs = (Date.now() - ctx.t0) / 1000;
     const evidence = [...ctx.checks.filter((c) => c.ok).map((c) => `${c.label}: ${c.evidence}`.replace(/: $/, '')), ...ctx.facts].join('; ');
     let files = ctx.files;
+    try {
+      await new Promise((r) => setTimeout(r, 4000)); // let the closing events (task cost, idle) land before the event log is saved
+      files = [...files, R.saveEvents(ctx.id, ctx.mark, 600, 'events.json')]; // every event of the scenario, pass or fail
+    } catch {
+      /* evidence only */
+    }
     if (!ok) files = [...files, ...(await failureBundle(ctx))];
     const short = (ok ? evidence : failed.map((f) => `${f.label}${f.evidence ? ` (${f.evidence})` : ''}`).join('; ')).slice(0, 420);
     console.log(`${ok ? 'PASS' : 'FAIL'} ${ctx.id} ${def.name[def.ids.indexOf(ctx.id)]} (${secs.toFixed(0)} s, ${money(cost - costBefore)} here, ${money(cost)} so far) - ${short}`);

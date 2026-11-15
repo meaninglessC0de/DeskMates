@@ -36,7 +36,7 @@ describe('hiring', () => {
     expect(e.state).toBe('starting');
     expect(e.stateDetail).toBe('Starting desktop');
     expect(e.persona.firstName).toBe('Maya');
-    expect(e.permissions.level).toBe('independent');
+    expect(e.permissions.level).toBe('asks_big_steps');
     expect(e.model).toBe('claude-sonnet-5-5');
     const up = await h.state(e.id, 'idle');
     expect(up.spaceId).toMatch(/^mock:emp-/);
@@ -178,10 +178,10 @@ describe('pause, take control, stuck', () => {
     await h.waitFor('done', isMsg(e.id, 'employee', 'done'), { from });
   });
 
-  it('take control pauses with "Waiting for you"; give back resumes', async () => {
+  it('take control pauses with "You have control"; give back resumes', async () => {
     const { h, e } = await hired();
     const on = h.office.control(e.id, true);
-    expect(on).toMatchObject({ state: 'paused', stateDetail: 'Waiting for you', controlledByUser: true });
+    expect(on).toMatchObject({ state: 'paused', stateDetail: 'You have control', controlledByUser: true });
     const off = h.office.control(e.id, false);
     expect(off).toMatchObject({ state: 'idle', controlledByUser: false });
   });
@@ -398,12 +398,13 @@ describe('the keep-going rules (with a runtime that stops early)', () => {
         deliver(item) {
           log.push(item);
           const nudge = item.kind === 'office' && /You stopped without finishing/.test(item.text);
-          if (!started || (item.kind === 'office' && !nudge)) return;
+          const hire = item.kind === 'office' && /just been hired/.test(item.text);
+          if (!started || (item.kind === 'office' && !nudge && !hire)) return;
           const t = setTimeout(() => {
             timers.delete(t);
             deps.host.turnStarted();
-            if (!nudge) deps.host.toolUsed('space');
-            deps.host.turnEnded({ costUsd: 0.01, numTurns: 1 });
+            if (!nudge && !hire) deps.host.toolUsed('space');
+            deps.host.turnEnded(hire ? {} : { costUsd: 0.01, numTurns: 1 });
           }, 5);
           timers.add(t);
         },

@@ -6,6 +6,8 @@ export interface TeamData {
   listEmployees(): Employee[];
   /** Tasks whose `finishedMs ?? assignedMs` is in [startMs, endMs). */
   listTasksInRange(startMs: number, endMs: number): Task[];
+  /** Spend that belongs to no task (greetings, plain chat turns) in [startMs, endMs), summed per employee. */
+  usageWithoutTask?(startMs: number, endMs: number): { employeeId: string; costUsd: number }[];
 }
 
 export type SyncTable = 'employees' | 'tasks' | 'steps' | 'messages' | 'usage';

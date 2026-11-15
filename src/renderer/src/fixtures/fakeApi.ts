@@ -82,7 +82,7 @@ export async function fakeRequest(method: string, path: string, body?: unknown):
     if (c === 'read') return undefined;
     if (c === 'pause') return { ...e, state: 'paused', stateDetail: 'Paused by you' };
     if (c === 'resume') return { ...e, state: 'idle', stateDetail: e.persona.role };
-    if (c === 'control') return { ...e, controlledByUser: Boolean(b.on), state: b.on ? 'paused' : 'idle', stateDetail: b.on ? 'Waiting for you' : e.persona.role };
+    if (c === 'control') return { ...e, controlledByUser: Boolean(b.on), state: b.on ? 'paused' : 'idle', stateDetail: b.on ? 'You have control' : e.persona.role };
     if (c === 'desktop') return { ...e, state: d === 'stop' ? 'offline' : e.state, stateDetail: d === 'stop' ? 'Desktop is off' : e.stateDetail };
     if (c === 'stream') return { kind: 'frames', url: `/api/employees/${id}/frame.jpg` };
     if (c === 'screen-grant') {

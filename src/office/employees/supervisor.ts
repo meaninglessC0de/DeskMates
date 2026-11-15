@@ -85,7 +85,19 @@ export class EmployeeSupervisor implements RuntimeHost {
   private flags = { asked: false, finished: false, stuck: false };
   private nudges = 0;
   private errorRestarts = 0;
-  private lastStep: { id: string; sentence: string; startedMs: number } | null = null;
+  private lastStep: { id: string; sentence: string; startedMs: number; taskId: string | null } | null = null;
+  /** While > 0, employee patches are written but announced once, when the outermost batch ends (one event per transition). */
+  private holdDepth = 0;
+  private heldEmployee = false;
+  /** finish_task / report_stuck ran inside a turn: the task closes when the turn's result (and its cost) arrives, or after 3 s. */
+  private pendingClose: { status: 'done' | 'failed'; outcome: string; stuck: string | null; timer: NodeJS.Timeout } | null = null;
+  /** The hire turn: the employee shows `starting` until the greeting turn ends, and manager messages wait for it. */
+  private greeting = false;
+  private greetTimer: NodeJS.Timeout | null = null;
+  private greetHeld: InboxItem[] = [];
+  /** A turn's trailing plain text, held while the nudge that usually follows may turn it into a tool bubble. */
+  private heldFinal: { text: string; timer: NodeJS.Timeout } | null = null;
+  private nudgedThisTurn = false;
   private lastSdkMs = Date.now();
   private stalls = 0;
   private removed = false;
@@ -143,8 +155,26 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   private patch(p: Partial<Employee>): Employee {
     const e = this.ctx.store.updateEmployee(this.id, p);
-    this.ctx.bus.emit({ type: 'employee', employee: e });
+    if (this.holdDepth > 0) this.heldEmployee = true;
+    else this.ctx.bus.emit({ type: 'employee', employee: e });
     return e;
+  }
+
+  private emitHeld(): void {
+    if (!this.heldEmployee) return;
+    this.heldEmployee = false;
+    this.ctx.bus.emit({ type: 'employee', employee: this.employee() });
+  }
+
+  /** Runs `fn` with employee events held back, then announces the final employee once. */
+  private batch<T>(fn: () => T): T {
+    this.holdDepth++;
+    try {
+      return fn();
+    } finally {
+      this.holdDepth--;
+      if (this.holdDepth === 0) this.emitHeld();
+    }
   }
 
   private touch(): Partial<Employee> {
@@ -155,7 +185,8 @@ export class EmployeeSupervisor implements RuntimeHost {
     const e = this.employee();
     if (this.desktop === 'starting') return { state: 'starting', detail: 'Starting desktop' };
     if (this.desktop === 'down') return { state: 'offline', detail: this.bootFailed ? "Couldn't start desktop" : 'Desktop is off' };
-    if (this.paused || e.controlledByUser) return { state: 'paused', detail: e.controlledByUser ? 'Waiting for you' : 'Paused by you' };
+    if (this.greeting) return { state: 'starting', detail: 'Starting desktop' };
+    if (this.paused || e.controlledByUser) return { state: 'paused', detail: e.controlledByUser ? 'You have control' : 'Paused by you' };
     if (this.stuckReason) return { state: 'stuck', detail: this.stuckReason };
     const pending = this.ctx.store.pendingApprovals(this.id);
     if (pending.length > 0) return { state: 'needs_you', detail: pending[0].title };
@@ -216,16 +247,19 @@ export class EmployeeSupervisor implements RuntimeHost {
     }
   }
 
-  private postEmployee(kind: MessageKind, text: string, notify: 'question' | 'done' | 'stuck' | 'message' | null = 'message'): Message {
+  private postEmployee(
+    kind: MessageKind, text: string, notify: 'question' | 'done' | 'stuck' | 'message' | null = 'message', taskId?: string | null,
+  ): Message {
     this.setTyping(false);
     const m: Message = {
       id: newId('msg'), employeeId: this.id, from: 'employee', kind, text,
-      taskId: this.task?.id ?? this.turnTaskId, createdMs: this.now(), seenMs: null,
+      taskId: taskId !== undefined ? taskId : this.task?.id ?? this.turnTaskId, createdMs: this.now(), seenMs: null,
     };
     this.ctx.store.insertMessage(m);
-    this.ctx.bus.emit({ type: 'message', message: m });
     const e = this.employee();
     this.patch({ unread: e.unread + 1, ...this.touch() });
+    this.emitHeld();
+    this.ctx.bus.emit({ type: 'message', message: m });
     if (notify) {
       const first = e.persona.firstName;
       const title = notify === 'done' ? `${first} finished a task` : notify === 'question' ? `${first} has a question` : notify === 'stuck' ? `${first} is stuck` : first;
@@ -246,6 +280,8 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   /** The user typed a message. Delivers it, steers if working, wakes the desktop if it is off. */
   sendMessage(text: string): Message {
+    this.flushClose();
+    this.flushHeldFinal();
     const wasQuestion = !!this.question;
     const m: Message = {
       id: newId('msg'), employeeId: this.id, from: 'user', kind: 'text', text,
@@ -256,7 +292,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.ctx.noteManagerMessage(this.id);
     this.lastAssignment = text;
     this.question = null;
-    if (this.stuckReason) this.setStuck(null);
+    this.setStuckFlag(null); // the refresh at the end of this method announces the new state
 
     if (this.budgetPrompt) {
       const stop = /^\s*(no|stop|cancel|nope|don'?t)\b/i.test(text);
@@ -286,6 +322,11 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   /** Put an item in the runtime's inbox, or hold it until the runtime is up. */
   deliver(item: InboxItem): void {
+    // a new hire writes her greeting first: what people say to her in the meantime is handled right after it
+    if (this.greeting && (item.kind === 'manager' || item.kind === 'colleague')) {
+      this.greetHeld.push(item);
+      return;
+    }
     if (this.runtime) this.runtime.deliver(item);
     else this.pendingItems.push(item);
   }
@@ -323,8 +364,9 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   private closeTask(status: 'done' | 'failed' | 'cancelled', outcome: string | null): Task | null {
     if (!this.task) return null;
-    this.flushActive(this.now());
-    const closed: Task = { ...this.task!, status, outcome, finishedMs: this.now() };
+    const now = this.now();
+    const activeMs = this.task.activeMs + (this.workingSince !== null ? now - this.workingSince : 0);
+    const closed: Task = { ...this.task, status, outcome, finishedMs: now, activeMs };
     this.ctx.store.upsertTask(closed);
     this.ctx.bus.emit({ type: 'task', task: closed });
     this.lastClosedTask = closed;
@@ -336,6 +378,52 @@ export class EmployeeSupervisor implements RuntimeHost {
     return closed;
   }
 
+  /** Close a task as failed and mark the employee stuck in one transition (working to stuck, never through idle). */
+  private failTask(outcome: string, stuck: string): void {
+    this.flushClose();
+    this.batch(() => {
+      this.setStuckFlag(stuck);
+      this.closeTask('failed', outcome);
+      this.refresh();
+    });
+  }
+
+  /**
+   * finish_task and report_stuck. Inside a turn the cost of the task is only known when the turn's result arrives,
+   * so the task closes then (at most 3 s later) with its real numbers; the bubble has already been posted.
+   * Outside a turn it closes at once. Either way the state changes in one employee event.
+   */
+  private closeAfterTurn(status: 'done' | 'failed', outcome: string, stuck: string | null, post: (taskId: string | null) => void): void {
+    this.flushClose();
+    const taskId = this.task?.id ?? this.turnTaskId;
+    if (!this.task || !this.inTurn) {
+      this.batch(() => {
+        this.setStuckFlag(stuck);
+        this.closeTask(status, outcome);
+        post(taskId);
+        this.refresh();
+      });
+      return;
+    }
+    post(taskId);
+    const timer = setTimeout(() => this.flushClose(), 3000);
+    timer.unref();
+    this.pendingClose = { status, outcome, stuck, timer };
+  }
+
+  private flushClose(): void {
+    const c = this.pendingClose;
+    if (!c) return;
+    this.pendingClose = null;
+    clearTimeout(c.timer);
+    if (this.removed) return;
+    this.batch(() => {
+      this.setStuckFlag(c.stuck);
+      this.closeTask(c.status, c.outcome);
+      this.refresh();
+    });
+  }
+
   private saveTask(t: Task): void {
     if (this.task?.id === t.id) this.task = t;
     this.ctx.store.upsertTask(t);
@@ -344,8 +432,12 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   private addStep(sentence: string, opts: { status?: ActivityStep['status']; peer?: ActivityStep['peer'] } = {}): string {
     const now = this.now();
-    if (this.lastStep && this.lastStep.sentence === sentence && now - this.lastStep.startedMs < 60_000 && !opts.peer) {
-      return this.lastStep.id;
+    if (this.lastStep && !opts.peer && this.lastStep.sentence === clip(sentence) && this.lastStep.taskId === (this.task?.id ?? null)) {
+      // the same action again inside one task: one step while it runs, or for a moment after it ended in the same turn
+      const prev = this.ctx.store.getStep(this.lastStep.id);
+      if (prev && (prev.status === 'running' || (this.inTurn && prev.endedMs !== null && now - prev.endedMs < 2_000))) {
+        return this.lastStep.id;
+      }
     }
     for (const s of this.ctx.store.recentSteps(this.id, 5)) {
       if (s.status === 'running') {
@@ -361,22 +453,64 @@ export class EmployeeSupervisor implements RuntimeHost {
     if (opts.peer) step.peer = opts.peer;
     this.ctx.store.upsertStep(step);
     this.ctx.bus.emit({ type: 'step', step });
-    this.lastStep = { id: step.id, sentence: step.sentence, startedMs: now };
+    this.lastStep = { id: step.id, sentence: step.sentence, startedMs: now, taskId: step.taskId };
     this.patch(this.touch());
     return step.id;
   }
 
   // ------------------------------------------------------------------ RuntimeHost: office tools
 
-  messageUser(text: string): string {
+  messageUser(text: string, opts?: { final?: boolean }): string {
     if (this.removed) return 'sent';
+    if (opts?.final) {
+      this.holdFinal(text);
+      return 'sent';
+    }
+    this.flushHeldFinal();
     this.postEmployee('text', text, 'message');
     return 'sent';
+  }
+
+  /**
+   * The trailing plain text of a turn. With a task open the employee is about to be nudged to finish or ask, and
+   * she often does it with the same sentence: keep the text back until that tool bubble says whether it is a duplicate.
+   */
+  private holdFinal(text: string): void {
+    if (this.heldFinal) {
+      if (sameSaying(this.heldFinal.text, text)) return;
+      this.flushHeldFinal();
+    }
+    if (!this.task) {
+      this.postEmployee('text', text, 'message');
+      return;
+    }
+    const timer = setTimeout(() => this.flushHeldFinal(), 20_000);
+    timer.unref();
+    this.heldFinal = { text, timer };
+  }
+
+  private flushHeldFinal(): void {
+    const h = this.heldFinal;
+    if (!h) return;
+    this.heldFinal = null;
+    clearTimeout(h.timer);
+    if (!this.removed) this.postEmployee('text', h.text, 'message');
+  }
+
+  /** A tool bubble (question, done, stuck) is about to be posted: drop the held text when it says the same thing. */
+  private settleHeldFinal(text: string): void {
+    const h = this.heldFinal;
+    if (!h) return;
+    if (sameSaying(h.text, text)) {
+      this.heldFinal = null;
+      clearTimeout(h.timer);
+    } else this.flushHeldFinal();
   }
 
   askUser(question: string): string {
     if (this.removed) return 'sent';
     this.flags.asked = true;
+    this.settleHeldFinal(question);
     this.postEmployee('question', question, 'question');
     this.question = question;
     this.refresh();
@@ -422,24 +556,28 @@ export class EmployeeSupervisor implements RuntimeHost {
   finishTask(summary: string): string {
     if (this.removed) return 'Task closed.';
     this.flags.finished = true;
-    this.postEmployee('done', summary, 'done');
-    this.closeTask('done', summary);
-    this.setStuck(null);
+    this.settleHeldFinal(summary);
+    this.closeAfterTurn('done', summary, null, (taskId) => this.postEmployee('done', summary, 'done', taskId));
     return 'Task closed.';
   }
 
   reportStuck(reason: string, tried: string): string {
     if (this.removed) return 'Noted.';
     this.flags.stuck = true;
-    this.postEmployee('text', `${reason} ${tried}`.trim(), 'stuck');
-    this.closeTask('failed', reason);
-    this.setStuck(reason);
+    const said = `${reason} ${tried}`.trim();
+    this.settleHeldFinal(said);
+    this.closeAfterTurn('failed', reason, reason, (taskId) => this.postEmployee('text', said, 'stuck', taskId));
     return 'Noted. Your manager has been told.';
   }
 
-  private setStuck(reason: string | null): void {
+  private setStuckFlag(reason: string | null): void {
+    if (this.stuckReason === reason) return;
     this.stuckReason = reason;
     this.ctx.store.setExtra(this.id, { stuckReason: reason });
+  }
+
+  private setStuck(reason: string | null): void {
+    this.setStuckFlag(reason);
     this.refresh();
   }
 
@@ -528,6 +666,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       this.turnTaskId = this.task?.id ?? null;
       this.flags = { asked: false, finished: false, stuck: false };
     }
+    if (this.greeting) return; // a message sent during the greeting has not reached her yet
     const now = this.now();
     for (const m of this.ctx.store.markSeen(this.id, now)) {
       this.ctx.bus.emit({ type: 'message_seen', id: m.id, employeeId: this.id, seenMs: now });
@@ -538,6 +677,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.noteSdkMessage();
     this.setTyping(false);
     this.nudges = 0;
+    this.flushClose();
     if (!this.task) this.openTask();
   }
 
@@ -562,11 +702,15 @@ export class EmployeeSupervisor implements RuntimeHost {
   }
 
   turnEnded(result: TurnResult): void {
+    this.nudgedThisTurn = false;
     try {
       this.turnEndedInner(result);
     } finally {
       this.turnTaskId = null;
       this.inTurn = false;
+      this.flushClose();
+      if (!this.nudgedThisTurn) this.flushHeldFinal();
+      this.endGreeting();
     }
   }
 
@@ -578,22 +722,9 @@ export class EmployeeSupervisor implements RuntimeHost {
     for (const s of this.ctx.store.recentSteps(this.id, 6)) {
       if (s.status === 'running') this.endStep(s.id, 'ok');
     }
-    if ((result.costUsd ?? 0) > 0 || (result.inputTokens ?? 0) > 0 || (result.outputTokens ?? 0) > 0) {
-      this.ctx.store.addUsage({
-        employeeId: this.id, taskId: this.turnTaskId, tsMs: now, costUsd: result.costUsd ?? 0,
-        inputTokens: result.inputTokens ?? 0, outputTokens: result.outputTokens ?? 0,
-      });
-      const t = this.turnTaskId ? this.ctx.store.getTask(this.turnTaskId) : undefined;
-      if (t) {
-        this.saveTask({
-          ...t,
-          costUsd: t.costUsd + (result.costUsd ?? 0),
-          inputTokens: t.inputTokens + (result.inputTokens ?? 0),
-          outputTokens: t.outputTokens + (result.outputTokens ?? 0),
-          numTurns: t.numTurns + (result.numTurns ?? 1),
-        });
-      }
-    }
+    this.addTurnUsage(result, now);
+    // finish_task / report_stuck ran in this turn: close the task now that it carries the turn's cost
+    this.flushClose();
     if (result.interrupted) {
       this.refresh();
       return;
@@ -615,11 +746,31 @@ export class EmployeeSupervisor implements RuntimeHost {
     if (this.employee().state === 'paused') return;
     if (this.nudges < 2) {
       this.nudges++;
+      this.nudgedThisTurn = true;
       this.deliver({ kind: 'office', text: NUDGE });
       return;
     }
-    this.closeTask('failed', 'Stopped making progress');
-    this.setStuck('Stopped making progress');
+    this.flushHeldFinal();
+    this.failTask('Stopped making progress', 'Stopped making progress');
+  }
+
+  private addTurnUsage(result: TurnResult, now: number): void {
+    if ((result.costUsd ?? 0) > 0 || (result.inputTokens ?? 0) > 0 || (result.outputTokens ?? 0) > 0) {
+      this.ctx.store.addUsage({
+        employeeId: this.id, taskId: this.turnTaskId, tsMs: now, costUsd: result.costUsd ?? 0,
+        inputTokens: result.inputTokens ?? 0, outputTokens: result.outputTokens ?? 0,
+      });
+      const t = this.turnTaskId ? this.ctx.store.getTask(this.turnTaskId) : undefined;
+      if (t) {
+        this.saveTask({
+          ...t,
+          costUsd: t.costUsd + (result.costUsd ?? 0),
+          inputTokens: t.inputTokens + (result.inputTokens ?? 0),
+          outputTokens: t.outputTokens + (result.outputTokens ?? 0),
+          numTurns: t.numTurns + (result.numTurns ?? 1),
+        });
+      }
+    }
   }
 
   private handleErrorResult(error: string): void {
@@ -638,8 +789,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       });
       return;
     }
-    this.closeTask('failed', 'Something went wrong with my session.');
-    this.setStuck('Something went wrong with my session.');
+    this.failTask('Something went wrong with my session.', 'Something went wrong with my session.');
   }
 
   private checkLimits(): boolean {
@@ -704,7 +854,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     for (const i of intro) runtime.deliver(i);
     const held = this.pendingItems;
     this.pendingItems = [];
-    for (const i of held) runtime.deliver(i);
+    for (const i of held) this.deliver(i);
     const grant = this.employee().screenGrant;
     if (grant) await runtime.attachHost();
   }
@@ -715,6 +865,9 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.abort?.abort();
     this.abort = null;
     this.inTurn = false;
+    this.flushClose();
+    this.flushHeldFinal();
+    this.endGreeting(true);
     this.setTyping(false);
     if (rt) await rt.dispose().catch(() => {});
     this.expirePending('The desktop was stopped.');
@@ -746,6 +899,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       if (this.removed) return;
       this.patch({ spaceId: info.id, desktopSinceMs: this.now(), pendingRestart: false });
       const intro = this.introFor(kind);
+      if (kind === 'hire') this.beginGreeting();
       await this.startRuntime(intro, true);
       if (kind === 'hire') this.setTyping(true);
     } catch (err) {
@@ -764,6 +918,26 @@ export class EmployeeSupervisor implements RuntimeHost {
       this.ctx.bus.emit({ type: 'toast', text: `Couldn't start ${this.firstName}'s desktop.`, tone: 'error' });
       this.refresh();
     }
+  }
+
+  /** Hire: she stays `starting` until her greeting turn ends (bounded), so `idle` never comes before her first message. */
+  private beginGreeting(): void {
+    this.greeting = true;
+    if (this.greetTimer) clearTimeout(this.greetTimer);
+    this.greetTimer = setTimeout(() => this.endGreeting(), 30_000);
+    this.greetTimer.unref();
+  }
+
+  private endGreeting(quiet = false): void {
+    if (!this.greeting) return;
+    this.greeting = false;
+    if (this.greetTimer) clearTimeout(this.greetTimer);
+    this.greetTimer = null;
+    const held = this.greetHeld.splice(0);
+    if (!quiet) this.refresh();
+    if (this.removed) return;
+    if (held.some((i) => i.kind === 'manager') && !this.task && !this.paused) this.setTyping(true);
+    for (const i of held) this.deliver(i);
   }
 
   private runtimeUnavailable(reason: string): void {
@@ -886,24 +1060,26 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   /** Resume; on a stuck employee this is "Try again". */
   resume(): Employee {
-    const wasStuck = !!this.stuckReason;
-    this.paused = false;
-    this.ctx.store.setExtra(this.id, { paused: false });
-    if (wasStuck) {
-      this.setStuck(null);
-      if (this.lastClosedTask?.status === 'failed' && !this.task) {
-        const reopened: Task = { ...this.lastClosedTask, status: 'running', finishedMs: null, outcome: null };
-        this.task = reopened;
-        this.ctx.store.upsertTask(reopened);
-        this.ctx.bus.emit({ type: 'task', task: reopened });
+    return this.batch(() => {
+      const wasStuck = !!this.stuckReason;
+      this.paused = false;
+      this.ctx.store.setExtra(this.id, { paused: false });
+      if (wasStuck) {
+        this.setStuckFlag(null);
+        if (this.lastClosedTask?.status === 'failed' && !this.task) {
+          const reopened: Task = { ...this.lastClosedTask, status: 'running', finishedMs: null, outcome: null };
+          this.task = reopened;
+          this.ctx.store.upsertTask(reopened);
+          this.ctx.bus.emit({ type: 'task', task: reopened });
+        }
+        this.nudges = 0;
+        this.deliver({ kind: 'office', text: 'Your manager asked you to try again. Look at the screen first, then carry on.' });
       }
-      this.nudges = 0;
-      this.deliver({ kind: 'office', text: 'Your manager asked you to try again. Look at the screen first, then carry on.' });
-    }
-    void this.runtime?.setPaused(this.employee().controlledByUser);
-    if (this.desktop === 'down') void this.startDesktop();
-    this.ensureRuntime();
-    return this.refresh();
+      void this.runtime?.setPaused(this.employee().controlledByUser);
+      if (this.desktop === 'down') void this.startDesktop();
+      this.ensureRuntime();
+      return this.refresh();
+    });
   }
 
   control(on: boolean): Employee {
@@ -996,8 +1172,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       this.stalls++;
       this.lastSdkMs = now;
       if (this.stalls >= 2) {
-        this.closeTask('failed', 'Stalled');
-        this.setStuck('Stalled');
+        this.failTask('Stalled', 'Stalled');
       } else {
         await this.runtime.interrupt();
         this.deliver({ kind: 'office', text: 'You stalled. Look at the screen first, then continue or call report_stuck.' });
@@ -1007,8 +1182,18 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   // ------------------------------------------------------------------ removal
 
+  private clearTimers(): void {
+    if (this.pendingClose) clearTimeout(this.pendingClose.timer);
+    this.pendingClose = null;
+    if (this.heldFinal) clearTimeout(this.heldFinal.timer);
+    this.heldFinal = null;
+    if (this.greetTimer) clearTimeout(this.greetTimer);
+    this.greetTimer = null;
+  }
+
   async remove(): Promise<void> {
     this.removed = true;
+    this.clearTimers();
     if (this.watchdogTimer) clearInterval(this.watchdogTimer);
     await this.chain.catch(() => {});
     await this.ctx.revokeScreen(this.id, 'removed').catch(() => {});
@@ -1021,6 +1206,7 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   /** Shutdown without deleting anything. */
   async dispose(): Promise<void> {
+    this.clearTimers();
     if (this.watchdogTimer) clearInterval(this.watchdogTimer);
     this.setTyping(false);
     await this.chain.catch(() => {});
@@ -1031,6 +1217,25 @@ export class EmployeeSupervisor implements RuntimeHost {
     for (const w of this.waiters.values()) w.resolve({ approved: false, note: 'The app is closing.', scope: 'once' });
     this.waiters.clear();
   }
+}
+
+const STOP_WORDS = new Set(['the', 'a', 'an', 'i', 'to', 'and', 'of', 'in', 'on', 'it', 'is', 'my', 'you', 'for', 'that', 'this', 'me', 'be', 'so']);
+
+function wordsOf(t: string): Set<string> {
+  return new Set(t.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter((w) => w && !STOP_WORDS.has(w)));
+}
+
+/** True when two chat texts say substantially the same thing (one contains the other, or most of their words match). */
+export function sameSaying(a: string, b: string): boolean {
+  const norm = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const na = norm(a), nb = norm(b);
+  if (!na || !nb) return false;
+  if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+  const wa = wordsOf(a), wb = wordsOf(b);
+  if (wa.size === 0 || wb.size === 0) return false;
+  let both = 0;
+  for (const w of wa) if (wb.has(w)) both++;
+  return both / (wa.size + wb.size - both) >= 0.4;
 }
 
 function money(n: number): string {

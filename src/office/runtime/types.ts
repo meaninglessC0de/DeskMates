@@ -46,7 +46,8 @@ export interface TurnResult {
 export interface RuntimeHost {
   employee(): Employee;
 
-  messageUser(text: string): string;
+  /** `final: true` is the trailing plain text of a turn (not the message_user tool): the supervisor may drop it as a duplicate. */
+  messageUser(text: string, opts?: { final?: boolean }): string;
   askUser(question: string): string;
   /** Waits for the decision. `kind: 'tool'` is for the permission gate, 'big_step' for request_approval. */
   requestApproval(a: { title: string; detail: string; kind?: 'tool' | 'big_step' }): Promise<ApprovalOutcome>;

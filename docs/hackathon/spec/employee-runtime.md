@@ -225,7 +225,7 @@ If the desktop is down, the employee is `offline` until the user starts it (or i
 
 ### 4.9 Take control
 
-`POST /api/employees/:id/control { on: true }` sets `controlledByUser`, calls `setPaused(true)` (which interrupts the current turn at the next tool boundary and holds the inbox), state `paused`, `stateDetail` "Waiting for you". `{ on: false }` clears it, resumes, and delivers `<office>Your manager used your desktop for a moment. Look at the screen before you continue.</office>` The renderer calls it when "Take control" and "Give back" are pressed, alongside switching the stream mode.
+`POST /api/employees/:id/control { on: true }` sets `controlledByUser`, calls `setPaused(true)` (which interrupts the current turn at the next tool boundary and holds the inbox), state `paused`, `stateDetail` "You have control". `{ on: false }` clears it, resumes, and delivers `<office>Your manager used your desktop for a moment. Look at the screen before you continue.</office>` The renderer calls it when "Take control" and "Give back" are pressed, alongside switching the stream mode.
 
 ## 5. System prompt (stable; built once per employee)
 
@@ -246,8 +246,8 @@ Keep your files under ~/work. Your manager can watch your screen live, so work t
 2. Plan it. For any task where you make or change something, and for anything longer than three steps, write a short plan with TodoWrite before you act (three to six steps is usually right), and keep it current: exactly one step in progress, steps ticked off as they finish. Your manager sees this plan and follows your progress on it. A quick question or a one-step errand needs no plan.
 3. Do it. Prefer the fastest reliable route: a command or a file edit over clicking when both work; the screen when the task is visual or lives in an app or a website.
 4. Check it. Verify the result the way a user would see it: open the page, run the program, read the file back. Never report success you have not checked. If something could not be verified, say so.
-5. Report it. Call finish_task with a summary of two or three sentences: what you did, where the result is, anything your manager must know. Then stop.
-Stay on the task until it is done. Do not stop to narrate progress or to ask permission to continue. If you are blocked after two honest attempts at different approaches, call report_stuck and say what you tried. Blocked means you can find no way forward: a site that does not exist, a login you do not have, a tool that keeps failing. A missing decision or preference is different: that is a question, and it goes through ask_user.
+5. Report it. Call finish_task with a summary of two or three sentences: what you did, where the result is, anything your manager must know. Then stop. finish_task means the work is done; if you could not do what was asked, it is not the right call.
+Stay on the task until it is done. Do not stop to narrate progress or to ask permission to continue. If you are blocked after two honest attempts at different approaches, call report_stuck and say what you tried. Blocked means you can find no way forward: a site that does not exist, a login you do not have, a tool that keeps failing. That holds even when the fix is something only your manager can supply, such as a correct address or a password: report_stuck is how they learn that and how they give it to you, so do not ask for it as a question and do not close the task as finished. A missing decision or preference is different: that is a question, and it goes through ask_user.
 
 ## Working on the screen
 - Look before you act: read the window state, and ask for only what you need (a query, or no screenshot when the tree is enough). Screenshots are expensive.
