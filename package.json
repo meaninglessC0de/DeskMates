@@ -1,5 +1,5 @@
 {
-  "name": "agent-manager",
+  "name": "deskmates",
   "version": "1.0.0",
   "description": "Deskmates: hire and manage a team of AI employees, each with its own desktop.",
   "scripts": {
