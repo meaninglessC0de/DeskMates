@@ -17,7 +17,7 @@ Read this first. Everything here was checked by running it, unless it says other
 | Team view | Time, tasks and cost per person from Databricks ("Synced with Databricks · now"), and the question "What did Maya work on today, and what did it cost?" answered with a table |
 | Stop and restart the office in the middle | Conversation, team and desktops all came back |
 
-Automated checks on the final code: 350 office tests and 79 renderer tests pass; the Astryx purity check finds nothing; the UI test (`npx tsx scripts/e2e/ui.ts`, a browser clicking through the app against scripted employees) passes 11 of 11; the real suite result is at the end of this file.
+Automated checks on the final code: all 429 tests pass; the Astryx purity check finds nothing and the Astryx doctor reports no failures on the built app; the UI test (`npx tsx scripts/e2e/ui.ts`, a browser clicking through the app against scripted employees) passes 11 of 11; the built Mac app passes its shell test (window, menu bar, notifications, starting and stopping the office); a 12-minute soak with three employees working at once on real desktops held steady (11 GB of memory free throughout, about 400 MB per employee, 18 cents on Haiku); the real suite result is at the end of this file.
 
 ## How to run it
 
@@ -34,7 +34,7 @@ That is the Mac app (window, menu bar, notifications); it starts everything else
 
 ## What only you can check (ten minutes, before recording)
 
-1. **Speak on a call.** I could not use a microphone. The spoken path was tested by a script with a recorded voice (answers in 2 to 3.5 s), not by a person. Check that she hears you, and that each person's voice suits their face in a meeting.
+1. **Speak on a call.** I could not use a microphone myself. At 02:45 a script played a recorded question into a real call on the final code: it was transcribed correctly and Maya answered aloud, in context, about one second after the question ended. Two things for you: check that each person's voice suits their face in a meeting, and **let her finish her hello before you speak** (a question spoken over her greeting is not heard).
 2. **The Mac shell.** Menu-bar icon in light and dark, the notification when someone needs you, the first-time prompts for microphone and notifications.
 3. **The Figma file** (below): one minute of tidying.
 
@@ -73,6 +73,8 @@ https://www.figma.com/design/YODWHUmMnsyE4EdtZUF7X4 (in your drafts, "Suhaan M's
 - The Team report from Databricks counts task cost only; small chat-only turns are in the local total but not in the warehouse figure (a few cents).
 - Lending your real screen to an employee is built up to the grant (banner, countdown, take it back) against a stand-in; driving your real Mac needs the Cua host driver installed and two permission clicks, and was not attempted.
 - No packaged `.app`; it runs with `npm start`.
+- The app's font (Figtree, from Astryx's neutral theme) loads from Google Fonts, so without a network the text falls back to the system font.
+- The Mac app was tested in its real window with scripted employees, and with real employees in a browser. The one combination not run is real employees inside the Mac window; nothing differs between the two except the shell, which has its own passing test.
 
 ## Spend
 

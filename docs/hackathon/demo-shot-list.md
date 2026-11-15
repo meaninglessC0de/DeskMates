@@ -34,7 +34,7 @@ Target length: two and a half minutes. One take per shot is enough: every shot b
 
 ## Checked live on 15 November, 02:00 (Sonnet 5.5, real desktops, through the app's own interface)
 
-Shots 1 to 8 ran as written: hire and hello in about 14 s; the site built and shown in Firefox (maximised, no pop-ups); the approval before the push; Maya asking Priya for a tagline and using it; a call with a face in about 3 s and a two-person meeting; the Team view synced with Databricks and a question answered in about 20 s. For shot 6, give Maya the tagline task only after Priya has said hello.
+Shots 1 to 8 ran as written: hire and hello in about 14 s; the site built and shown in Firefox (maximised, no pop-ups); the approval before the push; Maya asking Priya for a tagline and using it; a call with a face in about 3 s and a two-person meeting; the Team view synced with Databricks and a question answered in about 20 s. For shot 6, give Maya the tagline task only after Priya has said hello. For shot 7, let her finish her greeting before you speak: a question spoken over the greeting is not heard (checked with a recorded voice at 02:45: after the greeting, the answer starts about one second after you stop).
 
 ## What has not been checked by a person (try once before recording)
 
