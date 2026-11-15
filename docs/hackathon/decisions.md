@@ -44,6 +44,8 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 
 - **D-033 · 2026-11-14 · user** · After seeing the build: the front end must be taken further, "all out" for the Figma prize, across the whole app. Keep Astryx. **Custom components are allowed where we need them.** The call layout is wrong: the type box must sit at the bottom, not mid-column. No change to functionality. An Opus sub-agent may be used for this design work (an exception to D-011, which keeps build agents on Sonnet). · User's feedback during the build. Direction in `design/polish-brief.md`; custom visuals are built from Astryx components plus token-only CSS attached through `data-am-*` attributes, so `astryx doctor` stays at zero findings.
 
+- **D-034 · 2026-11-15 · user** · The app is named **Deskmates** (replaces the working name "Agent Manager"). The logo is a two-by-two grid of rounded squares in blue, orange, pink and green, each with a small darker dash, on a dark ground (the user's reference is `design/brand/reference-from-user.png`): made from scratch, professionally, "tweaked slightly" to look as good as possible, by a Sonnet sub-agent. · User's message during the build. The four logo colours also become the first four personal tints of employees, so the brand and the interface share one palette.
+
 ## Open questions
 
 - **Q-001 · What does the app do?** ~~The user will brief us.~~ **Answered 2026-11-14 by D-008, see [brief.md](brief.md).**
@@ -86,3 +88,27 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **D-EL-1 · recommendation, awaiting user:** do NOT replace Synthesia with ElevenLabs. Synthesia is a targeted bounty inside our own main track (50,000 credits) and is the only source of a moving face; ElevenLabs gives voice only and its bounty sits in Track 03, which may not be open to us. Do USE the user's ElevenLabs key for the employees' voices alongside Synthesia: it is already wired and needs only `ELEVENLABS_API_KEY`. If Synthesia access never arrives, the fallback ladder is audio-only calls with the ElevenLabs voice and the still portrait.
 - **Q-EL-1 · open, owner user:** ask the organisers whether a Track 02 team may also enter the ElevenLabs bounty (it rewards real-time voice agents with agentic depth and interaction design). If yes, deepen the ElevenLabs use; if no, keep it as the voice only.
 - **Q-SYN-1 (updated):** instead of asking for a key, check the hackathon sign-up inbox (and spam) for a Synthesia workspace invite. The invite was due Saturday morning. If none arrived, ask Synthesia to add the sign-up email. Then create the key and copy 5 more interactive ids (3 women, 2 men).
+
+## 2026-11-14 (late night) · assistant: Synthesia key saved and tested
+- **D-SYN-3.** `SYNTHESIA_API_KEY` is saved in `.env.local` and passes the free check (see research-log). Moving-face calls are now possible once avatar ids are in `config/cast-ids.txt`; until all people on a call have an id, that call stays audio-only (`voice/agent.py` requires an id for every person).
+- **Q-SYN-1 (now):** only the avatar ids remain: confirm Jenny/Kenji/Mei exist in the trial workspace (Avatars page) and copy 5 more synthetic interactive ids (3 women, 2 men). Key expiry defaults to 30 days; trial credit balance and limits are unknown, so check the Billing page.
+
+## 2026-11-15 · assistant: cast ids
+- **D-SYN-4.** `config/cast-ids.txt` now holds the user's five workspace ids (verified) plus the three Synthesia sample ids (untested), 8 lines in all. Genders of the five are `unknown` until someone looks. Meetings use at most 5 distinct faces per session anyway (plugin limit), so the five verified ids are enough for any one call.
+- **Q-SYN-3 · open, owner user:** which of the five avatars are men and which are women (or approve capturing one frame each, about 2 credits per avatar, which also produces portraits).
+
+## 2026-11-15 · assistant: genders and portraits
+- **Q-SYN-3 answered** (user approved capturing frames): see research-log. `config/cast-ids.txt` now has the genders. 
+- **D-SYN-5.** The five avatar portraits are saved but **not yet paired with cast members**: `config/cast.json` still has `avatarId: null` and its fallback portraits. Pairing is a product choice (the names in `cast.json` were written before any face existed, so check that each name suits its face, and rename a cast member if not). Not done by this agent because `cast.json` belongs to the cast workstream.
+- **Q-SYN-4 · open, owner user:** pair the five faces with cast members and merge ids and portraits into `cast.json`? And replace the three untested sample ids with workspace ids (1 man, 2 women) when convenient.
+
+## 2026-11-15 · D1 app design agent: polish pass decisions
+- **D-D1-1.** Personal tints are owned by the face, not the employee id: each of the 8 cast members has a fixed tint slot (`ui/tint.ts`), so four colleagues never share a colour (a hash of random ids collides about 60 % of the time for 4 people in 8 slots). Non-cast names hash.
+- **D-D1-2.** Employee portrait stays top-aligned with its run (Astryx default), not bottom-aligned: runs mix bubbles, activity lines and approval cards, and bottom alignment put the face beside a timestamp or a button row.
+- **D-D1-3.** Desktop panel: the "Live" marker sits in the panel's header line (state lifted from `Screen` through a new optional `onState` prop); the panel's state line drops its own dot while a screen is shown so two green dots never compete. "Take control" is secondary; "Give back" is filled. "Start desktop" is secondary.
+- **D-D1-4.** Info banners (desktop off, paused) are restyled to a quiet muted band; only stuck stays red.
+- **D-D1-5.** Team view: "Synced with Databricks · <time> · Open traces" (link only when `TeamReport.experimentUrl` is set). The link uses `target="_blank"`; in Electron that needs a `setWindowOpenHandler` → `shell.openExternal` in main (not present today, not in D1's scope).
+
+## 2026-11-15 (00:15) · assistant: pairing review
+- **D-SYN-5 (replaces the earlier "not yet paired" note).** Pairing is done and lives in `config/avatars.json` (W7), not in `cast.json`; do not duplicate it into `cast.json`. All eight ids are verified; `cast-ids.txt` documents them.
+- **Q-SYN-4 (updated), owner user:** (a) pick one more woman avatar in Synthesia (not red-haired; ideally one whose look suits "Amara Diallo" or "Maya Okafor") and give its Interactive ID so Amara and Hannah stop looking alike; (b) or tell us to rename the cast members whose names do not suit their faces. Until then the pairing works but Amara and Hannah are near twins.

@@ -149,7 +149,7 @@ export function ddl(loc: Location): { name: string; sql: string }[] {
   checkLocation(loc);
   const t = (n: string) => tableRef(loc, n);
   return [
-    { name: 'schema', sql: `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(loc.catalog)}.${quoteIdent(loc.schema)} COMMENT 'Agent Manager: AI employee activity'` },
+    { name: 'schema', sql: `CREATE SCHEMA IF NOT EXISTS ${quoteIdent(loc.catalog)}.${quoteIdent(loc.schema)} COMMENT 'Deskmates: AI employee activity'` },
     {
       name: 'employees',
       sql: `CREATE TABLE IF NOT EXISTS ${t('employees')} (

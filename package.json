@@ -1,7 +1,7 @@
 {
   "name": "agent-manager",
   "version": "1.0.0",
-  "description": "",
+  "description": "Deskmates: hire and manage a team of AI employees, each with its own desktop.",
   "scripts": {
     "astryx": "astryx",
     "office": "tsx src/office/main.ts",
@@ -67,5 +67,6 @@
     "typescript": "5.9.3",
     "vite": "8.3.8",
     "vitest": "5.1.0"
-  }
+  },
+  "productName": "Deskmates"
 }

@@ -93,7 +93,7 @@ describe('ddl', () => {
   it('creates the schema and the six tables in the configured location', () => {
     const d = ddl({ catalog: 'main', schema: 'team' });
     expect(d.map((x) => x.name)).toEqual(['schema', 'employees', 'tasks', 'events', 'messages', 'usage', 'daily_reports']);
-    expect(d[0].sql).toBe("CREATE SCHEMA IF NOT EXISTS `main`.`team` COMMENT 'Agent Manager: AI employee activity'");
+    expect(d[0].sql).toBe("CREATE SCHEMA IF NOT EXISTS `main`.`team` COMMENT 'Deskmates: AI employee activity'");
     for (const x of d.slice(1)) expect(x.sql).toContain('CREATE TABLE IF NOT EXISTS `main`.`team`.');
   });
 });
