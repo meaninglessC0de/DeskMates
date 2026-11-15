@@ -60,6 +60,12 @@ Fill in `.env.local` (Anthropic for the employees; LiveKit and Synthesia for cal
 npm run build && npm start
 ```
 
+Databricks, once (creates the schema, the tables and the Genie space, and prints the two ids to put in `.env.local`):
+
+```bash
+npx tsx scripts/databricks-setup.ts && npx tsx scripts/genie-setup.ts
+```
+
 No keys? The whole app also runs with scripted employees and recorded desktops:
 
 ```bash
@@ -78,7 +84,7 @@ and open `http://127.0.0.1:4318`.
 npm run check
 ```
 
-runs the type checks, the unit tests and the Astryx purity check. `npx tsx scripts/e2e/mock.ts` drives the whole app with scripted employees; `npx tsx scripts/e2e/real.ts` does the same with real models on real desktops (costs a few cents on Haiku).
+runs the type checks, the unit tests and the Astryx purity check. `npx tsx scripts/e2e/ui.ts` clicks through the app in a browser against scripted employees; `npx tsx scripts/e2e/real.ts` runs the product's promises with real models on real desktops (a few cents on Haiku).
 
 ## Where things are
 
@@ -88,5 +94,6 @@ runs the type checks, the unit tests and the Astryx purity check. `npx tsx scrip
 - `voice` the Python voice worker for calls
 - `config` the cast (names, faces, voices) and role presets
 - `docs/hackathon` the full record of the build: brief, decisions, research, specs, design notes and build log
+- Design file: [Deskmates on Figma](https://www.figma.com/design/YODWHUmMnsyE4EdtZUF7X4), built from the app's own screens (`scripts/figma-export.ts`)
 
 Third-party code: the desktop stream viewer in `src/renderer/src/media/cua-viewer` is adapted from Cua (FSL-1.1-MIT).
