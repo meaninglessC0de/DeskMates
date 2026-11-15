@@ -1,0 +1,30 @@
+{
+  "neutrals": [
+    { "name": "Body", "token": "--color-background-body", "light": "#f1f1f1", "dark": "#1b1b1b" },
+    { "name": "Surface", "token": "--color-background-surface", "light": "#ffffff", "dark": "#262626" },
+    { "name": "Ink (the one accent)", "token": "--color-accent", "light": "#1b1b1b", "dark": "#f1f1f1" },
+    { "name": "Text", "token": "--color-text-primary", "light": "#000000", "dark": "#ffffff" },
+    { "name": "Text, secondary", "token": "--color-text-secondary", "light": "#474747", "dark": "#9e9e9e" },
+    { "name": "Border, emphasised", "token": "--color-border-emphasized", "light": "#d4d4d4", "dark": "#525252" },
+    { "name": "Success (working)", "token": "--color-success", "light": "#198100", "dark": "#64af4c" },
+    { "name": "Error", "token": "--color-error", "light": "#c9303a", "dark": "#ff705d" },
+    { "name": "Info", "token": "--color-info", "light": "#0074e2", "dark": "#6d9cfe" }
+  ],
+  "type": [
+    { "name": "Display 3", "size": 29, "line": 40, "weight": 400, "sample": "Four desks, four mates" },
+    { "name": "Heading 1", "size": 24, "line": 32, "weight": 600, "sample": "Hire your first deskmate" },
+    { "name": "Heading 2", "size": 20, "line": 28, "weight": 600, "sample": "Maya Chen" },
+    { "name": "Large", "size": 17, "line": 24, "weight": 600, "sample": "Deploy to staging" },
+    { "name": "Body", "size": 14, "line": 20, "weight": 400, "sample": "The fix is ready. I need your approval to deploy it to staging." },
+    { "name": "Label", "size": 14, "line": 20, "weight": 500, "sample": "Summon meeting" },
+    { "name": "Supporting", "size": 12, "line": 20, "weight": 400, "sample": "Web developer · Needs you" }
+  ],
+  "radii": [
+    { "name": "inner", "px": 6 },
+    { "name": "element", "px": 10 },
+    { "name": "container", "px": 12 },
+    { "name": "chat", "px": 28 },
+    { "name": "full", "px": 48 }
+  ],
+  "spacing": [ { "px": 4 }, { "px": 8 }, { "px": 12 }, { "px": 16 }, { "px": 24 }, { "px": 32 }, { "px": 48 } ]
+}
