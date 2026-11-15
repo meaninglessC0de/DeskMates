@@ -1,29 +1,53 @@
-# V-pipeline hand-back (stopped early on the coordinator's instruction)
+# V-pipeline hand-back (second pass; paused on the coordinator's instruction, 15 Nov ~11:15)
 
-Status: development stopped before `scripts/demo/run.ts` was written. The pipeline does not exist.
+## State at a glance
 
-## What exists
-
-| Item | State |
+| Piece | State |
 | --- | --- |
-| `scripts/demo/seed/shop/` (Python shop: `shop/{money,catalog,cart,discounts,pricing,server}.py`, `README.md`, `.gitignore`, empty `tests/__init__.py`) | Written, untested. The checkout bug is planted in `shop/pricing.py` (`checkout_total`): tax is taken on the full subtotal and the discount subtracted afterwards, so customers pay tax on the discount. Nothing was run, not even locally. |
-| `scripts/demo/seed/shop/tests/test_*.py` (the 40 to 50 test suite) | Not started. Plan was about 46 tests, about 8 failing only because of the bug, runner `python3 -m unittest`. |
-| `scripts/demo/run.ts`, `scripts/demo/README.md`, seeding into the Space, the four tasks, progress and report, `shots/demo/last-run.json` | Not started. |
-| Typecheck of the scripts area | Not run (no TypeScript written). |
+| Seed shop `scripts/demo/seed/shop/` (50 tests) | Works. Verified on this Mac: unfixed seed gives 8 failures, a temporary copy with a correct fix gives all 50 passing. Also verified inside a real Space (50 tests, 8 failing, git clean on main, origin in sync). |
+| `scripts/demo/run.ts` (all flags) | Written. Typecheck passes (`npm run typecheck:area -- scripts`). Preflight errors and flag errors checked. Real-desktop path exercised for Maya only. |
+| `scripts/demo/README.md` | Written. |
+| Maya path on a real desktop | Works (run twice, see below). |
+| Ines alone | Not run. |
+| Priya and Jonas together (teammate exchange) | Not run. The detection code (thread steps with `peer.direction`) is untested. |
+| Four-person run | Not run, by design (the coordinator runs it). |
 
-`shots/demo/` was created empty. Nothing was committed or pushed. Nothing outside `scripts/demo/`, `shots/demo/` and this file was written. The folder `data-demo-dev/` (my office's data) is left on disk and is safe to delete.
+## The seed
 
-## Findings (usable if the work resumes)
+Python shop (`shop/` package plus `tests/`, run with `python3 -m unittest`). The bug is in `shop/pricing.py` `checkout_total`: VAT is taken on the full subtotal and the discount is subtracted afterwards, so customers pay VAT on the discount. 8 of 50 tests fail only because of it (7 in test_pricing, 1 in test_server); the fix is to tax `subtotal - discount`. Seeding is a tar.gz written with `spaces.writeFile` plus one bash script: git identity set globally (Maya Chen), `main` branch, initial commit, bare remote `~/work/remotes/shop.git` as `origin`, `main` pushed. The script verifies all of this and stops with a clear error if it is not so.
 
-- Space image (a Maya desktop on my test office): node v24.21.0, Python 3.12.3, git 2.43.0, firefox and xfce4-terminal present, tar and base64 present; user `cua`, home `/home/cua`, `~/Desktop` and `~/work` already exist; no global git identity (must be set).
-- Own office env that worked: `OFFICE_PORT=4337 DATA_DIR=data-demo-dev EMPLOYEE_MODEL=claude-haiku-5-5 DATABRICKS_SYNC=off LIVEKIT_URL= LIVEKIT_API_KEY= LIVEKIT_API_SECRET= MOCK_LLM=0 DESKTOPS=cua MAX_TEAM=4 node --import tsx src/office/main.ts`. `/api/health` then read `llm:true, desktops:cua, calls:off, databricks:false`. Blank vars win over `.env.local` because dotenv does not override variables already set.
-- `/api/candidates` picks the first unhired cast member whose `roleKey` equals the preset key. Each of web_developer, marketer, researcher, designer has exactly one cast member (Maya, Priya, Jonas, Ines), so hiring by roleKey gives the right person.
-- Seeding in a Space works through `createCuaSpaces({ dataDir, env: readEnv({...process.env, DESKTOPS:'cua'}) })` then `spaces.exec(employeeId, cmd)` and `spaces.writeFile(employeeId, path, content)`; the id is the employee id, not the space id.
-- Teammate messages show up as thread `steps` with `peer.direction` `to`/`from` (as in `scripts/e2e/real.ts`).
-- Scripts must be `.mts` or inside the repo (which has the right module type) when using top-level await.
+## Space image
 
-## Testing done and spend
+node v24.21.0, Python 3.12.3, git 2.43.0, firefox, xfce4-terminal, tar, base64. User `cua`, home `/home/cua`. No git identity by default.
 
-- One hire only: Maya on my office (port 4337), model claude-haiku-5-5, hello message only. She reached idle after about 20 s. No task was given to anyone.
-- Spend: $0.0052 (team report for today).
-- Cleanup: Maya removed through the API (204, employee list empty); her Space is gone from the Cua list. The three Spaces still listed belong to the app on port 4317 and were not touched. My office on 4337 is stopped, nothing listens on it. Ports 4317 and 4318 and `data/` were never touched.
+## What I saw (own office on port 4337, claude-haiku-5-5, Databricks and calls off)
+
+- Run 1 (first task wording): Haiku went to the push in 18 s. The pending approval was for a chained command (checkout, add, commit, push), so the commit had not happened yet, nothing was committed, and no terminal was on screen (the employee prompt tells people not to use a terminal through the screen and to use the shell tool). My first "finished" test was therefore wrong.
+- Fixes: (a) Maya's task now asks for "a terminal window on your desktop ... showing the passing run", the commit "as its own step" and the push "last of all"; (b) Maya counts as finished only when the push approval is pending AND branch `fix/checkout-discount` has a commit, the tree is clean, the tests pass in the Space and a terminal process exists.
+- Run 2 (new wording): hello at 16 s, seed verified in 1 s, task sent. About 28 s later (0.5 min of work): a pending approval "Push fix/checkout-discount" naming the commit "Charge VAT on the discounted subtotal". Frame fetched from `GET /api/employees/:id/frame.jpg` and looked at: a terminal window titled "shop tests" fills the desktop showing 50 tests `ok`, "OK", "TESTS FINISHED" and the prompt in `~/work/shop`. Saved at `shots/demo/maya.jpg`. Haiku is very fast; Sonnet will take longer, so timings below are Haiku's only.
+- The pipeline never answered the approval. I removed Maya through the API afterwards.
+
+Timings (Haiku): Maya 0.5 min from task to pending push. Others: not measured.
+
+## Cost
+
+Two Maya runs on Haiku plus the earlier hello-only test: well under $0.05 by the team report (it showed about $0.001 for the last run; the report lags). Budget of $1 untouched.
+
+## Known gaps and risks for the full run
+
+- If an employee raises an approval that is not Maya's push (a "big step"), the script does not answer it and that person will stall until timeout. The detail column says so for Maya ("pending approval that is not a push"); for the others it shows state `needs_you`. The progress line shows what they ask Sam.
+- Priya's pass condition needs a `to` step and a `from` step with Jonas's id in her thread after the task was sent. If the model answers through chat instead of `message_colleague`, she will not count as finished; read the thread.
+- Artifact paths for Priya, Jonas and Ines are found by listing html/md/txt/svg/png files newer than a marker created when the task was sent; they may be empty if the work lives only in the browser.
+- Task wording for Priya, Jonas and Ines was not tested on a real desktop, and "keep it open in Firefox" has not been checked on a frame.
+- `DEMO_MIN_FREE_GB` (default 4) aborts a hire when free plus inactive memory is under 4 GB; set 0 to skip.
+- The test run left `shots/demo/last-run.json` and `shots/demo/maya.jpg` (from the Maya-only run); a full run overwrites them.
+
+## Remaining real-desktop steps (not done)
+
+1. Ines alone (`--only ines`), check the frame shows both versions side by side in Firefox.
+2. Priya and Jonas together (`--only priya,jonas`), check a teammate message each way and the frames.
+3. Optionally the full four-person run (`npx tsx scripts/demo/run.ts`) on Sonnet, with memory in mind (4 desktops about 8 GB).
+
+## Cleanup
+
+Maya removed (204), her Space is gone; my office on 4337 is stopped, nothing of mine is listening. Ports 4317 and 4318, `data/` and the other app's three Spaces were never touched. `data-demo-dev/` remains on disk and can be deleted.
