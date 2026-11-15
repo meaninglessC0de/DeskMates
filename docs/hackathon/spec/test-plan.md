@@ -23,7 +23,7 @@ Read first: `docs/hackathon/README.md`. Front end must use Astryx (read `AGENTS.
 | S2 | Give Maya a real task: "Make a one-page site about our team in ~/work/site and show it to me in the browser" | A plan appears and ticks over; activity lines read like sentences; the browser in her desktop ends on the page; a `done` bubble summarises it; the task has cost and time |
 | S3 | Steer mid-task: "Make the heading blue" while S2 runs | Her message shows Delivered then Seen; the final page has a blue heading; she did not restart from scratch |
 | S4 | Approval: set Priya to "Asks first", ask her to save a file | An approval row and a notification; Approve lets her continue; a second run with Deny makes her stop and say so |
-| S5 | Big step: default level, ask Maya to "publish it with `git push`" | She asks through an approval before the push; nothing is pushed if denied |
+| S5 | Big step: default level ("Asks before big steps", the default of every preset), ask Maya to "publish it with `git push`" | She asks through an approval before the push; nothing is pushed if denied |
 | S6 | A question: "Write a tagline for us" to Priya with no context | She either asks one clear question (state Needs you, sorted to the top) or makes a sensible choice and says so; replying resumes her |
 | S7 | Teammates: ask Maya to "get a tagline from Priya and put it on the page" | One exchange between them visible as activity lines in both threads; the page shows the tagline; no loop |
 | S8 | Stuck: ask Jonas to open a site that does not exist and log in | He reports stuck with what he tried; the banner shows; "Try again" works |

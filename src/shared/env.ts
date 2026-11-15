@@ -85,7 +85,7 @@ export function readEnv(source?: EnvSource): Env {
     DATABRICKS_TOKEN: str(src, 'DATABRICKS_TOKEN', ''),
     DATABRICKS_WAREHOUSE_ID: str(src, 'DATABRICKS_WAREHOUSE_ID', ''),
     DATABRICKS_CATALOG: str(src, 'DATABRICKS_CATALOG', 'workspace'),
-    DATABRICKS_SCHEMA: str(src, 'DATABRICKS_SCHEMA', 'agent_manager'),
+    DATABRICKS_SCHEMA: str(src, 'DATABRICKS_SCHEMA', 'deskmates'),
     DATABRICKS_GENIE_SPACE_ID: str(src, 'DATABRICKS_GENIE_SPACE_ID', ''),
     MLFLOW_TRACKING_URI: str(src, 'MLFLOW_TRACKING_URI', 'databricks'),
     MLFLOW_EXPERIMENT_ID: str(src, 'MLFLOW_EXPERIMENT_ID', ''),
