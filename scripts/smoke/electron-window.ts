@@ -22,7 +22,7 @@ try {
   const errors: string[] = [];
   win.on('pageerror', (e) => errors.push(e.message));
   await win.waitForLoadState('load');
-  await win.getByText('Maya Okafor').first().waitFor({ timeout: 15_000 });
+  await win.getByText('Maya Chen').first().waitFor({ timeout: 15_000 });
   await win.evaluate('document.fonts.ready');
   await win.waitForTimeout(500);
   await win.screenshot({ path: out });

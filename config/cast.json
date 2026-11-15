@@ -1,7 +1,7 @@
 [
   {
     "id": "maya",
-    "name": "Maya Okafor",
+    "name": "Maya Chen",
     "firstName": "Maya",
     "roleKey": "web_developer",
     "role": "Web developer",
@@ -81,7 +81,7 @@
   },
   {
     "id": "amara",
-    "name": "Amara Diallo",
+    "name": "Amara Lim",
     "firstName": "Amara",
     "roleKey": "operations",
     "role": "Operations",
@@ -93,7 +93,7 @@
       "voiceId": "athena",
       "label": "Clear and steady"
     },
-    "avatarId": "01ee56f6-4aa5-4eb2-a6f1-178c1c17f7b3"
+    "avatarId": "a861a646-ad59-4960-adab-5aa2eac9c2b5"
   },
   {
     "id": "marcus",
@@ -110,5 +110,21 @@
       "label": "Warm and relaxed"
     },
     "avatarId": "570fcdf6-bc33-4cbd-a102-7cb7aa53b165"
+  },
+  {
+    "id": "hannah",
+    "name": "Hannah Brooks",
+    "firstName": "Hannah",
+    "roleKey": "writer",
+    "role": "Writer",
+    "personality": "Dry wit, tight prose.",
+    "portrait": "hannah.jpg",
+    "gender": "woman",
+    "voice": {
+      "provider": "livekit",
+      "voiceId": "callista",
+      "label": "Crisp and light"
+    },
+    "avatarId": "8788bef1-8020-46e0-a8f4-510ea9989b25"
   }
 ]

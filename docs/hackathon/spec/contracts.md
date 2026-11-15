@@ -45,7 +45,7 @@ export interface Permissions {
 }
 
 export interface Persona {
-  name: string;                   // "Maya Okafor"
+  name: string;                   // "Maya Chen"
   firstName: string;              // "Maya"
   role: string;                   // "Web developer"
   roleKey: string;                // preset key or 'custom'

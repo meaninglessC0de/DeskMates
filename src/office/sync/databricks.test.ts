@@ -75,7 +75,7 @@ const rowsIn = (m: string) => (m.match(/\n {2}\(/g) ?? []).length;
 describe('flushing', () => {
   it('syncs every table with one MERGE per table and removes the sent rows', async () => {
     const { store, sync } = setup();
-    store.insertEmployee(emp('e1', 'Maya Okafor'));
+    store.insertEmployee(emp('e1', 'Maya Chen'));
     store.upsertTask(task('e1', NOW));
     store.insertMessage(msg('m1', 'e1'));
     store.upsertStep({ id: 's1', employeeId: 'e1', taskId: null, sentence: 'Opened the site', status: 'ok', startedMs: NOW, endedMs: NOW + 1500 });
@@ -84,7 +84,7 @@ describe('flushing', () => {
     await until('all five tables', () => ['employees', 'tasks', 'events', 'messages', 'usage'].every((t) => fake.tables.has(t)));
     expect(merges()).toHaveLength(5);
     expect([...fake.tables.get('events')!.values()][0]).toMatchObject({ summary: 'Opened the site', status: 'ok', duration_ms: 1500, ts: NOW });
-    expect([...fake.tables.get('employees')!.values()][0]).toMatchObject({ employee_id: 'e1', name: 'Maya Okafor', permission_level: 'asks_big_steps' });
+    expect([...fake.tables.get('employees')!.values()][0]).toMatchObject({ employee_id: 'e1', name: 'Maya Chen', permission_level: 'asks_big_steps' });
     await until('outbox empty', () => (store.db.prepare('SELECT COUNT(*) AS n FROM outbox').get() as { n: number }).n === 0);
     expect(sync.status().syncedMs).not.toBeNull();
   });
@@ -182,7 +182,7 @@ describe('flushing', () => {
   it('sends the history that existed before sync was turned on, once per workspace', async () => {
     const store = new Store(':memory:');
     stores.push(store);
-    store.insertEmployee(emp('e1', 'Maya Okafor'));
+    store.insertEmployee(emp('e1', 'Maya Chen'));
     store.upsertTask(task('e1', NOW));
     store.insertMessage(msg('m1', 'e1'));
     store.addUsage({ employeeId: 'e1', taskId: null, tsMs: NOW, costUsd: 0.1, inputTokens: 1, outputTokens: 2 });
@@ -248,7 +248,7 @@ describe('circuit breaker in the sink', () => {
 
 describe('team report from the warehouse', () => {
   function seed(store: Store) {
-    store.insertEmployee(emp('e1', 'Maya Okafor', 111));
+    store.insertEmployee(emp('e1', 'Maya Chen', 111));
     store.insertEmployee(emp('e2', 'Priya Raman', 222));
     store.upsertTask(task('e1', NOW - 1000, { activeMs: 3_600_000, costUsd: 0.5 }));
     store.upsertTask(task('e1', NOW - 2 * DAY, { activeMs: 1_800_000, costUsd: 0.25, status: 'failed' }));
@@ -292,7 +292,7 @@ describe('team report from the warehouse', () => {
 
   it('has no previous period when there was no work then', async () => {
     const { store, sync } = setup();
-    store.insertEmployee(emp('e1', 'Maya Okafor'));
+    store.insertEmployee(emp('e1', 'Maya Chen'));
     store.upsertTask(task('e1', NOW - 1000));
     const r = await sync.teamReport('today');
     expect(r.source).toBe('databricks');

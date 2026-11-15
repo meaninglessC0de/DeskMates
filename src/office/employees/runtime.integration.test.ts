@@ -52,7 +52,7 @@ describe('hiring with the real runtime', () => {
     expect(emp().state).toBe('idle');
     const hello = hh.events.find((x) => x.type === 'message' && x.message.employeeId === e.id && x.message.from === 'employee') as Ev<'message'>;
     expect(hello.message.text).toBe('Hi, I am Maya.');
-    expect(fake.last.options.systemPrompt).toContain('You are Maya Okafor');
+    expect(fake.last.options.systemPrompt).toContain('You are Maya Chen');
   });
 
   it('delivers the briefing as the first item of the session', async () => {

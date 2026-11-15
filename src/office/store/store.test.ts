@@ -5,7 +5,7 @@ import { Store } from './store.ts';
 function emp(id: string, over: Partial<Employee> = {}): Employee {
   return {
     id,
-    persona: { name: 'Maya Okafor', firstName: 'Maya', role: 'Web developer', roleKey: 'web_developer', personality: 'Calm', workingStyle: 'Small steps', starters: [], portraitUrl: '', voice: { provider: 'livekit', voiceId: '', label: 'Warm', sampleUrl: null }, avatarId: null },
+    persona: { name: 'Maya Chen', firstName: 'Maya', role: 'Web developer', roleKey: 'web_developer', personality: 'Calm', workingStyle: 'Small steps', starters: [], portraitUrl: '', voice: { provider: 'livekit', voiceId: '', label: 'Warm', sampleUrl: null }, avatarId: null },
     permissions: { level: 'asks_big_steps', internet: true, commands: true, myScreen: false, teammates: true },
     state: 'idle', stateDetail: 'Web developer', stateSinceMs: 1, spaceId: null, sessionId: null, model: 'm', unread: 0, lastActivityMs: 1,
     screenGrant: null, desktopSinceMs: null, pendingRestart: false, controlledByUser: false, createdMs: 1, ...over,

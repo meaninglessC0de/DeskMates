@@ -18,7 +18,7 @@ export function makeEmployee(over: Omit<Partial<Employee>, 'permissions'> & { pe
   return {
     id: 'emp_01TEST',
     persona: {
-      name: 'Maya Okafor', firstName: 'Maya', role: 'Web developer', roleKey: preset.key,
+      name: 'Maya Chen', firstName: 'Maya', role: 'Web developer', roleKey: preset.key,
       personality: 'Calm and exact. Asks one good question, then ships.', workingStyle: preset.workingStyle,
       starters: preset.starters, portraitUrl: '', voice: { provider: 'livekit', voiceId: '', label: 'x', sampleUrl: null }, avatarId: null,
     },

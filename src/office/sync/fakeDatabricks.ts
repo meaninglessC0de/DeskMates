@@ -300,7 +300,7 @@ export async function startFakeDatabricks(opts: FakeOptions = {}): Promise<FakeD
       if (method === 'GET' && m) {
         const q = options.genie ?? {};
         const columns = q.columns ?? ['name', 'hours'];
-        const rows = q.rows ?? [['Maya Okafor', 3.5], ['Priya Raman', 1.25]];
+        const rows = q.rows ?? [['Maya Chen', 3.5], ['Priya Raman', 1.25]];
         return send(200, { statement_response: { statement_id: 'g1', status: { state: 'SUCCEEDED' }, manifest: { schema: { columns: columns.map((name) => ({ name })) } }, result: { data_array: rows } } });
       }
     }

@@ -149,7 +149,7 @@ Window chrome (shell concern, not Astryx): hidden-inset titlebar. Traffic lights
 ```
 1280 x 800   1 col = 16 px   1 row = 36 px
 +----------------+---------------------------------------------------------------+
-|  o  o  o       |(MO) Maya Okafor              (vid) (mon) (...) | [Summon meeting]|  56 px
+|  o  o  o       |(MO) Maya Chen              (vid) (mon) (...) | [Summon meeting]|  56 px
 |  Agent Manager+|     Web developer · Working · 42 min                           |
 |----------------|---------------------------------------------------------------|
 |(MO)* Maya O.  2m                                                                |
@@ -335,7 +335,7 @@ Step 2: meet them (the proposal).
 | (<)  Meet Maya                                      (x)|
 |                                                        |
 |                       (  portrait  )                   |  Avatar 144, circle
-|                        Maya Okafor                     |  Text large, click to edit
+|                        Maya Chen                     |  Text large, click to edit
 |                        Web developer                   |
 |        Calm and exact. Asks one good question,         |  Text supporting, 2 lines max
 |        then ships.                                     |
@@ -368,7 +368,7 @@ Opened by clicking the top-bar identity block, `⌘I`, or More -> Profile. A rig
 
 ```
 +---------------------------------+  400 px wide, full height
-| Maya Okafor                  (x)|  DrawerHeader title, subtitle "Web developer"
+| Maya Chen                  (x)|  DrawerHeader title, subtitle "Web developer"
 |                                 |
 |          (  portrait 96  )      |
 |           (> Hear Maya)         |
@@ -393,7 +393,7 @@ Opened by clicking the top-bar identity block, `⌘I`, or More -> Profile. A rig
 
 | Element | Astryx | Copy |
 | --- | --- | --- |
-| Drawer | `Drawer side="end" width={400} label="Profile"` + `DrawerHeader title="Maya Okafor" subtitle="Web developer" onOpenChange` | No footer: everything saves immediately (Switch semantics), so there is no Save or Done button |
+| Drawer | `Drawer side="end" width={400} label="Profile"` + `DrawerHeader title="Maya Chen" subtitle="Web developer" onOpenChange` | No footer: everything saves immediately (Switch semantics), so there is no Save or Done button |
 | Portrait | `Avatar size={96}` + `Button ghost sm "Hear Maya"` | |
 | Personality | `TextArea` with visible label "Personality" (`Text type="label"`); one paragraph (persona + working style, 280 chars max) | Saves on blur; no toast. Error: `status` "Couldn't save" |
 | Permission levels | `RadioList` | **Asks first**: "Checks with you before anything that changes something." **Asks before big steps**: "Checks before deploying, spending, sending or deleting." **Works independently**: "Only stops when it's stuck." Default for new hires: "Asks before big steps" |
@@ -412,7 +412,7 @@ Default layout A "Desktop focus" at 1280 x 800 (stage padding step 6 = 24 px; to
 ```
 1280 x 800   1 col = 16 px   1 row = 36 px                        (all dark)
 +------------------------------------------------------------------------------+
-|  Maya Okafor · 04:12                                                          |  top strip 48
+|  Maya Chen · 04:12                                                          |  top strip 48
 |  +-------------------------------------------------------+  +---------------+ |
 |  |                                                       |  |               | |
 |  |                                                       |  |   face tile   | |
@@ -470,7 +470,7 @@ The "Summon meeting" button opens an Astryx `Popover placement="below" width={32
 +--------------------------------+  320 px
 |  (o)(o)(o)  Everyone        [ ]|   Item compact + AvatarGroup, shortcut row
 |--------------------------------|
-|  (MO) Maya Okafor     Working [v]|  Item row, spacious: Avatar 36, name, role, check
+|  (MO) Maya Chen     Working [v]|  Item row, spacious: Avatar 36, name, role, check
 |  (PR) Priya Raman     Idle    [v]|
 |  (JW) Jonas Weber     Idle    [ ]|
 |  (IM) Ines Moreau     Offline   |  disabled row
@@ -506,7 +506,7 @@ Reached from the sidebar footer (`⌘T`). Quiet, no cards, no charts in v1. Layo
    +6 vs last week       +9                    ...               Text supporting (omit if no data)
 
   Employee              Hours     Tasks done     Cost
-  (MO) Maya Okafor      14.2      21             £4.80      Table, density balanced, sortable
+  (MO) Maya Chen      14.2      21             £4.80      Table, density balanced, sortable
        Web developer
   (PR) Priya Raman       9.0      13             £3.10
   ...
@@ -564,7 +564,7 @@ Both are native macOS surfaces (Astryx cannot render them: gap G1). Build them f
 No animation in the menu bar (battery, calm). Click opens a **native menu** (Apple: a menu, not a popover):
 
 ```
- Maya Okafor      Needs you     (18 pt round portrait at the start of each item)
+ Maya Chen      Needs you     (18 pt round portrait at the start of each item)
  Priya Raman      Working
  Jonas Weber      Idle
  Show all…                      (only when more than 6)
@@ -583,10 +583,10 @@ When your screen is lent, the first two items are "Maya is using your screen" (d
 
 | Event | Title | Body | Actions (max 2) | Click |
 | --- | --- | --- | --- | --- |
-| Approval | Maya Okafor | "Can I deploy this to staging?" | Approve, Deny | Opens the thread at the approval row |
+| Approval | Maya Chen | "Can I deploy this to staging?" | Approve, Deny | Opens the thread at the approval row |
 | Question | Priya Raman | "Which headline do you prefer, A or B?" | Reply (inline text) | Opens the thread |
-| Finished | Maya Okafor | "Finished the checkout fix. Take a look?" | none | Opens the thread |
-| Stuck | Maya Okafor | "I'm stuck. The staging site won't load." | Reply, Show desktop | Opens the thread; Show desktop opens it with the panel on |
+| Finished | Maya Chen | "Finished the checkout fix. Take a look?" | none | Opens the thread |
+| Stuck | Maya Chen | "I'm stuck. The staging site won't load." | Reply, Show desktop | Opens the thread; Show desktop opens it with the panel on |
 | Screen request | Jonas Weber | "May I use your screen for 10 minutes?" | Allow, Not now | Opens the thread at the request |
 | Meeting request (optional) | Ines Moreau | "Can we talk about the logo?" | Join, Not now | Opens the call stage if Join |
 
@@ -828,7 +828,7 @@ Product behaviour requested from the backend: a short natural filler from the ad
 
 ### 4.11 Accessibility
 
-- Tile = `SelectableCard` with `label` "Maya Okafor, speaking. Press to address" (state changes update the label). Captions region `aria-live="polite"` only while captions are on.
+- Tile = `SelectableCard` with `label` "Maya Chen, speaking. Press to address" (state changes update the label). Captions region `aria-live="polite"` only while captions are on.
 - Every control has a visible label tooltip, a `Kbd` hint and 44 px target.
 - Reduced motion: layout changes become cross-fades of at most 200 ms.
 - The ring never carries meaning alone: the chip shows state text and the caption names the speaker.
@@ -949,12 +949,12 @@ The face a user sees in the sidebar must be the same face that appears in the ca
 
 | # | Role (row label) | Name | Personality (one line, shown in hire) | Working style (stored, not shown by default) | Voice | Starters (3) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Web developer | Maya Okafor | Calm and exact. Asks one good question, then ships. | Small steps, runs the tests before saying done, shows the staging link | Warm alto, unhurried | Fix a bug / Build a page / Review my code |
+| 1 | Web developer | Maya Chen | Calm and exact. Asks one good question, then ships. | Small steps, runs the tests before saying done, shows the staging link | Warm alto, unhurried | Fix a bug / Build a page / Review my code |
 | 2 | Marketer | Priya Raman | Warm and curious. Thinks in audiences. | Offers three options, checks competitors, never posts without approval | Bright mezzo, quick | Plan a campaign / Write a launch email / Research competitors |
 | 3 | Researcher | Jonas Weber | Patient and sceptical. Cites everything. | Reads widely, keeps running notes, flags what is uncertain | Even baritone, measured | Find the facts / Compare options / Summarise a paper |
 | 4 | Designer | Ines Moreau | Opinionated, and kind about it. | Sketches two directions, explains the why, asks before polishing | Soft, expressive | Sketch a layout / Improve this page / Make a logo |
 | 5 | Data analyst | Kenji Watanabe | Quiet and precise. Loves a clean chart. | Checks the data first, states assumptions, ends with one paragraph | Low, calm | Clean this data / Find the trend / Build a chart |
-| 6 | Operations | Amara Diallo | Organised and unflappable. | Keeps checklists, chases loose ends, reports once a day | Clear, steady | Plan the week / Chase this up / Tidy my inbox |
+| 6 | Operations | Amara Lim | Organised and unflappable. | Keeps checklists, chases loose ends, reports once a day | Clear, steady | Plan the week / Chase this up / Tidy my inbox |
 | 7 | Sales | Marcus Reyes | Friendly and direct. Never pushy. | Researches the lead first, drafts in your voice, asks before sending | Warm tenor, relaxed | Find leads / Draft outreach / Prepare for a call |
 | 8 | Writer | Hannah Brooks | Dry wit, tight prose. | Outlines first, edits twice, keeps your voice | Crisp, light | Draft a post / Edit this / Write the docs |
 

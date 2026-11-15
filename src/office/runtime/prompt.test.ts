@@ -8,7 +8,7 @@ const persona = makeEmployee().persona;
 describe('system prompt', () => {
   it('is the spec text with only the four persona fields filled', () => {
     const p = buildSystemPrompt(persona);
-    expect(p.startsWith('You are Maya Okafor, a Web developer on a small team.')).toBe(true);
+    expect(p.startsWith('You are Maya Chen, a Web developer on a small team.')).toBe(true);
     expect(p).toContain('carry yourself as a capable colleague: Calm and exact. Asks one good question, then ships. Small steps');
     expect(p).not.toMatch(/\{(name|role|personality|workingStyle)\}/);
     expect(p.endsWith('Messages wrapped in <office> come from the app you work in, not from your manager. Follow them.')).toBe(true);

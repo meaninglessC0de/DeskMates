@@ -36,7 +36,7 @@ describe('team report', () => {
 
   it('sums per person, counts done and failed, and fills previous', () => {
     const s = new Store(':memory:');
-    s.insertEmployee(emp('a', 'Maya Okafor'));
+    s.insertEmployee(emp('a', 'Maya Chen'));
     s.insertEmployee(emp('b', 'Priya Raman'));
     s.upsertTask(task('a', NOW - 3_600_000));                                              // today
     s.upsertTask(task('a', NOW - 2 * 3_600_000, { costUsd: 0.75, activeMs: 1_200_000 }));  // today
@@ -49,7 +49,7 @@ describe('team report', () => {
     const today = computeTeamReport(s, 'today', NOW);
     expect(today.source).toBe('local');
     expect(today.syncedMs).toBeNull();
-    expect(today.rows.map((r) => r.name)).toEqual(['Maya Okafor', 'Priya Raman']);
+    expect(today.rows.map((r) => r.name)).toEqual(['Maya Chen', 'Priya Raman']);
     expect(today.rows[0]).toMatchObject({ employeeId: 'a', tasksDone: 2, tasksFailed: 0, activeMs: 1_800_000, costUsd: 1, lastActivityMs: 42, portraitUrl: '/media/portraits/x.jpg' });
     expect(today.rows[1]).toMatchObject({ tasksDone: 0, tasksFailed: 1, costUsd: 0.5 });
     expect(today.totals).toEqual({ activeMs: 2_400_000, tasksDone: 2, costUsd: 1.5 });
@@ -66,7 +66,7 @@ describe('team report', () => {
 
   it('gives previous as null when the period before has no work, and lists people with no work', () => {
     const s = new Store(':memory:');
-    s.insertEmployee(emp('a', 'Maya Okafor'));
+    s.insertEmployee(emp('a', 'Maya Chen'));
     s.insertEmployee(emp('b', 'Priya Raman'));
     s.upsertTask(task('a', NOW - 3_600_000));
     const r = computeTeamReport(s, 'today', NOW);
@@ -77,7 +77,7 @@ describe('team report', () => {
 
   it('ignores work of people who are no longer on the team', () => {
     const s = new Store(':memory:');
-    s.insertEmployee(emp('a', 'Maya Okafor'));
+    s.insertEmployee(emp('a', 'Maya Chen'));
     s.upsertTask(task('gone', NOW - 3_600_000));
     expect(computeTeamReport(s, 'today', NOW).totals.tasksDone).toBe(0);
   });

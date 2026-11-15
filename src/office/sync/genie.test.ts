@@ -18,7 +18,7 @@ describe('genie', () => {
     expect(r.answer).toBe('Maya worked the most this week.');
     expect(r.sql).toContain('SELECT name');
     expect(r.columns).toEqual(['name', 'hours']);
-    expect(r.rows).toEqual([['Maya Okafor', '3.5'], ['Priya Raman', '1.25']]);
+    expect(r.rows).toEqual([['Maya Chen', '3.5'], ['Priya Raman', '1.25']]);
     expect(r.conversationId).toMatch(/^conv-/);
     expect(fake.requests.map((x) => `${x.method} ${x.path.replace(/(conv|msg)-\d+/g, '$1')}`)).toEqual([
       'POST /api/2.0/genie/spaces/space1/start-conversation',

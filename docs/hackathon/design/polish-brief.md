@@ -96,7 +96,7 @@ The user's complaint is about this screen. Rebuild its layout so nothing floats:
 
 ```
 +--------------------------------------------------------------------------+
-|  Maya Okafor · Web developer                              04:12          |   top strip
+|  Maya Chen · Web developer                              04:12          |   top strip
 |  +--------------------------------------------+  +--------------------+  |
 |  |                                            |  |                    |  |
 |  |                                            |  |    Maya            |  |

@@ -112,3 +112,17 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 ## 2026-11-15 (00:15) · assistant: pairing review
 - **D-SYN-5 (replaces the earlier "not yet paired" note).** Pairing is done and lives in `config/avatars.json` (W7), not in `cast.json`; do not duplicate it into `cast.json`. All eight ids are verified; `cast-ids.txt` documents them.
 - **Q-SYN-4 (updated), owner user:** (a) pick one more woman avatar in Synthesia (not red-haired; ideally one whose look suits "Amara Diallo" or "Maya Okafor") and give its Interactive ID so Amara and Hannah stop looking alike; (b) or tell us to rename the cast members whose names do not suit their faces. Until then the pairing works but Amara and Hannah are near twins.
+
+## 2026-11-15 (00:18) · assistant
+- **D-SYN-6.** Amara now uses workspace avatar 6 (`a861a646-...`); Hannah keeps sample Jenny; workspace avatar 4 (`01ee56f6-...`) is spare. Q-SYN-4 part (a) is resolved (no more twins).
+- **Q-SYN-4 (remaining), owner user:** rename Maya Okafor and Amara Diallo so the names suit their faces? Renaming touches `cast.json`, `voices.json` (keyed by first name), `avatars.json`, portrait file names, fixtures and tests, so it should be done in one pass by the cast workstream, not piecemeal.
+
+## 2026-11-15: Brand decision (brand designer agent, on the user brief)
+- Logo = the user reference rebuilt from scratch: four superellipse tiles, a handle each, flat, colours blue 262 / orange 62 / pink 357 / green 160. Details and rejected variants in `design/brand/README.md`. Product name: Deskmates.
+
+## 2026-11-15 (00:25) · user approved, assistant did it
+- **D-SYN-7.** Cast surnames: Maya Okafor -> **Maya Chen**, Amara Diallo -> **Amara Lim** (first names and ids unchanged). Use the new names everywhere; do not reintroduce the old ones. Stale copies of the old surnames remain only in history files and gitignored runtime data.
+- **D-SYN-8.** `config/cast.json` is the source of truth for avatar ids (it wins over `config/avatars.json`); Amara's id is `a861a646-ad59-4960-adab-5aa2eac9c2b5`. Keep the two files in step.
+- **Q-CAST-1 · open, owner user or orchestrator:** bring Hannah back into the cast (she no longer shares a face with anyone)?
+- **Q-CAST-1 answered · 2026-11-15 · orchestrator:** Hannah Brooks is back in `config/cast.json` (sample avatar Jenny, voice callista). All eight faces are now different people, so the cast is eight again. Checked on the portrait sheet `design/cast-portraits.png`.
+
