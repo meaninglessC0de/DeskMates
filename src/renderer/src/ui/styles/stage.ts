@@ -32,7 +32,7 @@ ${S} [data-am-desks-view] [data-am="desk-face"] {
   bottom: auto;
 }
 ${S} [data-am-desks-view] [data-am="tile-chip"] {
-  padding: calc(var(--spacing-1) * var(--am-desks-zoom, 1));
+  padding: calc(var(--spacing-1) * var(--am-chip-zoom, 1));
 }
 ${S} [data-am-desks-view] [data-am="chip"],
 ${S} [data-am-desks-view] [data-am="desk-hire"],
@@ -81,11 +81,12 @@ ${S} [data-am="desks-back"]:focus-visible {
   }
 }
 /* ---------- The pill with its status line, the message bubble, the ring pulse ---------- */
+${Array.from({ length: 47 }, (_, i) => (0.7 + i * 0.05).toFixed(2)).map((z) => `${S} [data-am-desks-view][data-am-chip-scale="${z}"] { --am-chip-zoom: ${z}; }`).join('\n')}
 ${S} [data-am-desks-view] [data-am="desk-chip"] {
-  zoom: var(--am-desks-zoom, 1);
+  zoom: var(--am-chip-zoom, 1);
   min-width: 0;
-  max-width: 100%;
-  padding-block: var(--spacing-1-5);
+  max-width: 60%;
+  padding-block: var(--spacing-1);
   padding-inline: var(--spacing-3);
   border-radius: var(--radius-container);
   background: color-mix(in oklab, var(--color-background-body) 72%, transparent);

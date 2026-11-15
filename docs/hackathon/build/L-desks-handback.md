@@ -37,3 +37,8 @@
 - Rail text scale uses CSS `zoom` like the pill; rail width is computed in `layout.ts` (px for the `width` prop) from the 20 % rule, minimum 280 px.
 - Steps are capped at 300 per employee for live events only; thread pages from the API merge uncapped.
 - Events lack nothing needed. Caveat: if the office reuses one step id for a message and later changes `peer.text`, the bubble keeps the same key and will not re-pop.
+
+## Update: chip made smaller (coordinator's live feedback)
+- Pill capped at 60 % of the tile width (detail stays one line with an ellipsis). "Done" now shows no outcome text.
+- Pill scale is now proportional to the tile (`chipScaleFor` in `desks/layout.ts`, tile width / 580 in 0.05 steps, min 0.7), set as `data-am-chip-scale` on the view; the face and rail keep their own steps. Measured two-line pill height: 14-16 % of tile height, width at most 58 %, at 1280x800, 1440x900 and 2560x1600 with the rail on.
+- New worst-case fixture `desks/worst` (long Working sentence, Done desk, Waiting, long Needs you title); screenshots `shots/desks/worst-<size>-chip.png` and `working-<size>-chip.png`.

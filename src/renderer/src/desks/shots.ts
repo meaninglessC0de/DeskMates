@@ -6,4 +6,5 @@ export const shots: { name: string; query?: string }[] = [
   { name: 'working' },
   { name: 'quiet' },
   { name: 'working-no-rail', query: 'messages=0' },
+  { name: 'worst' },
 ];

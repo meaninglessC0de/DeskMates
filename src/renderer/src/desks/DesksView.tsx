@@ -220,7 +220,7 @@ export function DesksView() {
   const win = useWindowSize();
   const dialogOpen = useStore((s) => s.ui.hireOpen || s.ui.settingsOpen || s.ui.summonOpen);
   const { area, rail, railScale } = deskArea(win, showRail);
-  const { tile, gap, scale } = desksLayout(area);
+  const { tile, gap, scale, chipScale } = desksLayout(area);
   const messages = useMemo(() => peerMessages(threads), [threads]);
   useExpiry(messages);
   const now = Date.now();
@@ -283,7 +283,7 @@ export function DesksView() {
               />
             </VStack>
           }>
-          <HStack data-am-desks-view="" data-am-scale={String(scale)} width={win.w} height={win.h}>
+          <HStack data-am-desks-view="" data-am-scale={String(scale)} data-am-chip-scale={chipScale.toFixed(2)} width={win.w} height={win.h}>
             <Center width={area.w} height={win.h}>
               <VStack>
                 {row(0, 1)}

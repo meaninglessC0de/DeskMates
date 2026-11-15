@@ -28,8 +28,8 @@ describe('deskStatus', () => {
     const s = deskStatus(emp({ state: 'needs_you', stateDetail: 'Deploy' }), { steps: [], approvals: [a('1', 'Old one', 'approved', 1), a('2', 'Publish with git push', 'pending', 2)], task: null });
     expect(s).toMatchObject({ word: 'Needs you', detail: 'Publish with git push', tone: 'attention' });
   });
-  it('done with an outcome, idle without, no progress once the task is over', () => {
-    expect(deskStatus(emp({ state: 'idle' }), { steps: [], approvals: [], task: task({ status: 'done', outcome: 'Vendor B is cheapest.\nMore.', plan: plan(3, 3) }) })).toEqual({ word: 'Done', detail: 'Vendor B is cheapest.', tone: 'normal', progress: null });
+  it('done shows no outcome text, idle is idle, no progress once the task is over', () => {
+    expect(deskStatus(emp({ state: 'idle' }), { steps: [], approvals: [], task: task({ status: 'done', outcome: 'Vendor B is cheapest.', plan: plan(3, 3) }) })).toEqual({ word: 'Done', detail: null, tone: 'normal', progress: null });
     expect(deskStatus(emp({ state: 'idle' }), undefined)).toMatchObject({ word: 'Idle', detail: null });
     expect(deskStatus(emp({ state: 'idle' }), { steps: [], approvals: [], task: task({ status: 'done' }) })).toMatchObject({ word: 'Done', detail: null });
   });

@@ -88,7 +88,29 @@ function quiet(): { employees: Employee[]; threads: Record<string, ThreadFixture
   };
 }
 
+/** The worst case for the pill: a long Working sentence, a long approval title, a Done desk, a Waiting desk. */
+function worst(): { employees: Employee[]; threads: Record<string, ThreadFixture> } {
+  const base = working();
+  const maya = task('dx-maya', EMP.maya, { title: 'Write the launch post', assignedMs: ago(14 * MIN), plan: [{ title: 'Draft', status: 'done' }, { title: 'Style it', status: 'done' }, { title: 'Check it', status: 'in_progress' }] });
+  const ines = task('dx-ines', EMP.ines, { title: 'Design the pricing table', assignedMs: ago(11 * MIN), plan: [{ title: 'Sketch', status: 'done' }, { title: 'Publish', status: 'in_progress' }] });
+  const priya = task('dx-priya', EMP.priya, { title: 'Write the pricing page copy', status: 'done', assignedMs: ago(13 * MIN), finishedMs: ago(MIN), outcome: 'The launch post is now a styled web page, open in Firefox, and the copy is in the shared doc.', plan: [{ title: 'Write', status: 'done' }] });
+  const t = (tk: typeof maya, steps: ThreadFixture['steps'], approvals: ThreadFixture['approvals'] = []): ThreadFixture => ({ messages: [], steps, approvals, task: tk });
+  const threads: Record<string, ThreadFixture> = {
+    ...base.threads,
+    [EMP.maya]: t(maya, [step(31, EMP.maya, maya.id, 'The launch post is now a styled web page, open in Firefox and checked on a narrow window', ago(10 * SEC))]),
+    [EMP.priya]: t(priya, []),
+    [EMP.ines]: t(ines, [], [approval('dx-ines', EMP.ines, ines.id, { title: 'Publish the pricing page to the public website with git push', detail: '', createdMs: ago(20 * SEC) })]),
+  };
+  const employeesOut = base.employees.map((e) =>
+    e.id === EMP.maya ? { ...e, state: 'working' as const, stateDetail: 'Checking the post' }
+    : e.id === EMP.priya ? { ...e, state: 'idle' as const, stateDetail: 'Marketer' }
+    : e.id === EMP.ines ? { ...e, state: 'needs_you' as const, stateDetail: 'Publish' }
+    : e);
+  return { employees: employeesOut, threads };
+}
+
 export function desksFixture(name: string): { employees: Employee[]; threads: Record<string, ThreadFixture> } | null {
+  if (name === 'worst') return worst();
   if (name.startsWith('working')) return working();
   if (name === 'quiet') return quiet();
   return null;

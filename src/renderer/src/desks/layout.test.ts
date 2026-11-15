@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deskArea, desksLayout, railWidth, scaleFor, seat } from './layout';
+import { chipScaleFor, deskArea, desksLayout, railWidth, scaleFor, seat } from './layout';
 
 describe('desksLayout', () => {
   it.each([[1440, 900], [2560, 1600], [1280, 800], [1920, 1080], [900, 1200]])('fits and centres a window of %i x %i', (w, h) => {
@@ -28,6 +28,15 @@ describe('desksLayout', () => {
     expect(scaleFor(596)).toBe(1.5);
     expect(scaleFor(1058)).toBe(2.75);
     expect(scaleFor(5000)).toBe(3);
+  });
+});
+
+describe('chipScaleFor', () => {
+  it('follows the tile in 0.05 steps, within bounds', () => {
+    expect(chipScaleFor(508)).toBe(0.85);
+    expect(chipScaleFor(906)).toBe(1.55);
+    expect(chipScaleFor(100)).toBe(0.7);
+    expect(chipScaleFor(9000)).toBe(3);
   });
 });
 

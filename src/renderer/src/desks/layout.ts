@@ -18,10 +18,22 @@ export interface DesksLayout {
   /** Margin around the whole grid on the axis that limits the size (the other axis is centred and larger). */
   margin: number;
   scale: DesksScale;
+  /** Size of the pill with its status line: proportional to the tile so it never grows past about 16 % of the tile's height. */
+  chipScale: number;
 }
 
 /** Tile width at which the pill and the face are at their base size. Scales in steps from there. */
 const BASE_TILE = 360;
+
+/** Tile width per unit of chip scale (the two-line pill is about 54 px tall at 1, so under 16 % of the tile's height). */
+export const CHIP_TILE_PER_SCALE = 580;
+export const CHIP_SCALE_MIN = 0.7;
+export const CHIP_SCALE_MAX = 3;
+/** The chip scales in steps of 0.05 (CSS: `[data-am-chip-scale]` in ui/styles/stage.ts). */
+export function chipScaleFor(tileW: number): number {
+  const v = Math.floor((tileW / CHIP_TILE_PER_SCALE) * 20) / 20;
+  return Math.min(CHIP_SCALE_MAX, Math.max(CHIP_SCALE_MIN, v));
+}
 
 export function scaleFor(tileW: number): DesksScale {
   const want = tileW / BASE_TILE;
@@ -41,7 +53,7 @@ export function desksLayout(win: Size): DesksLayout {
   // An even leftover on both axes keeps every hairline on a whole pixel when the grid is centred.
   let gap = Math.round(w * g);
   if ((win.w - gap) % 2) gap += 1;
-  return { tile: { w, h: h % 2 ? h - 1 : h }, gap, margin: Math.round(gap / 2), scale: scaleFor(w) };
+  return { tile: { w, h: h % 2 ? h - 1 : h }, gap, margin: Math.round(gap / 2), scale: scaleFor(w), chipScale: chipScaleFor(w) };
 }
 
 /** Desk order: the stage's rule (tint order, which is hire order for the cast), four desks at most. */

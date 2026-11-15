@@ -70,7 +70,7 @@ export function deskStatus(e: Employee, slice: DeskSlice | undefined): DeskStatu
     case 'offline':
       return { ...base, word: 'Offline', detail: null };
     case 'idle':
-      if (task?.status === 'done') return { ...base, word: 'Done', detail: clean(task.outcome) };
+      if (task?.status === 'done') return { ...base, word: 'Done', detail: null };
       return { ...base, word: 'Idle', detail: null };
   }
 }
