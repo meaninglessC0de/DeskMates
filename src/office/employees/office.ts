@@ -21,7 +21,7 @@ import { decodeToken, makeCandidate, type CandidateInput, type RoleClient } from
 import { EmployeeSupervisor, type SupervisorContext } from './supervisor.ts';
 
 /** Messages in one chain between the same two people (since the manager last spoke to either) before the guard refuses. */
-export const PAIR_LIMIT = 8;
+export const PAIR_LIMIT = 16;
 
 export interface OfficeDeps {
   env: Env;

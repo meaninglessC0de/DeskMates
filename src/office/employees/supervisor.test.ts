@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { Approval, Employee, Task } from '../../shared/index.ts';
 import type { EmployeeRuntime, InboxItem, RuntimeDeps } from '../runtime/types.ts';
 import { harness, type Ev, type Harness } from '../testkit.ts';
+import { PAIR_LIMIT } from './office.ts';
 
 let h: Harness | null = null;
 afterEach(async () => {
@@ -309,7 +310,7 @@ describe('desktop actions and removal', () => {
 });
 
 describe('colleagues', () => {
-  it('delivers by first name, lists valid names, honours the switch and stops a loop after eight', async () => {
+  it('delivers by first name, lists valid names, honours the switch and stops a loop at the pair limit', async () => {
     const { h, e } = await hired();
     const b = await h.hire('marketer');
     await h.state(b.id, 'idle');
@@ -321,10 +322,10 @@ describe('colleagues', () => {
     const step = await h.waitFor('peer step on Priya', (x): x is Ev<'step'> => x.type === 'step' && x.step.employeeId === b.id && x.step.peer?.direction === 'from', { from });
     expect(step.step.sentence).toBe('Maya asked something');
     expect(maya.listColleagues()).toBe('Priya, Marketer, idle');
-    for (let i = 2; i <= 8; i++) {
+    for (let i = 2; i <= PAIR_LIMIT; i++) {
       expect((i % 2 === 0 ? priya : maya).messageColleague(i % 2 === 0 ? 'Maya' : 'Priya', `Message ${i}`)).toMatch(/^Sent to /);
     }
-    expect(priya.messageColleague('Maya', 'Nine')).toBe('Limit reached. Ask your manager instead.');
+    expect((PAIR_LIMIT % 2 === 0 ? maya : priya).messageColleague(PAIR_LIMIT % 2 === 0 ? 'Priya' : 'Maya', 'One too many')).toBe('Limit reached. Ask your manager instead.');
     h.office.sendMessage(e.id, 'Carry on.'); // a manager message resets the chain
     expect(priya.messageColleague('Maya', 'Four')).toBe('Sent to Maya.');
     await h.office.patchEmployee(e.id, { permissions: { teammates: false } });
