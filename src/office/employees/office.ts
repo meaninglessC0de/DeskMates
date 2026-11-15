@@ -22,6 +22,8 @@ import { EmployeeSupervisor, type SupervisorContext } from './supervisor.ts';
 
 /** Messages in one chain between the same two people (since the manager last spoke to either) before the guard refuses. */
 export const PAIR_LIMIT = 16;
+/** Team-wide cap on teammate messages in any 60 seconds. Twenty was reached by four people in a real hand-off burst, and a refused sign-off stalled the run. */
+export const TEAM_PER_MINUTE = 90;
 
 export interface OfficeDeps {
   env: Env;
@@ -137,7 +139,7 @@ export class Office implements SupervisorContext {
   colleagueGuard(fromId: string, toId: string): string | null {
     const now = Date.now();
     this.wakeLog = this.wakeLog.filter((t) => now - t < 60_000);
-    if (this.wakeLog.length >= 20) return 'Too many messages between teammates right now. Ask your manager instead.';
+    if (this.wakeLog.length >= TEAM_PER_MINUTE) return 'Too many messages between teammates this minute, so this one was NOT sent. Carry on with your own work and send it again shortly.';
     const since = Math.max(this.lastManagerMs.get(fromId) ?? 0, this.lastManagerMs.get(toId) ?? 0);
     const chain = this.colleagueLog.filter((l) => l.ms > since && ((l.from === fromId && l.to === toId) || (l.from === toId && l.to === fromId)));
     if (chain.length >= PAIR_LIMIT) return 'Limit reached. Ask your manager instead.';

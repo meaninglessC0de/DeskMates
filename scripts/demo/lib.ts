@@ -116,7 +116,7 @@ export async function hireOne(p: Person): Promise<Employee> {
   log(`Hiring ${c.persona.name} (${c.persona.role})...`);
   const e = await api<Employee>('POST', '/api/employees', { token: c.token });
   await waitHello(e.id, p.first);
-  log(`${p.first} is at her desk and has said hello`);
+  log(`${p.first} is in and has said hello`);
   return e;
 }
 

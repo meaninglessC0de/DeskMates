@@ -525,7 +525,7 @@ describe('waiting for a teammate', () => {
     expect(nudges(log)).toHaveLength(0);
   });
 
-  it('after four minutes (shortened here) the office delivers one note, then the normal rules apply', async () => {
+  it('after the wait timeout (shortened here) the office delivers one note, then the normal rules apply', async () => {
     const log: InboxItem[] = [];
     const { maya, mayaSup } = await rig(log);
     mayaSup.waitTimeoutMs = 80;

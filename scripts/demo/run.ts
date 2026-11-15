@@ -227,7 +227,7 @@ async function main(): Promise<void> {
   for (const p of people) {
     const have = existing.find((e) => e.persona.firstName === p.first);
     if (have) {
-      log(`${p.first} is already on the team, reusing her`);
+      log(`${p.first} is already on the team, reusing`);
       team.set(p.key, have);
     } else {
       team.set(p.key, await hireOne(p));

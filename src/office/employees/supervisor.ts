@@ -42,7 +42,7 @@ const NUDGE =
   'You stopped without finishing or asking. If the task is complete, call finish_task with a short summary. If you need a decision from your manager, call ask_user. If you are blocked with no way forward, call report_stuck. Otherwise carry on with the next unfinished step of your plan.';
 
 /** How long an employee waits for a teammate before the office tells her to carry on. */
-export const WAIT_TIMEOUT_MS = 4 * 60_000;
+export const WAIT_TIMEOUT_MS = 150_000; // 2.5 min: long enough for a real piece of work, short enough that a lost message is not a dead desk
 
 const MAX_DETAIL = 40;
 function clip(s: string, n = MAX_DETAIL): string {
