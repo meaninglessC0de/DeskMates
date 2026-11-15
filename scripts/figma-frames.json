@@ -1,18 +1,107 @@
 [
-  { "id": "shell/first-run", "query": "employees=none", "scheme": "light", "title": "First run: four empty desks" },
-  { "id": "hire/step-1", "scheme": "light", "title": "Hire: choose a role" },
-  { "id": "hire/step-2", "query": "step=meet&role=sales", "scheme": "light", "title": "Hire: meet the candidate" },
-  { "id": "thread/maya-desktop", "query": "open=desktop", "scheme": "light", "title": "Conversation with live desktop" },
-  { "id": "thread/maya", "scheme": "light", "title": "Approval in the conversation" },
-  { "id": "thread/working", "query": "select=priya", "scheme": "light", "title": "Working: plan and activity" },
-  { "id": "desktop/in-control", "query": "select=priya&control=1", "scheme": "light", "title": "Taking control of a desktop" },
-  { "id": "stage/one-to-one", "query": "s=speaking", "scheme": "light", "title": "Call: face and live desktop" },
-  { "id": "stage/picker", "query": "s=picker&open=summon", "scheme": "light", "title": "Summon meeting" },
-  { "id": "stage/meeting-4", "query": "s=m4", "scheme": "light", "title": "Meeting of four" },
-  { "id": "stage/meeting-4-spotlight", "query": "s=m4-spotlight", "scheme": "light", "title": "Meeting: a desktop in the spotlight" },
-  { "id": "team/week-answer", "query": "range=week&caps=genie,databricks&ask=answer", "scheme": "light", "title": "Team report with a question answered" },
-  { "id": "profile/maya", "scheme": "light", "title": "Profile and permissions" },
-  { "id": "settings/connections-all", "query": "caps=databricks,genie,calls_avatar,cua", "scheme": "light", "title": "Settings" },
-  { "id": "thread/maya-desktop", "query": "open=desktop", "scheme": "dark", "title": "Conversation with live desktop (dark)" },
-  { "id": "team/week-synced", "query": "range=week&caps=databricks&synced=1", "scheme": "dark", "title": "Team report (dark)" }
+  {
+    "id": "shell/first-run",
+    "query": "employees=none",
+    "scheme": "light",
+    "title": "First run: four empty desks"
+  },
+  {
+    "id": "hire/step-1",
+    "scheme": "light",
+    "title": "Hire: choose a role"
+  },
+  {
+    "id": "hire/step-2",
+    "query": "step=meet&role=sales",
+    "scheme": "light",
+    "title": "Hire: meet the candidate"
+  },
+  {
+    "id": "hire/step-1-full",
+    "query": "full=1",
+    "scheme": "light",
+    "title": "Hire: the team is full (four desks, four deskmates)"
+  },
+  {
+    "id": "thread/maya-desktop",
+    "query": "open=desktop",
+    "scheme": "light",
+    "title": "Conversation with live desktop"
+  },
+  {
+    "id": "thread/maya",
+    "scheme": "light",
+    "title": "Approval in the conversation"
+  },
+  {
+    "id": "thread/working",
+    "query": "select=priya",
+    "scheme": "light",
+    "title": "Working: plan and activity"
+  },
+  {
+    "id": "desktop/in-control",
+    "query": "select=priya&control=1",
+    "scheme": "light",
+    "title": "Taking control of a desktop"
+  },
+  {
+    "id": "stage/connecting",
+    "query": "s=connecting",
+    "scheme": "light",
+    "title": "Calling"
+  },
+  {
+    "id": "stage/one-to-one",
+    "query": "s=speaking",
+    "scheme": "light",
+    "title": "Call: face and live desktop"
+  },
+  {
+    "id": "stage/picker",
+    "query": "s=picker&open=summon",
+    "scheme": "light",
+    "title": "Summon meeting"
+  },
+  {
+    "id": "stage/meeting-4",
+    "query": "s=m4",
+    "scheme": "light",
+    "title": "Meeting of four"
+  },
+  {
+    "id": "stage/meeting-4-spotlight",
+    "query": "s=m4-spotlight",
+    "scheme": "light",
+    "title": "Meeting: a desktop in the spotlight"
+  },
+  {
+    "id": "team/week-answer",
+    "query": "range=week&caps=genie,databricks&ask=answer",
+    "scheme": "light",
+    "title": "Team report with a question answered"
+  },
+  {
+    "id": "profile/maya",
+    "scheme": "light",
+    "title": "Profile and permissions"
+  },
+  {
+    "id": "settings/connections-all",
+    "query": "caps=databricks,genie,calls_avatar,cua",
+    "scheme": "light",
+    "title": "Settings"
+  },
+  {
+    "id": "thread/maya-desktop",
+    "query": "open=desktop",
+    "scheme": "dark",
+    "title": "Conversation with live desktop (dark)"
+  },
+  {
+    "id": "team/week-synced",
+    "query": "range=week&caps=databricks&synced=1",
+    "scheme": "dark",
+    "title": "Team report (dark)"
+  }
 ]

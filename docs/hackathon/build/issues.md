@@ -93,3 +93,15 @@ Format: `I-<n>`, scenario, expected, observed, evidence, best reading of the cau
 - Evidence: `shots/e2e-ui/S17/03-summon.png`, `shots/e2e-ui/S17/fail.png`, `page.txt`; ui.ts S17 line.
 - Reading: `TopBar.tsx` computes `callsOff` for the Call button but the Summon button only checks `peers < 2` (and `AppFrame.tsx` disables the `mod+shift+m` hotkey on peers only). Owner: `src/renderer/src/shell/TopBar.tsx` (and `AppFrame.tsx`): disable when `callsOff`, with the tooltip "Calls are off".
 - Note on the Ask box (also S17): the team view does not render it at all without Databricks (ruling R15), so "absent" counts as passing in `ui.ts`; the test plan's "disabled with a reason" wording is superseded by R15.
+
+## I-14 · Live run · Office does not start after a quick restart: "database is locked" (high, fixed)
+
+- Observed: stop the office (graceful), start it again within a few seconds: `[office] could not start: database is locked`. Cause: `PRAGMA journal_mode = WAL` ran before any busy timeout was set while the old process was still closing the file. Fix: `busy_timeout = 15000` first (`store.ts`).
+
+## I-15 · Live run · Voice worker fails to start when port 8081 is taken (medium, fixed)
+
+- Observed: four failed starts in a row (`address already in use ('0.0.0.0', 8081)`) while another office's worker held the port; calls would not connect until it freed. Fix: `WorkerOptions(host="127.0.0.1", port=0)` in `voice/agent.py`.
+
+## I-16 · Live run · Team shows "0.0" hours after a short first session (low, fixed)
+
+- Fix: time under an hour reads as minutes ("12 min"), from an hour up as "5.2 h"; label "Time worked".

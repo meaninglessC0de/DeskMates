@@ -143,6 +143,12 @@ async function serialise({ scheme, width, height }: { scheme: Scheme; width: num
         data = null;
       }
     } else if (el instanceof HTMLVideoElement) {
+      if (el.readyState < 2 || el.videoWidth === 0) {
+        // no picture in it (fixtures have no live video): its poster if it has one, otherwise leave it out so the
+        // still underneath shows, as it does in the app
+        data = el.poster ? await toDataUrl(el.poster) : null;
+        if (!data) el.setAttribute('data-am-drop', '');
+      } else
       try {
         const c = document.createElement('canvas');
         c.width = el.videoWidth || el.clientWidth;
@@ -166,7 +172,7 @@ async function serialise({ scheme, width, height }: { scheme: Scheme; width: num
       cs.visibility === 'hidden' ||
       cs.visibility === 'collapse' ||
       (el.hasAttribute('popover') && !el.matches(':popover-open')) ||
-      (el instanceof HTMLDialogElement && !el.open) ||
+      (el instanceof HTMLDialogElement && !el.open && !(el.hasAttribute('popover') && el.matches(':popover-open'))) ||
       el.hasAttribute('hidden');
     if (gone) {
       hidden.push(el);
@@ -176,9 +182,42 @@ async function serialise({ scheme, width, height }: { scheme: Scheme; width: num
   };
   walk(document.body);
   hidden.forEach((el) => el.setAttribute('data-am-drop', ''));
+  // Modal dialogs and open popovers live in the browser's top layer, which a static copy does not have: without help a
+  // dialog falls to the end of the page. Each is pinned where it is on screen, with its backdrop drawn as a real element.
+  const tops: { key: string; style: string; backdrop: string | null }[] = [];
+  let topN = 0;
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>('dialog[open], [popover]'))) {
+    const modal = el instanceof HTMLDialogElement && el.matches(':modal');
+    const popped = el.hasAttribute('popover') && el.matches(':popover-open');
+    if (!modal && !popped) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    const key = `top-${topN++}`;
+    el.setAttribute('data-am-top', key);
+    const bg = modal ? getComputedStyle(el, '::backdrop').backgroundColor : '';
+    tops.push({
+      key,
+      // inset first (it would reset left and top if it came later); the box is already where its transform put it
+      style: `display:${getComputedStyle(el).display};position:fixed;inset:auto;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;max-width:none;max-height:none;opacity:${getComputedStyle(el).opacity};visibility:visible;transform:none;translate:none;scale:none;z-index:${1000 + topN};`,
+      backdrop: bg && bg !== 'rgba(0, 0, 0, 0)' ? bg : null,
+    });
+  }
   const clone = document.documentElement.cloneNode(true) as HTMLElement;
   hidden.forEach((el) => el.removeAttribute('data-am-drop'));
+  document.querySelectorAll('video[data-am-drop]').forEach((el) => el.removeAttribute('data-am-drop'));
   clone.querySelectorAll('[data-am-drop]').forEach((el) => el.remove());
+  document.querySelectorAll('[data-am-top]').forEach((el) => el.removeAttribute('data-am-top'));
+  for (const t of tops) {
+    const el = clone.querySelector<HTMLElement>(`[data-am-top="${t.key}"]`);
+    if (!el) continue;
+    el.removeAttribute('data-am-top');
+    el.setAttribute('style', `${el.getAttribute('style') ?? ''};${t.style}`);
+    if (t.backdrop) {
+      const shade = document.createElement('div');
+      shade.setAttribute('style', `position:fixed;left:0;top:0;width:${width}px;height:${height}px;background:${t.backdrop};z-index:999;`);
+      el.parentElement?.insertBefore(shade, el);
+    }
+  }
   clone.querySelectorAll('script, link, style, noscript, template').forEach((el) => el.remove());
   for (const el of Array.from(clone.querySelectorAll<HTMLElement>('[data-am-export]'))) {
     const key = el.getAttribute('data-am-export')!;
