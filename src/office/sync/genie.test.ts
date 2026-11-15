@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { startFakeDatabricks, type FakeDatabricks } from './fakeDatabricks.ts';
-import { createGenieClient } from './genie.ts';
+import { createGenieClient, label, plain } from './genie.ts';
 import { SyncError } from './types.ts';
 
 let fake: FakeDatabricks;
@@ -12,12 +12,22 @@ afterEach(() => fake.close());
 const client = (over: Record<string, unknown> = {}) =>
   createGenieClient({ host: fake.url, token: fake.token, spaceId: 'space1', pollMs: 5, capMs: 2000, ...over });
 
+describe('plain text', () => {
+  it('removes Markdown marks from an answer and keeps the words', () => {
+    expect(plain('There are **0 employees** and `no roles`.\n\n- First\n- Second')).toBe('There are 0 employees and no roles.\n\nFirst\nSecond');
+  });
+  it('makes a column name readable', () => {
+    expect(label('num_employees')).toBe('Num employees');
+    expect(label('name')).toBe('Name');
+  });
+});
+
 describe('genie', () => {
   it('starts a conversation and returns answer, sql, columns and rows', async () => {
     const r = await client().ask('Who worked the most?');
     expect(r.answer).toBe('Maya worked the most this week.');
     expect(r.sql).toContain('SELECT name');
-    expect(r.columns).toEqual(['name', 'hours']);
+    expect(r.columns).toEqual(['Name', 'Hours']);
     expect(r.rows).toEqual([['Maya Chen', '3.5'], ['Priya Raman', '1.25']]);
     expect(r.conversationId).toMatch(/^conv-/);
     expect(fake.requests.map((x) => `${x.method} ${x.path.replace(/(conv|msg)-\d+/g, '$1')}`)).toEqual([

@@ -50,6 +50,24 @@ const MAX_ROWS = 20;
 const cell = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 
 /** Genie Conversation API: start or continue a conversation, poll until the answer is complete, fetch the query result. */
+/** Genie writes Markdown; the Team view shows plain text. Emphasis marks, code ticks and list bullets are removed, the words stay. */
+export function plain(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^[ \t]*[-*][ \t]+/gm, '')
+    .replace(/^#+[ \t]+/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** A column name as a header a person reads: `num_employees` becomes "Num employees". */
+export function label(column: string): string {
+  const words = column.replace(/_/g, ' ').trim();
+  return words ? words[0]!.toUpperCase() + words.slice(1) : column;
+}
+
 export function createGenieClient(cfg: GenieConfig) {
   const now = cfg.now ?? Date.now;
   const sleep = cfg.sleep ?? realSleep;
@@ -104,9 +122,9 @@ export function createGenieClient(cfg: GenieConfig) {
       }
     }
     return {
-      answer: text ?? q?.query?.description ?? (rows.length ? 'Here is what I found.' : 'Genie had no answer for that.'),
+      answer: plain(text ?? q?.query?.description ?? (rows.length ? 'Here is what I found.' : 'Genie had no answer for that.')),
       sql: q?.query?.query ?? null,
-      columns,
+      columns: columns.map(label),
       rows,
       conversationId: cid,
     };
