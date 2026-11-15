@@ -133,6 +133,7 @@ export interface TeamReport {
   rows: TeamRow[];
   source: 'databricks' | 'local';
   syncedMs: number | null;
+  experimentUrl?: string | null;  // MLflow experiment page with one trace per employee session; absent or null = hide the link
 }
 
 export interface RolePreset {

@@ -16,6 +16,7 @@ import type { InboxItem, RuntimeFactory } from '../runtime/types.ts';
 import type { HostDriver, Spaces } from '../spaces/types.ts';
 import type { Store } from '../store/store.ts';
 import { SyncError, type Sync } from '../sync/types.ts';
+import { experimentUrl } from '../sync/tracing.ts';
 import { decodeToken, makeCandidate, type CandidateInput, type RoleClient } from './hiring.ts';
 import { EmployeeSupervisor, type SupervisorContext } from './supervisor.ts';
 
@@ -429,8 +430,10 @@ export class Office implements SupervisorContext {
 
   // ------------------------------------------------------------------ team
 
-  team(range: TeamReport['range']): Promise<TeamReport> {
-    return this.sync.teamReport(range);
+  async team(range: TeamReport['range']): Promise<TeamReport> {
+    const report = await this.sync.teamReport(range);
+    // The MLflow experiment link only makes sense when the numbers really come from Databricks.
+    return report.source === 'databricks' ? { ...report, experimentUrl: experimentUrl() } : report;
   }
 
   async ask(question: string, conversationId?: string): Promise<TeamAskResponse> {
