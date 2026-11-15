@@ -69,7 +69,7 @@ describe('runCallMind', () => {
     expect(out).toEqual(['I am rebuilding ', 'the pricing page.']);
     const r = client.requests[0];
     expect(r.model).toBe('claude-haiku-5-5');
-    expect(r.max_tokens).toBe(400);
+    expect(r.max_tokens).toBe(1200);
     expect(r.stream).toBe(true);
     expect(r.output_config).toEqual({ effort: 'low' });
     expect(r).not.toHaveProperty('thinking');

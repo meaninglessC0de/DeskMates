@@ -99,7 +99,9 @@ export async function* runCallMind(o: MindOptions): AsyncGenerator<string> {
     const stream = await o.client.messages.create(
       {
         model: o.model,
-        max_tokens: 400,
+        // A cap, not a target: the prompt keeps the spoken answer short. 400 cut off the tell_worker call that follows the
+        // spoken acknowledgement (thinking + words + the instruction written out), so the instruction was lost (I-22).
+        max_tokens: 1200,
         stream: true,
         system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
         messages: convo,

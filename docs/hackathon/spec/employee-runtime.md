@@ -375,7 +375,7 @@ Messages: the call transcript so far (user and assistant turns as plain text).
 
 Tools: `tell_worker({ instruction })` delivers `{ kind: 'manager', via: 'call' }` to the worker's inbox and returns "passed on". `look_at_screen({})` returns the Space's current screenshot as an image block.
 
-Request settings: model `VOICE_MODEL`, streaming, `max_tokens` 400, `output_config: { effort: 'low' }`, and a cache breakpoint on the system block. Run the tool loop inside the endpoint: stream text deltas to the caller as they arrive; on a tool call, run it and continue with a second request. Translate to OpenAI-style SSE chunks (`choices[0].delta.content`) and finish with `data: [DONE]`. If the model returns nothing within 2.5 seconds, send the filler "One second." first.
+Request settings: model `VOICE_MODEL`, streaming, `max_tokens` 1200 (a cap: 400 cut off `tell_worker` calls, I-22), `output_config: { effort: 'low' }`, and a cache breakpoint on the system block. Run the tool loop inside the endpoint: stream text deltas to the caller as they arrive; on a tool call, run it and continue with a second request. Translate to OpenAI-style SSE chunks (`choices[0].delta.content`) and finish with `data: [DONE]`. If the model returns nothing within 2.5 seconds, send the filler "One second." first.
 
 ### 8.3 Meetings (2 to 4 employees, one voice at a time)
 
