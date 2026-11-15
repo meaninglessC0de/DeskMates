@@ -163,7 +163,7 @@ export const threads: Record<string, ThreadFixture> = {
     task: mayaTask,
     messages: [
       msg(1, EMP.maya, 'user', 'The checkout button does nothing on mobile. Can you fix it?', ago(55 * MIN), { taskId: mayaTask.id }),
-      msg(2, EMP.maya, 'employee', 'On it. I will reproduce it first, then fix it.', ago(54 * MIN), { taskId: mayaTask.id }),
+      msg(2, EMP.maya, 'employee', 'On it. I’ll reproduce it first.', ago(54 * MIN), { taskId: mayaTask.id }),
       msg(3, EMP.maya, 'employee', 'Found it: the handler throws when the cart is empty. Fixed, and the tests pass.', ago(8 * MIN), { taskId: mayaTask.id }),
       msg(4, EMP.maya, 'employee', 'The fix is ready. I need your approval to deploy it to staging.', ago(2 * MIN), { taskId: mayaTask.id }),
     ],
@@ -176,14 +176,14 @@ export const threads: Record<string, ThreadFixture> = {
       step(6, EMP.maya, mayaTask.id, 'Asked Priya about the copy', ago(6 * MIN), 'ok', { peer: { employeeId: EMP.priya, direction: 'to', text: 'Is the new button label approved?' } }),
     ],
     approvals: [
-      approval('maya1', EMP.maya, mayaTask.id, { title: 'Deploy to staging', detail: 'Runs deploy.sh on staging.example.com', createdMs: ago(2 * MIN) }),
+      approval('maya1', EMP.maya, mayaTask.id, { title: 'Deploy to staging', detail: 'Puts the fix on the test site', createdMs: ago(2 * MIN) }),
     ],
   },
   [EMP.priya]: {
     task: priyaTask,
     messages: [
       msg(1, EMP.priya, 'user', 'Write the launch email for the new pricing page.', ago(40 * MIN), { taskId: priyaTask.id }),
-      msg(2, EMP.priya, 'employee', 'Happy to. I will look at three competitor emails first.', ago(39 * MIN), { taskId: priyaTask.id }),
+      msg(2, EMP.priya, 'employee', 'Happy to. I’ll look at three competitor emails first.', ago(39 * MIN), { taskId: priyaTask.id }),
       msg(3, EMP.priya, 'employee', 'Two directions so far: plain and friendly, or short and bold. Which do you prefer?', ago(20 * MIN), { taskId: priyaTask.id, kind: 'question' }),
     ],
     steps: [

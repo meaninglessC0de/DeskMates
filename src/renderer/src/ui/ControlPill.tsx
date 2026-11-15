@@ -7,7 +7,7 @@ import { HStack } from '@astryxdesign/core/HStack';
  */
 export function ControlPill({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <HStack data-am="pill" role="toolbar" aria-label={label} gap={1} vAlign="center" hAlign="center" padding={1.5}>
+    <HStack data-am="pill" role="toolbar" aria-label={label} gap={1} vAlign="center" hAlign="center" padding={1}>
       {children}
     </HStack>
   );

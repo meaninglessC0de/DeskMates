@@ -34,7 +34,7 @@ export function TopBar({ employee }: TopBarProps) {
   const paused = employee.state === 'paused';
 
   return (
-    <LayoutHeader hasDivider>
+    <LayoutHeader hasDivider data-am-topbar="">
       <HStack gap={3} vAlign="center">
         <StackItem size="fill">
           <HStack>

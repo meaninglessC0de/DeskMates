@@ -11,18 +11,18 @@ import { useStore } from '../api/store';
 /** The request, the resolved action in one line, and Deny and Approve. Resolved: one quiet line. */
 export function ApprovalRow({ approval }: { approval: Approval }) {
   if (approval.status !== 'pending') {
-    const verb = approval.status === 'approved' ? 'You approved this' : approval.status === 'denied' ? 'You denied this' : 'Expired';
+    const verb = approval.status === 'approved' ? `You approved: ${approval.title}` : approval.status === 'denied' ? `You denied: ${approval.title}` : `Expired: ${approval.title}`;
     return (
       <Text type="supporting">
         {`${verb} · `}
-        <Timestamp value={approval.resolvedMs ?? approval.createdMs} format="time" type="inherit" color="inherit" />
+        <Timestamp value={approval.resolvedMs ?? approval.createdMs} format="time" type="inherit" color="inherit" hasTooltip={false} />
       </Text>
     );
   }
   const decide = (decision: 'approve' | 'deny'): void => void useStore.getState().decideApproval(approval.id, { decision });
   const screen = approval.kind === 'screen';
   return (
-    <Section data-am-approval="" variant="transparent" padding={3}>
+    <Section data-am-approval="" variant="transparent" paddingInline={4} paddingBlock={3}>
       <Item
         density="compact"
         startContent={<StatusDot variant="warning" label="Needs your approval" />}

@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppShell } from '@astryxdesign/core/AppShell';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
-import { Skeleton } from '@astryxdesign/core/Skeleton';
+import { Center } from '@astryxdesign/core/Center';
 import { VStack } from '@astryxdesign/core/VStack';
 import { SideNav } from '@astryxdesign/core/SideNav';
 import { useToast } from '@astryxdesign/core/Toast';
@@ -20,10 +20,39 @@ import { ProfileDrawer } from './profile/ProfileDrawer';
 import { SettingsDialog } from './settings/SettingsDialog';
 import { Stage } from './stage/Stage';
 import { SummonPicker } from './stage/SummonPicker';
+import { DeskLoader } from './ui/DeskLoader';
+
+/** How long the stage stays mounted after a call ends, so it can cross-fade out (the stage's 240 ms entrance, mirrored). */
+const STAGE_LEAVE_MS = 240;
+
+/**
+ * True while the stage should still be on screen: the call is live, or it ended less than STAGE_LEAVE_MS ago.
+ * `leaving` is the second part, exposed to the stage's CSS as `data-am-leaving` on `[data-am-stage-root]`.
+ */
+function useStageLeave(live: boolean): { mounted: boolean; leaving: boolean } {
+  const [leaving, setLeaving] = useState(false);
+  const was = useRef(live);
+  useEffect(() => {
+    if (was.current && !live) {
+      setLeaving(true);
+      const t = setTimeout(() => setLeaving(false), STAGE_LEAVE_MS);
+      was.current = live;
+      return () => clearTimeout(t);
+    }
+    was.current = live;
+    setLeaving(false);
+    return undefined;
+  }, [live]);
+  return { mounted: live || leaving, leaving: leaving && !live };
+}
 
 /** Called once before the first render. In `?shot=` mode this loads the store from the fixtures. */
 export function initApp(): void {
   startShellBridge(useStore);
+  // The Mac shell's title-bar inset: lets app.ts place the sidebar header beside the traffic lights.
+  if (typeof window !== 'undefined' && (window as { shell?: unknown }).shell && typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-am-electron', '');
+  }
   const shot = getShot();
   if (shot) {
     loadShot(shot);
@@ -49,27 +78,16 @@ function Placeholder({ error }: { error?: boolean }) {
         error ? (
           <Banner
             status="error"
+            data-am-banner=""
             title="Can't reach your team"
-            description="Check that the app service is running"
+            description="Deskmates keeps trying. You can also try now."
             container="section"
-            endContent={<Button label="Retry" variant="secondary" onClick={() => void useStore.getState().boot()} />}
+            endContent={<Button label="Try again" variant="secondary" onClick={() => void useStore.getState().boot()} />}
           />
         ) : undefined
       }
-      sideNav={
-        <SideNav aria-label="Team">
-          <VStack gap={3} padding={3}>
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} height={40} />
-            ))}
-          </VStack>
-        </SideNav>
-      }>
-      <VStack gap={3} padding={4}>
-        <Skeleton height={32} width={240} />
-        <Skeleton height={16} />
-        <Skeleton height={16} width="70%" />
-      </VStack>
+      sideNav={<SideNav aria-label="Team">{null}</SideNav>}>
+      <Center height="100%">{error ? null : <DeskLoader size={48} label="Opening Deskmates" />}</Center>
     </AppShell>
   );
 }
@@ -89,10 +107,16 @@ export function App() {
   }, []);
 
   const setUi = useStore.getState().setUi;
+  const stage = useStageLeave(Boolean(call));
+  const stageNode = stage.mounted ? (
+    <VStack data-am-stage-root="" data-am-leaving={stage.leaving ? '' : undefined} height="100%">
+      <Stage />
+    </VStack>
+  ) : null;
 
   let body;
   if (call) {
-    body = <Stage />;
+    body = null;
   } else if (boot === 'idle' || boot === 'loading') {
     body = <Placeholder />;
   } else if (boot === 'error') {
@@ -114,6 +138,7 @@ export function App() {
   return (
     <>
       {body}
+      {stageNode}
       <ToastBridge />
     </>
   );

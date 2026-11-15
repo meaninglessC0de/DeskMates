@@ -302,10 +302,11 @@ function Frames({ url, label, emit }: { url: string; label: string; emit: (s: Sp
   };
 
   return (
-    <AspectRatio ratio={DEFAULT_RATIO} fit="contain">
+    <AspectRatio ratio={DEFAULT_RATIO} fit="contain" role="img" aria-label={label}>
+      {/* alt="" so a failed frame never shows the browser's broken-image glyph and alt text; the box carries the name */}
       <img
         src={`${url}${url.includes('?') ? '&' : '?'}t=${tick}`}
-        alt={label}
+        alt=""
         onLoad={() => {
           failures.current = 0;
           emit('live');

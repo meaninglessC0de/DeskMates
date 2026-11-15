@@ -28,12 +28,12 @@ export function DesktopPanel({ employeeId, onExpand, isInDrawer }: DesktopPanelP
   const employee = useEmployee(employeeId);
   const [screen, setScreen] = useState<SpaceState>('connecting');
   if (!employee) return null;
-  const showsScreen = !(employee.screenGrant || employee.state === 'offline' || employee.desktopSinceMs === null);
+  const showsScreen = !(employee.screenGrant || employee.state === 'offline' || employee.state === 'starting' || employee.desktopSinceMs === null);
   const body = (
     <VStack gap={4}>
       <HStack vAlign="center" gap={1}>
         <StackItem size="fill">
-          <StateLine employee={employee} hasDot={!showsScreen} />
+          <StateLine employee={employee} hasDot={!showsScreen && employee.state !== 'starting'} />
         </StackItem>
         {showsScreen ? <LiveMarker state={screen} /> : null}
         {onExpand ? (

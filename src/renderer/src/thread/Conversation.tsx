@@ -152,7 +152,7 @@ export function Conversation({ employeeId }: ConversationProps) {
         end={desktopOpen && !narrow ? <DesktopPanel employeeId={employeeId} onExpand={() => setExpanded(true)} /> : undefined}
       />
       {narrow ? (
-        <Drawer isOpen={desktopOpen} onOpenChange={(o) => s.toggleDesktop(employeeId, o)} label="Desktop" width={440} hasScrim={false}>
+        <Drawer isOpen={desktopOpen} onOpenChange={(o) => s.toggleDesktop(employeeId, o)} label="Desktop" width={440} hasScrim={false} data-am-drawer="">
           <DesktopPanel employeeId={employeeId} isInDrawer />
         </Drawer>
       ) : null}

@@ -88,3 +88,15 @@ All rules in `ui/styles/stage.ts`, scoped under `[data-am="stage"]` (the stage's
 | `data-am="stage-top"` | `HStack` | Tabular figures for the call timer | Timer has no tabular option |
 | `data-am="inset"` | `VStack` around a small tile laid on a large one | `--shadow-high` so it lifts off the tile under it | none |
 | `data-am-picker`, `data-am="people-stack"` | `List`, `HStack` in the summon picker | Reuses the sidebar's `data-am-people` row style; overlapping 24 px portraits with a popover-coloured cut | AvatarGroup cannot take `Portrait` |
+
+### Round two additions (D2)
+| Hook / piece | On | What it does | Gap |
+| --- | --- | --- | --- |
+| `StageTile` `centre`, `data-am="tile-dim"` | `StageTile` | A dim layer that is always mounted and fades (230 ms), and a centred block in place of the chip: the brand `DeskLoader` over "Calling Maya" (one-to-one, at least 600 ms) and the 16 px loader before "Joining" in meetings; the live tile cross-fades in | Overlay's scrim has no transition |
+| `data-am-crop="tall|standard|wide"` | `StageTile` | Anchors a square or 4:5 photo per tile shape (40 %, 25 %, 18 %), checked for all eight people in every layout | AspectRatio `fit` has no anchor |
+| `data-am="circle-video"` | `VStack` in a strip row | The live video inside the portrait circle in a row tile | none |
+| Media chip capsule | `StageChip` on any photo, video or desktop | One 28 px blurred capsule for every label on media (replaces the face scrim); plain text on a tint wash | Token has no translucent tone |
+| Mute pressed | `ToggleButton` in `ControlPill` | Muted is a filled light disc with the slashed mic | ToggleButton pressed state is a faint wash |
+| Stage banner | `Banner` on the stage | Raised surface, primary text, status only in the icon | Banner tints the whole slab |
+| Focus on tiles | `::before` of `StageTile` | The system focus ring drawn one step inside the edge, above the media (the hover wrapper clips outlines outside) | SelectableCard's ring sits under video |
+| `[data-am-leaving]` | App's stage root (App.tsx) | The stage fades out the way it came in; Stage keeps its last frame while the call slice is already empty | no exit motion |

@@ -1,4 +1,5 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { AppShell } from '@astryxdesign/core/AppShell';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
@@ -17,25 +18,33 @@ import { VStack } from '@astryxdesign/core/VStack';
 import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
 import { themes, defaultThemeSlug } from '../theme';
+import { Portrait } from '../ui/Portrait';
+import { tintIndex } from '../ui/tint';
 import { Captions, useCaptionLine } from './Captions';
 import { ControlBar } from './ControlBar';
 import type { LayoutChoice } from './ControlBar';
 import { buildScenario, realPortraitUrl, stageShot } from './fixtures';
-import { BOTTOM_RESERVE, TOP_STRIP, gridLayout, oneToOneLayout, spotlightLayout, stageBox } from './layout';
+import { BOTTOM_RESERVE, MARK_GAP, TOP_STRIP, gridLayout, oneToOneLayout, spotlightLayout, stageBox } from './layout';
 import type { OneToOneLayout } from './layout';
-import { useLastSpeaker, useRing, useThinking } from './signals';
+import { useLastSpeaker, useLeftNotice, useRing, useRinging, useThinking } from './signals';
 import { DesktopTile, FaceTile } from './Tile';
 import type { ChipState } from './Tile';
 import { useCall } from './useCall';
 import { useWindowSize } from './useWindowSize';
 
 const BANNER_HEIGHT = 44;
-const THINKING_HINT_MS = 3000;
 const STILL_THINKING_MS = 8000;
 const NO_ANSWER_MS = 20000;
 const GRID_GAP = 4;
+/** Spacing step 10 = 40 px, layout.ts MARK_GAP. */
+const MARK_GAP_STEP = 10;
 /** Spacing step 3 = 12 px, layout.ts STRIP_GAP. */
 const STRIP_GAP = 3;
+
+/** "Maya, Priya, Jonas and Ines". */
+function listNames(names: string[]): string {
+  return names.length <= 1 ? (names[0] ?? 'Meeting') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
 
 /** The one-to-one layout choice lasts across calls (until the app restarts). */
 let savedLayout: OneToOneLayout = 'desktop';
@@ -55,6 +64,9 @@ export function Stage() {
   }, []);
 
   const session = useCall();
+  const hasCall = useStore((s) => s.call !== null);
+  // After End the app keeps the stage mounted for its 230 ms fade-out (App.tsx, data-am-leaving); show the last frame.
+  const lastTree = useRef<ReactNode>(null);
   const employees = useStore((s) => s.employees);
   const captionsDefault = useStore((s) => s.settings?.captions ?? true);
   const win = useWindowSize();
@@ -70,7 +82,11 @@ export function Stage() {
       const found = byId(p.employeeId);
       const employee = found && shot?.realPortraits ? { ...found, persona: { ...found.persona, portraitUrl: realPortraitUrl(found.persona.firstName) } } : found;
       return employee ? [{ employee, state: p.state }] : [];
-    });
+    })
+    // Everyone sits at their own desk: tiles in tint order, so a team of four is the Deskmates mark (blue, orange /
+    // pink, green). Number keys follow the order on screen.
+    .map((p) => ({ ...p, desk: tintIndex(p.employee.id, p.employee.persona.name, p.employee.persona.portraitUrl) }))
+    .sort((a, b) => a.desk - b.desk);
   const n = people.length;
   const isMeeting = n >= 2;
   const first = (id: string): string => byId(id)?.persona.firstName ?? '';
@@ -82,9 +98,19 @@ export function Stage() {
   const lastCaption = session.captions[session.captions.length - 1];
   const userSpeaking = !!lastCaption && lastCaption.from === 'user' && !lastCaption.final && session.speaker.phase !== 'speaking';
 
-  const thinkingHint =
-    thinking.employeeId && thinking.ms >= THINKING_HINT_MS && thinking.ms < NO_ANSWER_MS ? `${first(thinking.employeeId)} is thinking` : null;
-  const line = useCaptionLine(session.captions, first, thinkingHint);
+  const connecting = useRinging(session.state === 'connecting', !!shot);
+  const leftNotice = useLeftNotice(session.participants, first);
+  const noAnswerId = thinking.employeeId && thinking.ms >= NO_ANSWER_MS ? thinking.employeeId : null;
+  const mutedHint = !session.micOn && !session.micBlocked && userSpeaking;
+  // One line under the stage: what someone said, or one short status (the chips carry "Thinking" and "Still thinking").
+  const hint = leftNotice ?? (noAnswerId ? `${first(noAnswerId)} didn’t answer` : mutedHint ? 'You’re muted' : null);
+  const spoken = useCaptionLine(
+    session.captions,
+    first,
+    hint,
+    noAnswerId ? { label: 'Ask again', onClick: () => void useStore.getState().addressCall(noAnswerId) } : undefined,
+  );
+  const line = connecting ? null : spoken;
 
   const address = (id: string): void => void useStore.getState().addressCall(id);
   const pinnedPerson = people.find((p) => p.employee.id === pinned);
@@ -92,10 +118,12 @@ export function Stage() {
 
   const chipFor = (id: string, state: string): ChipState => {
     if (state === 'failed') return { detail: "Couldn't join" };
-    if (state === 'joining' || session.state === 'connecting') return { detail: isMeeting ? 'Joining' : 'Calling', lead: 'spinner' };
+    if (state === 'joining' || connecting) {
+      return isMeeting ? { detail: 'Joining', lead: 'loader' } : { calling: `Calling ${byId(id)?.persona.firstName ?? ''}` };
+    }
     if (state === 'dropped') return { detail: 'Reconnecting', lead: 'spinner' };
     if (thinking.employeeId === id) {
-      if (thinking.ms >= NO_ANSWER_MS) return { detail: 'No answer', action: { label: 'Ask again', onClick: () => address(id) } };
+      if (thinking.ms >= NO_ANSWER_MS) return { detail: 'No answer' };
       return { detail: thinking.ms >= STILL_THINKING_MS ? 'Still thinking' : 'Thinking', lead: 'spinner' };
     }
     if (ring === id) return { detail: 'Speaking' };
@@ -114,7 +142,7 @@ export function Stage() {
         size={size}
         chip={chipFor(id, p.state)}
         hasRing={speaking}
-        isDropped={p.state === 'dropped'}
+        isDropped={connecting || p.state === 'dropped' || p.state === 'joining' || p.state === 'failed'}
         videoTrack={hasVideo ? session.videoTrack : null}
         audioTrack={hasVideo ? session.audioTrack : null}
         hasPortrait={!!p.employee.persona.portraitUrl && !(shot?.noPortraits ?? false)}
@@ -128,13 +156,14 @@ export function Stage() {
   const banner =
     session.micBlocked && session.state !== 'failed' ? (
       <Banner
+        data-am-banner=""
         status="error"
         container="section"
         title="Microphone is blocked"
         endContent={<Button label="Open System Settings" variant="secondary" size="sm" href="x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone" />}
       />
     ) : !isMeeting && people[0]?.state === 'dropped' && session.state !== 'failed' ? (
-      <Banner status="warning" container="section" title="Reconnecting" />
+      <Banner data-am-banner="" status="warning" container="section" title="Reconnecting" />
     ) : undefined;
 
   const box = stageBox(win.w, win.h - (banner ? BANNER_HEIGHT : 0));
@@ -178,8 +207,19 @@ export function Stage() {
     body = (
       <Center height="100%">
         <EmptyState
-          title={n > 1 ? "Couldn't start the meeting" : `Couldn't reach ${names[0] ?? 'them'}`}
-          description="Check your connection and try again."
+          icon={
+            n === 1 && people[0] ? (
+              <Portrait person={{ id: people[0].employee.id, name: people[0].employee.persona.name, portraitUrl: shot?.noPortraits ? '' : people[0].employee.persona.portraitUrl }} size={96} />
+            ) : (
+              <HStack data-am="people-stack" vAlign="center">
+                {people.map((p) => (
+                  <Portrait key={p.employee.id} person={{ id: p.employee.id, name: p.employee.persona.name, portraitUrl: shot?.noPortraits ? '' : p.employee.persona.portraitUrl }} size={56} />
+                ))}
+              </HStack>
+            )
+          }
+          title={n > 1 ? 'Couldn’t start the meeting' : `Couldn’t reach ${names[0] ?? 'them'}`}
+          description="The call didn’t connect. Try again in a moment."
           actions={
             <HStack gap={2}>
               <Button label="Try again" variant="primary" onClick={retry} />
@@ -267,9 +307,15 @@ export function Stage() {
         {sp.strip.orientation === 'vertical' ? (
           <HStack gap={4} vAlign="start">
             {large}
-            <VStack gap={STRIP_GAP} width={sp.column ?? sp.strip.tile.w} height={sp.large.h}>
-              {strip}
-            </VStack>
+            {sp.strip.cols === 2 ? (
+              <Grid columns={2} gap={STRIP_GAP} width={sp.column ?? sp.strip.tile.w * 2}>
+                {strip}
+              </Grid>
+            ) : (
+              <VStack gap={STRIP_GAP} width={sp.column ?? sp.strip.tile.w} height={sp.large.h}>
+                {strip}
+              </VStack>
+            )}
           </HStack>
         ) : (
           <VStack gap={4} hAlign="center">
@@ -283,16 +329,15 @@ export function Stage() {
     const gl = gridLayout(n, box);
     body = (
       <Center height="100%">
-        <Grid columns={gl.cols} gap={GRID_GAP} width={gl.cols * gl.tile.w + (gl.cols - 1) * 16}>
+        <Grid columns={gl.cols} gap={gl.gap === MARK_GAP ? MARK_GAP_STEP : GRID_GAP} width={gl.cols * gl.tile.w + (gl.cols - 1) * gl.gap}>
           {people.map((p) => face(p, gl.tile, { onShowDesktop: true }))}
         </Grid>
       </Center>
     );
   }
 
-  const title = isMeeting ? 'Meeting' : (people[0]?.employee.persona.name ?? '');
+  const title = isMeeting ? listNames(names) : (people[0]?.employee.persona.name ?? '');
   const subtitle = isMeeting ? null : (people[0]?.employee.persona.role ?? null);
-  const mutedHint = !session.micOn && !session.micBlocked && userSpeaking;
   const layouts: LayoutChoice[] = isMeeting
     ? [
         { value: 'grid', label: 'Grid' },
@@ -301,7 +346,7 @@ export function Stage() {
     : ONE_TO_ONE_CHOICES;
   const bodyKey = failed ? 'failed' : !isMeeting ? `one:${oneLayout}` : pinnedPerson ? `spot:${pinnedPerson.employee.id}` : `grid:${n}`;
 
-  return (
+  const tree = (
     <Theme theme={themes[defaultThemeSlug]!} mode="dark">
       <AppShell data-am="stage" contentPadding={0} banner={banner}>
         <Layout
@@ -310,11 +355,12 @@ export function Stage() {
           header={
             <LayoutHeader height={TOP_STRIP} padding={0}>
               <HStack data-am="stage-top" height={TOP_STRIP} gap={2} hAlign="center" vAlign="center">
-                <Text type="label">{title}</Text>
+                <Text type="label" maxLines={1}>
+                  {title}
+                </Text>
                 {subtitle ? <Text type="supporting">{subtitle}</Text> : null}
-                {session.state === 'live' ? <Text type="supporting">{'·'}</Text> : null}
-                {session.state === 'live' ? <Timer startTime={session.startedMs} format="clock" /> : null}
-                {mutedHint ? <Text type="supporting">{'· You’re muted'}</Text> : null}
+                {session.state === 'live' && !connecting ? <Text type="supporting">{'·'}</Text> : null}
+                {session.state === 'live' && !connecting ? <Timer startTime={session.startedMs} format="clock" /> : null}
               </HStack>
             </LayoutHeader>
           }
@@ -331,7 +377,7 @@ export function Stage() {
                 {failed ? null : <Captions line={line} isOn={captionsOn} />}
                 {failed ? null : (
                   <ControlBar
-                    endOnly={session.state === 'connecting'}
+                    endOnly={connecting}
                     micOn={session.micOn}
                     micBlocked={session.micBlocked}
                     onMic={session.setMic}
@@ -350,4 +396,6 @@ export function Stage() {
       </AppShell>
     </Theme>
   );
+  if (hasCall || !lastTree.current) lastTree.current = tree;
+  return hasCall ? tree : lastTree.current;
 }

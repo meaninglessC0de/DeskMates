@@ -19,6 +19,7 @@ import { getShot } from '../fixtures/shot';
 import { SpaceView, type SpaceState } from '../media/SpaceView';
 import { Elapsed } from '../shell/Elapsed';
 import { STATE_LABEL } from '../shell/presence';
+import { DeskLoader } from '../ui/DeskLoader';
 
 const DOT: Partial<Record<Employee['state'], 'success' | 'warning' | 'error'>> = { working: 'success', needs_you: 'warning', stuck: 'error' };
 const PLAN_ROWS = 6;
@@ -86,6 +87,17 @@ export function Screen({ employee, onState }: { employee: Employee; onState?: (s
         <AspectRatio ratio={16 / 10}>
           <Center height="100%">
             <EmptyState isCompact title={`${first} is on your screen`} />
+          </Center>
+        </AspectRatio>
+      </VStack>
+    );
+  }
+  if (employee.state === 'starting') {
+    return (
+      <VStack data-am-screen="" data-am-screen-state="off">
+        <AspectRatio ratio={16 / 10}>
+          <Center height="100%">
+            <DeskLoader size={40} label={`Starting ${first}'s desktop`} />
           </Center>
         </AspectRatio>
       </VStack>

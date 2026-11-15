@@ -8,8 +8,6 @@ import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Icon } from '@astryxdesign/core/Icon';
-import { Skeleton } from '@astryxdesign/core/Skeleton';
-import { Spinner } from '@astryxdesign/core/Spinner';
 import { Text } from '@astryxdesign/core/Text';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -26,6 +24,8 @@ import { useStore } from '../api/store';
 import { ApiClientError } from '../api/client';
 import { useShot } from '../fixtures/shot';
 import { Portrait } from '../ui/Portrait';
+import { DeskLoader } from '../ui/DeskLoader';
+import { Desks } from '../ui/Desks';
 
 export interface HireDialogProps {
   isOpen: boolean;
@@ -45,6 +45,24 @@ const LEVELS: { value: PermissionLevel; label: string; description: string }[] =
   { value: 'independent', label: 'Works independently', description: 'Only stops when it is stuck.' },
 ];
 
+/** Wait (at most 1.5 s) for a candidate's portrait to be in the cache, so the face never flashes its tint. */
+function preloadFace(url: string): Promise<void> {
+  if (!url || typeof Image === 'undefined') return Promise.resolve();
+  const src = /\/media\/portraits\/[^/]+\.jpg$/.test(url) ? url.replace(/\.jpg$/, '-sq.jpg') : url;
+  return new Promise((done) => {
+    const img = new Image();
+    const t = setTimeout(done, 1500);
+    img.onload = img.onerror = () => {
+      clearTimeout(t);
+      done();
+    };
+    img.src = src;
+  });
+}
+
+/** How long the previous face stays while the next one fades in over it. */
+const CROSSFADE_MS = 230;
+
 const firstName = (c: Candidate): string => c.persona.firstName || c.persona.name.split(' ')[0] || c.persona.name;
 
 /** What the user sees for a failed API call: the server's plain sentence, with the team-full line fixed. */
@@ -55,6 +73,7 @@ function messageOf(e: unknown): { text: string; full: boolean } {
 
 export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
   const presets = useStore((s) => s.presets);
+  const team = useStore((s) => s.employees);
   const shot = useShot()?.params;
 
   const [step, setStep] = useState<'roles' | 'meet'>('roles');
@@ -62,6 +81,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
   const [description, setDescription] = useState('');
   const [roleKey, setRoleKey] = useState('');
   const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [leaving, setLeaving] = useState<Candidate | null>(null);
   const [seen, setSeen] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [shuffling, setShuffling] = useState(false);
@@ -98,6 +118,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
     if (shot?.get('state') === 'loading') return;
     try {
       const c = await useStore.getState().fetchCandidate({ roleKey: key, ...(text ? { description: text } : {}) });
+      await preloadFace(c.persona.portraitUrl);
       show(c, preset);
       setLoading(false);
     } catch (e) {
@@ -120,6 +141,9 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
         ...(roleKey === 'custom' && description ? { description: description.trim() } : {}),
         exclude: seen,
       });
+      await preloadFace(c.persona.portraitUrl);
+      setLeaving(candidate);
+      setTimeout(() => setLeaving(null), CROSSFADE_MS);
       show(c);
     } catch (e) {
       setError(messageOf(e).text);
@@ -199,7 +223,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
 
   const header = meeting ? (
     <DialogHeader
-      title={loading || !candidate ? 'Meet your hire' : `Meet ${who}`}
+      title="New hire"
       onOpenChange={onOpenChange}
       startContent={
         <VStack height={16} vAlign="center" hAlign="center">
@@ -213,7 +237,27 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
 
   const roles = (
     <VStack gap={3}>
-      {error ? <Banner status={full ? 'info' : 'error'} title={error} container="section" /> : null}
+      {full ? (
+        <VStack gap={3} hAlign="center" paddingBlock={4} data-am-full="">
+          <Desks people={team.slice(0, 4).map((e) => ({ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }))} size={64} />
+          <VStack gap={0.5} hAlign="center">
+            <Text type="label">Your team is full</Text>
+            <Text type="supporting">Four desks, four deskmates. Remove someone to hire again.</Text>
+          </VStack>
+          <Button
+            label="Open Team"
+            variant="secondary"
+            onClick={() => {
+              onOpenChange(false);
+              useStore.getState().setView('team');
+            }}
+          />
+        </VStack>
+      ) : error ? (
+        <Banner status="error" title={error} container="section" />
+      ) : null}
+      {full ? null : (
+        <>
       <List density="balanced" edge="flush">
         {presets.map((p) => {
           const RoleIcon = ROLE_ICONS[p.icon] ?? Briefcase;
@@ -267,29 +311,41 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
           />
         </List>
       )}
+        </>
+      )}
     </VStack>
   );
 
   const proposal = (
     <VStack gap={6} hAlign="center" paddingBlockStart={4}>
       {loading || !candidate ? (
-        <VStack gap={4} hAlign="center" padding={4}>
-          <Skeleton width={144} height={144} radius="rounded" />
-          <HStack gap={2} vAlign="center">
-            <Spinner size="sm" />
-            <Text type="supporting">Finding the right person</Text>
-          </HStack>
+        <VStack hAlign="center" justify="center" minHeight={296} padding={4}>
+          <DeskLoader size={56} label="Finding someone…" />
         </VStack>
       ) : (
         <>
-          <VStack gap={1} hAlign="center" data-am-identity="" key={candidate.persona.name}>
-            <Portrait person={{ id: candidate.persona.name, name: candidate.persona.name, portraitUrl: candidate.persona.portraitUrl }} size={144} />
-            <VStack gap={0.5} hAlign="center" paddingBlockStart={5}>
-              <Text type="display-3">{name.trim() || candidate.persona.name}</Text>
-              <Text type="supporting">{candidate.persona.role}</Text>
-            </VStack>
-            <VStack hAlign="center" paddingBlockStart={3} maxWidth={360}>
-              <Text type="body" color="secondary" justify="center">{personality.trim() || candidate.persona.personality}</Text>
+          <VStack data-am-identity-stack="" width="100%" hAlign="center">
+            {leaving && leaving.token !== candidate.token ? (
+              <VStack gap={1} hAlign="center" data-am-identity="out" key={`out-${leaving.token}`} aria-hidden="true">
+                <Portrait person={{ id: leaving.persona.name, name: leaving.persona.name, portraitUrl: leaving.persona.portraitUrl }} size={144} />
+                <VStack gap={0.5} hAlign="center" paddingBlockStart={5}>
+                  <Text type="large" size="2xl" weight="semibold">{leaving.persona.name}</Text>
+                  <Text type="supporting">{leaving.persona.role}</Text>
+                </VStack>
+                <VStack hAlign="center" paddingBlockStart={3} maxWidth={360}>
+                  <Text type="body" justify="center">{leaving.persona.personality}</Text>
+                </VStack>
+              </VStack>
+            ) : null}
+            <VStack gap={1} hAlign="center" data-am-identity="in" key={candidate.token}>
+              <Portrait person={{ id: candidate.persona.name, name: candidate.persona.name, portraitUrl: candidate.persona.portraitUrl }} size={144} />
+              <VStack gap={0.5} hAlign="center" paddingBlockStart={5}>
+                <Text type="large" size="2xl" weight="semibold">{name.trim() || candidate.persona.name}</Text>
+                <Text type="supporting">{candidate.persona.role}</Text>
+              </VStack>
+              <VStack hAlign="center" paddingBlockStart={3} maxWidth={360}>
+                <Text type="body" justify="center">{personality.trim() || candidate.persona.personality}</Text>
+              </VStack>
             </VStack>
           </VStack>
           <HStack gap={2} vAlign="center" hAlign="center">

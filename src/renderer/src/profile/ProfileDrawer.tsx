@@ -42,13 +42,13 @@ function uptime(sinceMs: number, now: number): string {
   const mins = Math.max(0, Math.floor((now - sinceMs) / MINUTE));
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return h > 0 ? `${h} h ${m} min` : `${m} min`;
+  return h > 0 ? (m > 0 ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 }
 
 function desktopLine(e: Employee, now: number): string {
   if (e.state === 'offline') return 'Desktop is off';
   if (e.state === 'starting' || e.desktopSinceMs === null) return 'Starting desktop';
-  return `Running · ${uptime(e.desktopSinceMs, now)}`;
+  return `Running for ${uptime(e.desktopSinceMs, now)}`;
 }
 
 export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawerProps) {
@@ -121,7 +121,7 @@ export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawe
         header={<DrawerHeader title={employee.persona.name} subtitle={employee.persona.role} onOpenChange={onOpenChange} />}
         content={
           <LayoutContent isScrollable>
-            <VStack gap={8} data-am-sections="">
+            <VStack gap={6} data-am-sections="">
               <VStack gap={2} hAlign="center" paddingBlockStart={2}>
                 <Portrait person={{ id: employee.id, name: employee.persona.name, portraitUrl: employee.persona.portraitUrl }} size={96} />
                 {sampleUrl ? (
@@ -138,7 +138,7 @@ export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawe
               <TextArea
                 label="Personality"
                 hasAutoFocus
-                rows={3}
+                rows={2}
                 maxLength={280}
                 value={personality}
                 onChange={(v) => {

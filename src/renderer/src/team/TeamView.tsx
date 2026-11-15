@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Layout, LayoutContent, LayoutHeader } from '@astryxdesign/core/Layout';
 import { Link } from '@astryxdesign/core/Link';
+import { Center } from '@astryxdesign/core/Center';
+import { tintIndex } from '../ui/tint';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { Collapsible } from '@astryxdesign/core/Collapsible';
@@ -53,7 +55,7 @@ function Figure({ label, value, change }: { label: string; value: string; change
   return (
     <VStack gap={1}>
       <Text type="supporting">{label}</Text>
-      <Text type="display-2" data-am-num="" data-am-figure="">{value}</Text>
+      <Text type="display-3" weight="medium" data-am-num="" data-am-figure="">{value}</Text>
       <Text type="supporting" data-am-num="">{change ?? ' '}</Text>
     </VStack>
   );
@@ -79,8 +81,21 @@ function Figures({ report, range }: { report: TeamReport; range: TeamRange }) {
   );
 }
 
+/** Each person's hours against the busiest person's, as a thin bar in their own tint (the one data use of the tint). */
+function Share({ row, max }: { row: Row; max: number }) {
+  const pct = max > 0 ? Math.max(4, Math.round((row.hours / max) * 100)) : 0;
+  return (
+    <HStack data-am-share="" aria-hidden="true" width={56}>
+      <Center data-am-share-fill="" data-am-tint={String(tintIndex(row.employeeId, row.name, row.portraitUrl))} width={`${pct}%`} height={4}>
+        {null}
+      </Center>
+    </HStack>
+  );
+}
+
 function PeopleTable({ report }: { report: TeamReport }) {
   const select = useStore.getState().selectEmployee;
+  const maxHours = report.rows.reduce((m, r) => Math.max(m, r.activeMs / HOUR), 0);
   const data: Row[] = report.rows.map((r) => ({
     employeeId: r.employeeId, name: r.name, role: r.role, portraitUrl: r.portraitUrl,
     hours: r.activeMs / HOUR, tasksDone: r.tasksDone, cost: r.costUsd,
@@ -102,7 +117,7 @@ function PeopleTable({ report }: { report: TeamReport }) {
       columns={[
         {
           key: 'name',
-          header: 'Employee',
+          header: 'Deskmate',
           sortable: true,
           renderCell: (r: Row) => (
             <List density="compact" edge="flush">
@@ -115,7 +130,18 @@ function PeopleTable({ report }: { report: TeamReport }) {
             </List>
           ),
         },
-        { key: 'hours', header: 'Hours', align: 'end', sortable: true, renderCell: (r: Row) => <Text hasTabularNumbers>{r.hours.toFixed(1)}</Text> },
+        {
+          key: 'hours',
+          header: 'Hours',
+          align: 'end',
+          sortable: true,
+          renderCell: (r: Row) => (
+            <HStack gap={3} vAlign="center" hAlign="end">
+              <Text hasTabularNumbers>{r.hours.toFixed(1)}</Text>
+              <Share row={r} max={maxHours} />
+            </HStack>
+          ),
+        },
         { key: 'tasksDone', header: 'Tasks done', align: 'end', sortable: true, renderCell: (r: Row) => <Text hasTabularNumbers>{String(r.tasksDone)}</Text> },
         { key: 'cost', header: 'Cost', align: 'end', sortable: true, renderCell: (r: Row) => <Text hasTabularNumbers>{usd.format(r.cost)}</Text> },
       ]}
@@ -132,8 +158,8 @@ function Ask() {
       ? {
           answer: 'Maya closed the most tasks this week, with 10 of the 25.',
           sql: "SELECT name, SUM(tasks_done) AS tasks FROM team_runs WHERE week = current_week() GROUP BY name ORDER BY tasks DESC",
-          columns: ['Employee', 'Tasks done'],
-          rows: [['Maya Chen', '10'], ['Priya Raman', '5'], ['Jonas Weber', '5'], ['Ines Moreau', '5'], ['Kenji Watanabe', '4'], ['Amara Lim', '3'], ['Marcus Reyes', '2']],
+          columns: ['Deskmate', 'Tasks done'],
+          rows: [['Maya Chen', '10'], ['Priya Raman', '5'], ['Jonas Weber', '5'], ['Ines Moreau', '5']],
           conversationId: 'shot',
         }
       : null,
@@ -227,7 +253,8 @@ export function TeamView() {
         status="error"
         title="Couldn't load the numbers"
         container="section"
-        endContent={<Button label="Retry" variant="secondary" size="sm" onClick={() => void loadTeam(range)} />}
+        data-am-banner=""
+        endContent={<Button label="Try again" variant="secondary" size="sm" onClick={() => void loadTeam(range)} />}
       />
     );
   } else if (!report) {
@@ -253,7 +280,7 @@ export function TeamView() {
       <Spinner label="Loading" />
     );
   } else if (report.rows.length === 0 || (report.totals.tasksDone === 0 && report.totals.activeMs === 0)) {
-    body = <EmptyState title="No work yet" description="Numbers appear once your team starts on tasks." />;
+    body = <EmptyState title="No work yet" description="Numbers show up once your deskmates start a task." />;
   } else {
     body = (
       <VStack gap={10}>
@@ -284,8 +311,8 @@ export function TeamView() {
     <Layout
       height="fill"
       header={
-        <LayoutHeader>
-          <HStack gap={4} vAlign="center">
+        <LayoutHeader data-am-topbar="">
+          <HStack gap={4} vAlign="center" data-am-page="" data-am-page-header="">
             <StackItem size="fill">
               <Text type="large">Team</Text>
             </StackItem>
@@ -299,7 +326,7 @@ export function TeamView() {
       }
       content={
         <LayoutContent isScrollable>
-          <VStack maxWidth={880} padding={6}>
+          <VStack padding={6} data-am-page="">
             {body}
           </VStack>
         </LayoutContent>

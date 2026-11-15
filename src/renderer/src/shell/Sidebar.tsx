@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { SideNav, SideNavHeading, SideNavSection } from '@astryxdesign/core/SideNav';
 import { List, ListItem } from '@astryxdesign/core/List';
 import { Badge } from '@astryxdesign/core/Badge';
@@ -16,8 +17,17 @@ import { rowLine } from './presence';
 
 export const APP_NAME = 'Deskmates';
 
+/** Ids present when the sidebar first rendered with the team loaded: those rows are already there; any later id is an arrival. */
+function useArrivals(ids: string[]): Set<string> {
+  const known = useRef<Set<string> | null>(null);
+  if (known.current === null && (ids.length > 0 || useStore.getState().bootState === 'ready')) known.current = new Set(ids);
+  const fresh = new Set(ids.filter((id) => known.current !== null && !known.current.has(id)));
+  return fresh;
+}
+
 export function Sidebar() {
   const employees = useStore((s) => s.employees);
+  const arrivals = useArrivals(employees.map((e) => e.id));
   const selectedId = useStore((s) => s.ui.selectedId);
   const view = useStore((s) => s.ui.view);
   const userName = useStore((s) => s.settings?.userName ?? 'You');
@@ -70,6 +80,7 @@ export function Sidebar() {
                 <ListItem
                   key={e.id}
                   data-am-row={e.state}
+                  data-am-arrive={arrivals.has(e.id) ? '' : undefined}
                   label={<Text type="label" maxLines={1}>{e.persona.name}</Text>}
                   description={
                     line.emphasised ? (
@@ -85,7 +96,7 @@ export function Sidebar() {
                   startContent={<Portrait person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={40} presence={e.state} />}
                   endContent={
                     <VStack gap={1} hAlign="end" data-am-num="">
-                      <Timestamp value={e.lastActivityMs} format="relative_short" />
+                      <Timestamp value={e.lastActivityMs} format="relative_short" hasTooltip={false} />
                       {e.unread > 0 ? <Badge label={String(e.unread)} variant="neutral" /> : null}
                     </VStack>
                   }

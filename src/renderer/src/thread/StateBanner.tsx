@@ -15,6 +15,7 @@ export function StateBanner({ employee, panelOpen }: { employee: Employee; panel
       <Banner
         status="error"
         container="section"
+        data-am-banner=""
         title={`${first} is stuck`}
         description={employee.stateDetail}
         endContent={
@@ -31,7 +32,7 @@ export function StateBanner({ employee, panelOpen }: { employee: Employee; panel
       <Banner
         status="info"
         container="section"
-        data-am-quiet=""
+        data-am-banner=""
         title={`${first}'s desktop is off`}
         endContent={panelOpen ? undefined : <Button label="Start desktop" variant="secondary" size="sm" onClick={() => void s.desktopAction(employee.id, 'start')} />}
       />
@@ -42,7 +43,7 @@ export function StateBanner({ employee, panelOpen }: { employee: Employee; panel
       <Banner
         status="info"
         container="section"
-        data-am-quiet=""
+        data-am-banner=""
         title={`${first} is paused`}
         endContent={<Button label="Resume" variant="secondary" size="sm" onClick={() => void s.resumeEmployee(employee.id)} />}
       />

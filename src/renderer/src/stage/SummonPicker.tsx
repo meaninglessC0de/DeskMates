@@ -7,10 +7,12 @@ import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { List, ListItem } from '@astryxdesign/core/List';
 import { Text } from '@astryxdesign/core/Text';
 import { Tooltip } from '@astryxdesign/core/Tooltip';
-import { Check } from 'lucide-react';
+import { Square, SquareCheck, SquareMinus } from 'lucide-react';
 import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
+import { Desks } from '../ui/Desks';
 import { Portrait } from '../ui/Portrait';
+import { tintIndex } from '../ui/tint';
 
 export interface SummonPickerProps {
   isOpen: boolean;
@@ -20,7 +22,6 @@ export interface SummonPickerProps {
 const MAX_PEOPLE = 4;
 
 const unavailable = (e: Employee): string | null => (e.state === 'offline' ? 'Desktop is off' : e.state === 'paused' ? 'Paused' : null);
-const stateWord = (e: Employee): string | null => (e.state === 'working' ? 'Working' : e.state === 'needs_you' ? 'Needs you' : e.state === 'stuck' ? 'Stuck' : null);
 
 /** Who to bring in. One person starts a call, two to four start a meeting. */
 export function SummonPicker({ isOpen, onOpenChange }: SummonPickerProps) {
@@ -38,6 +39,11 @@ export function SummonPicker({ isOpen, onOpenChange }: SummonPickerProps) {
 
   const toggle = (id: string): void => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length < MAX_PEOPLE ? [...p, id] : p));
   const allPicked = everyone.length > 0 && everyone.every((e) => picked.includes(e.id));
+  // The four desks fill as people are picked, in desk order (their tint slot), so a full meeting reads as the mark.
+  const deskPeople = employees
+    .filter((e) => picked.includes(e.id))
+    .map((e) => ({ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl, desk: tintIndex(e.id, e.persona.name, e.persona.portraitUrl) }))
+    .sort((a, b) => a.desk - b.desk);
 
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange} width={360}>
@@ -49,14 +55,8 @@ export function SummonPicker({ isOpen, onOpenChange }: SummonPickerProps) {
             <List density="balanced" data-am-people="" data-am-picker="">
               <ListItem
                 label={<Text type="label">Everyone</Text>}
-                startContent={
-                  <HStack data-am="people-stack" vAlign="center">
-                    {everyone.map((e) => (
-                      <Portrait key={e.id} person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={24} />
-                    ))}
-                  </HStack>
-                }
-                endContent={allPicked ? <Icon icon={Check} size="sm" /> : undefined}
+                startContent={<Desks people={deskPeople} size={40} />}
+                endContent={<Icon icon={allPicked ? SquareCheck : picked.length > 0 ? SquareMinus : Square} size="sm" color={picked.length > 0 ? 'primary' : 'secondary'} />}
                 isDisabled={everyone.length === 0}
                 onClick={() => setPicked(allPicked ? [] : everyone.map((e) => e.id))}
               />
@@ -64,20 +64,13 @@ export function SummonPicker({ isOpen, onOpenChange }: SummonPickerProps) {
                 const off = unavailable(e);
                 const isPicked = picked.includes(e.id);
                 const capped = !isPicked && picked.length >= MAX_PEOPLE;
-                const word = stateWord(e);
                 const row = (
                   <ListItem
                     key={e.id}
                     label={<Text type="label" maxLines={1}>{e.persona.name}</Text>}
                     description={off ?? e.persona.role}
                     startContent={<Portrait person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={40} presence={e.state} />}
-                    endContent={
-                      isPicked ? (
-                        <Icon icon={Check} size="sm" />
-                      ) : word && !off ? (
-                        <Text type="supporting">{word}</Text>
-                      ) : undefined
-                    }
+                    endContent={off ? undefined : <Icon icon={isPicked ? SquareCheck : Square} size="sm" color={isPicked ? 'primary' : 'secondary'} />}
                     isSelected={isPicked}
                     isDisabled={!!off || capped}
                     onClick={() => toggle(e.id)}

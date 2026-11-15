@@ -21,9 +21,9 @@ type Dot = 'success' | 'warning' | 'neutral';
 function connections(c: Capabilities | null): { key: string; label: string; value: string; dot: Dot }[] {
   if (!c) return [];
   return [
-    { key: 'model', label: 'Model', value: c.llm ? 'Connected' : 'Not set up', dot: c.llm ? 'success' : 'warning' },
-    { key: 'desktops', label: 'Desktops', value: c.desktops === 'cua' ? 'Ready' : 'Demo', dot: c.desktops === 'cua' ? 'success' : 'neutral' },
-    { key: 'calls', label: 'Calls', value: c.calls === 'avatar' ? 'Video and voice' : c.calls === 'audio' ? 'Voice only' : 'Off', dot: c.calls === 'off' ? 'neutral' : 'success' },
+    { key: 'model', label: 'AI', value: c.llm ? 'Connected' : 'Not set up', dot: c.llm ? 'success' : 'warning' },
+    { key: 'desktops', label: 'Desks', value: c.desktops === 'cua' ? 'Ready' : 'Demo', dot: c.desktops === 'cua' ? 'success' : 'warning' },
+    { key: 'calls', label: 'Video calls', value: c.calls === 'avatar' ? 'Video and voice' : c.calls === 'audio' ? 'Voice only' : 'Off', dot: c.calls === 'off' ? 'neutral' : c.calls === 'audio' ? 'warning' : 'success' },
     { key: 'databricks', label: 'Databricks', value: c.databricks ? 'Connected' : 'Not set up', dot: c.databricks ? 'success' : 'neutral' },
   ];
 }
@@ -66,7 +66,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
         content={
           <LayoutContent>
             {settings ? (
-              <VStack gap={8} data-am-sections="">
+              <VStack gap={6} data-am-sections="">
                 <TextInput label="Your name" value={name} onChange={setName} />
 
                 <VStack gap={2}>

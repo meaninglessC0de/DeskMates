@@ -13,6 +13,7 @@ import type { Employee } from '../../../shared';
 import { AvatarVideo } from '../media/AvatarVideo';
 import { SpaceView } from '../media/SpaceView';
 import type { SpaceState } from '../media/SpaceView';
+import { DeskLoader } from '../ui/DeskLoader';
 import { Portrait } from '../ui/Portrait';
 import { StageChip } from '../ui/StageChip';
 import { StageTile } from '../ui/StageTile';
@@ -23,7 +24,9 @@ import type { Size } from './layout';
 export interface ChipState {
   /** One quiet word: the role in a meeting, or the state. Nothing when idle in a call. */
   detail?: string;
-  lead?: 'spinner';
+  lead?: 'spinner' | 'loader';
+  /** The call is ringing: the tile dims and shows the brand loader over "Calling Maya" instead of a chip. */
+  calling?: string;
   /** A quiet action after the words: "Ask again". */
   action?: { label: string; onClick: () => void };
 }
@@ -34,7 +37,7 @@ export interface FaceTileProps {
   chip: ChipState;
   /** The ring: this person has the floor. */
   hasRing: boolean;
-  /** Dimmed and reconnecting. */
+  /** Dimmed: reconnecting, joining or could not join. */
   isDropped?: boolean;
   /** Only the current speaker's tile gets the live video; every other tile shows a still. */
   videoTrack: MediaStreamTrack | null;
@@ -58,16 +61,19 @@ export function squareStill(url: string): string {
   return m && CAST_FILES.includes(m[1]!) ? url.replace(/\.jpg(\?.*)?$/, '-sq.jpg$1') : url;
 }
 
+/** Below this width (the spotlight's two-by-two, the bottom strip) a chip keeps only the name; ring and spinner show state. */
+const NARROW_TILE = 200;
+
 /** Below this height a face tile without a photo reads as a row: the monogram, then the name beside it (spotlight strip of four). */
 const ROW_TILE_HEIGHT = 150;
 /**
  * How a face tile arranges itself: `tile` (video, photo or monogram filling it, chip bottom-left); `row` for a
  * short, wide strip tile (the portrait as a circle, then the name beside it: a photo cropped to a 2:1 band shows
- * only eyes); `stack` for the small 160 x 120 bottom-strip tile (portrait over the name, centred). A tile with live
- * video is always `tile`.
+ * only eyes); `stack` for the small 160 x 120 bottom-strip tile (portrait over the name, centred). In a row or stack
+ * the live video, when this person has it, plays inside the circle, so a strip is always one kind of tile.
  */
-function arrangement(hasVideo: boolean, size: Size): 'tile' | 'row' | 'stack' {
-  if (hasVideo || size.h >= ROW_TILE_HEIGHT) return 'tile';
+function arrangement(size: Size): 'tile' | 'row' | 'stack' {
+  if (size.h >= ROW_TILE_HEIGHT) return 'tile';
   return size.w >= 240 ? 'row' : 'stack';
 }
 
@@ -93,7 +99,7 @@ function hoverAction(content: ReactNode, child: ReactNode) {
 export function FaceTile({ employee, size, chip, hasRing, isDropped, videoTrack, audioTrack, hasPortrait, onPress, onShowDesktop, label }: FaceTileProps) {
   const p = employee.persona;
   const hasMedia = hasPortrait || videoTrack !== null;
-  const mode = arrangement(videoTrack !== null, size);
+  const mode = arrangement(size);
   const person = { id: employee.id, name: p.name, portraitUrl: hasPortrait ? p.portraitUrl : '' };
   // The still and the live video share one framing (square, head and shoulders), one crop and one anchor, so the
   // video fades in over the still without a jump. The video layer is only mounted while this tile has the track.
@@ -118,9 +124,22 @@ export function FaceTile({ employee, size, chip, hasRing, isDropped, videoTrack,
       <Portrait person={{ id: employee.id, name: p.name, portraitUrl: '' }} size={portraitSize(size)} />
     </Center>
   );
-  const lead = chip.lead === 'spinner' ? <Spinner size="sm" aria-label={chip.detail ?? 'Working'} /> : undefined;
+  const circle = (px: number) =>
+    videoTrack ? (
+      <VStack data-am="circle-video" width={px} height={px}>
+        <AvatarVideo track={videoTrack} audio={audioTrack} fallbackSrc={still} name={p.name} ratio={1} />
+      </VStack>
+    ) : (
+      <Portrait person={person} size={px} />
+    );
+  const lead =
+    chip.lead === 'spinner' ? (
+      <Spinner size="sm" aria-label={chip.detail ?? 'Working'} />
+    ) : chip.lead === 'loader' ? (
+      <DeskLoader size={16} label={undefined} />
+    ) : undefined;
   const end = chip.action ? <Button label={chip.action.label} variant="secondary" size="sm" onClick={chip.action.onClick} /> : undefined;
-  const chipNode = <StageChip name={p.firstName} detail={mode === 'stack' ? undefined : chip.detail} lead={lead} end={end} />;
+  const chipNode = <StageChip name={p.firstName} detail={mode === 'stack' || size.w < NARROW_TILE ? undefined : chip.detail} lead={lead} end={end} />;
 
   const tile = (
     <StageTile
@@ -131,17 +150,18 @@ export function FaceTile({ employee, size, chip, hasRing, isDropped, videoTrack,
       hasRing={hasRing}
       hasMedia={hasMedia && mode === 'tile'}
       isDimmed={isDropped}
+      centre={chip.calling ? <DeskLoader size={mode === 'tile' ? 40 : 24} label={chip.calling} /> : undefined}
       onPress={onPress}
       label={label}
-      chip={mode === 'tile' ? chipNode : undefined}>
+      chip={mode === 'tile' && !chip.calling ? chipNode : undefined}>
       {mode === 'row' ? (
         <HStack width={size.w} height={size.h} gap={3} vAlign="center" paddingInline={4}>
-          <Portrait person={person} size={48} />
+          {circle(48)}
           {chipNode}
         </HStack>
       ) : mode === 'stack' ? (
         <VStack width={size.w} height={size.h} gap={1} hAlign="center" vAlign="center" paddingInline={2}>
-          <Portrait person={person} size={40} />
+          {circle(40)}
           {chipNode}
         </VStack>
       ) : (
