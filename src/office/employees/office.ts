@@ -419,7 +419,7 @@ export class Office implements SupervisorContext {
           plan: task?.plan ?? [],
           recentSteps: self.store.recentSteps(id, 8).map((s) => s.sentence),
           recentChat: self.store.recentMessages(id, 6).map((m) => ({ from: m.from === 'user' ? 'user' : 'employee', text: m.text })),
-          waitingOn: pending ? pending.title : lastQ?.kind === 'question' && employee.state === 'needs_you' ? lastQ.text : null,
+          waitingOn: pending ? `approval for "${pending.title}"${pending.detail ? ` (${pending.detail})` : ''}` : lastQ?.kind === 'question' && employee.state === 'needs_you' ? lastQ.text : null,
           notes: self.store.listNotes(id, 15),
           userName: self.userName(),
         };

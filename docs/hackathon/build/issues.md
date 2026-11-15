@@ -105,3 +105,24 @@ Format: `I-<n>`, scenario, expected, observed, evidence, best reading of the cau
 ## I-16 · Live run · Team shows "0.0" hours after a short first session (low, fixed)
 
 - Fix: time under an hour reads as minutes ("12 min"), from an hour up as "5.2 h"; label "Time worked".
+
+## I-18 · User's run · `npm start` fails: "No entry point found for electron app" (high, fixed)
+
+- Observed 15 Nov 10:35, the first time the documented command was run as written. `package.json` had no `main` field; the shell test passed because it launches `out/main/index.js` directly. Fix: `"main": "./out/main/index.js"`.
+
+## I-19 · Video takes · On a call Maya says the fix is not written while her push approval is pending (medium, fixed in the prompt, not yet heard on a live call)
+
+- Observed 15 Nov 11:35 in the recorded meeting: "I haven't fixed the bug or committed anything", seconds after "found and fixed". Cause: her plan was never ticked (first step still "in progress"), her activity lines only say "Ran a command", and the call mind is told never to claim finished work, so the pending approval was the only evidence and it lost.
+- Fix: the call mind is told that plan ticks can lag and that waiting on an approval means the steps before it are done; the "waiting on" line now names the approval and its command. Reproduced and re-run offline on her real situation (3 of 3 wrong before, 3 of 3 right after). Needs an office restart to take effect.
+
+## I-20 · Video takes · Two approvals for one push (medium, open)
+
+- Observed 15 Nov: Maya asked with `request_approval` ("Push fix/checkout-discount"); after Approve the gate asked again for the command itself ("Publish with git push"). The first approval does not cover the gate's check.
+- Proposed: tell the worker not to call `request_approval` for a shell command the office already gates (publish, send, delete), so there is one card with the exact command. That is a change to the employee prompt and its spec, so it waits for a live check.
+
+## I-21 · Video takes · Activity lines read "Ran a command" (low, open)
+
+- Seven of Maya's eight recent lines were "Ran a command". They tell neither the manager nor the call mind what happened. Proposed: name the command's purpose from its first word (tests, git commit, git push) the way the gate already titles risky commands.
+
+Also seen in the takes, by design: the microphone is on when a meeting starts, so voices near the Mac are heard as the manager and answered. Mute when recording.
+

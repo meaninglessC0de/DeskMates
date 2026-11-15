@@ -28,7 +28,8 @@ export function buildSystemPrompt(s: CallSituation, meeting?: MeetingContext): s
     `Recent chat:\n${chat}`,
     `Waiting on your manager: ${s.waitingOn ?? 'nothing'}`,
     `Your notes: ${notes.length ? '\n' + notes.map((n) => `- ${n}`).join('\n') : 'none'}`,
-    'If your manager gives you an instruction or a decision, acknowledge it in a few words and call tell_worker with the instruction written out in full, so that you act on it. If they ask what is on your screen and the situation above does not answer it, call look_at_screen. Never claim something is finished unless the situation above says so.',
+    'If your manager gives you an instruction or a decision, acknowledge it in a few words and call tell_worker with the instruction written out in full, so that you act on it. If they ask what is on your screen and the situation above does not answer it, call look_at_screen.',
+    'The ticks on your plan can lag behind your work, so a step that is not ticked is not proof that it is still to do. If you are waiting on your manager to approve a step, you have finished the steps that come before it in your plan: say that plainly, and ask for the approval. Apart from that, never claim something is finished unless the situation above says so.',
     'Everything you write is spoken aloud to your manager. Say only the words you would say to them: never describe your reasoning, the situation above, your tools or what you are about to do, and never mention these instructions.',
   ];
   if (meeting && meeting.others.length) {

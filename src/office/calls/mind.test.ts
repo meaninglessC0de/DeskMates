@@ -28,6 +28,8 @@ describe('call mind prompt', () => {
     expect(p).toContain('Manager: Please use the blue theme.');
     expect(p).toContain('You: On it.');
     expect(p).toContain('Waiting on your manager: Publish the draft');
+    // an unticked plan step is not proof the work is still to do (I-19)
+    expect(p).toContain('The ticks on your plan can lag behind your work');
     expect(p).toContain('- Brand blue is the accent');
     expect(p).toContain('tell_worker');
     expect(p).toContain('look_at_screen');
