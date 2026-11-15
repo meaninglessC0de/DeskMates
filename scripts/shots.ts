@@ -12,7 +12,7 @@
  * answered with placeholder SVGs here.
  */
 import { createServer as createNetServer } from 'node:net';
-import { mkdirSync, readdirSync, existsSync } from 'node:fs';
+import { mkdirSync, readdirSync, existsSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
@@ -106,7 +106,13 @@ async function main(): Promise<number> {
         if (m.type() === 'error') problems.push(`console error: ${m.text()}`);
       });
       page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
-      await page.route(/\/media\/portraits\//, (r) => r.fulfill({ contentType: 'image/svg+xml', body: portraitSvg(r.request().url()) }));
+      await page.route(/\/media\/portraits\//, (r) => {
+        // Real cast portraits from config/portraits/ when the file exists; a placeholder otherwise.
+        const name = decodeURIComponent(new URL(r.request().url()).pathname.split('/').pop() ?? '');
+        const real = join(root, 'config/portraits', name);
+        if (name && !name.includes('..') && existsSync(real)) return r.fulfill({ contentType: 'image/jpeg', body: readFileSync(real) });
+        return r.fulfill({ contentType: 'image/svg+xml', body: portraitSvg(r.request().url()) });
+      });
       await page.route(/\/api\/employees\/[^/]+\/(frame|thumbnail)\.jpg/, (r) => r.fulfill({ contentType: 'image/svg+xml', body: frameSvg }));
       await page.emulateMedia({ colorScheme: scheme });
       await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });

@@ -1,4 +1,3 @@
-import { Avatar } from '@astryxdesign/core/Avatar';
 import { ChatMessage, ChatMessageBubble, ChatMessageMetadata, ChatSystemMessage } from '@astryxdesign/core/Chat';
 import { Spinner } from '@astryxdesign/core/Spinner';
 import { Text } from '@astryxdesign/core/Text';
@@ -6,6 +5,7 @@ import { Timestamp } from '@astryxdesign/core/Timestamp';
 import type { Employee, Message } from '../../../shared';
 import { ActivityGroupRow } from './ActivityGroupRow';
 import { ApprovalRow } from './ApprovalRow';
+import { Portrait as Face } from '../ui/Portrait';
 import { bubbleGroups, type TimelineItem } from './model';
 
 interface Props {
@@ -18,7 +18,7 @@ interface Props {
 }
 
 function Portrait({ employee }: { employee: Employee }) {
-  return <Avatar name={employee.persona.name} src={employee.persona.portraitUrl || undefined} size={32} tooltip={false} />;
+  return <Face person={{ id: employee.id, name: employee.persona.name, portraitUrl: employee.persona.portraitUrl }} size={32} />;
 }
 
 /** The children of a ChatMessageList. */
@@ -57,6 +57,10 @@ export function Messages({ items, employee, typing, newest, newestUser }: Props)
             );
           case 'employee': {
             const groups = bubbleGroups(item.parts);
+            let lastText = -1;
+            item.parts.forEach((p, i) => {
+              if (p.kind === 'message') lastText = i;
+            });
             return (
               <ChatMessage key={item.key} sender="assistant" avatar={<Portrait employee={employee} />}>
                 {item.parts.map((p, i) => {
@@ -66,7 +70,7 @@ export function Messages({ items, employee, typing, newest, newestUser }: Props)
                         key={p.key}
                         group={groups[i]}
                         metadata={
-                          newest && p.message.id === newest.id ? (
+                          i === lastText || (newest && p.message.id === newest.id) ? (
                             <ChatMessageMetadata timestamp={<Timestamp value={p.message.createdMs} format="time" />} />
                           ) : undefined
                         }>

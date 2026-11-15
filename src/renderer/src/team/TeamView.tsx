@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Layout, LayoutContent, LayoutHeader } from '@astryxdesign/core/Layout';
-import { Avatar } from '@astryxdesign/core/Avatar';
+import { Link } from '@astryxdesign/core/Link';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { Collapsible } from '@astryxdesign/core/Collapsible';
@@ -24,7 +24,7 @@ import { useStore } from '../api/store';
 import type { TeamRange } from '../api/store';
 import { ApiClientError } from '../api/client';
 import { useShot } from '../fixtures/shot';
-import { portraitSrc } from '../profile/shotState';
+import { Portrait } from '../ui/Portrait';
 
 const HOUR = 3_600_000;
 const ANSWER_ROWS = 5;
@@ -53,8 +53,8 @@ function Figure({ label, value, change }: { label: string; value: string; change
   return (
     <VStack gap={1}>
       <Text type="supporting">{label}</Text>
-      <Text type="display-3">{value}</Text>
-      <Text type="supporting">{change ?? ' '}</Text>
+      <Text type="display-2" data-am-num="" data-am-figure="">{value}</Text>
+      <Text type="supporting" data-am-num="">{change ?? ' '}</Text>
     </VStack>
   );
 }
@@ -107,9 +107,9 @@ function PeopleTable({ report }: { report: TeamReport }) {
           renderCell: (r: Row) => (
             <List density="compact" edge="flush">
               <ListItem
-                label={r.name}
+                label={<Text type="label" maxLines={1}>{r.name}</Text>}
                 description={r.role}
-                startContent={<Avatar name={r.name} src={portraitSrc(r.portraitUrl)} size={32} tooltip={false} />}
+                startContent={<Portrait person={{ id: r.employeeId, name: r.name, portraitUrl: r.portraitUrl }} size={32} />}
                 onClick={() => void select(r.employeeId)}
               />
             </List>
@@ -133,7 +133,7 @@ function Ask() {
           answer: 'Maya closed the most tasks this week, with 10 of the 25.',
           sql: "SELECT name, SUM(tasks_done) AS tasks FROM team_runs WHERE week = current_week() GROUP BY name ORDER BY tasks DESC",
           columns: ['Employee', 'Tasks done'],
-          rows: [['Maya Okafor', '10'], ['Priya Raman', '5'], ['Jonas Weber', '5'], ['Ines Moreau', '5'], ['Kenji Watanabe', '4'], ['Amara Diallo', '3'], ['Marcus Reyes', '2']],
+          rows: [['Maya Chen', '10'], ['Priya Raman', '5'], ['Jonas Weber', '5'], ['Ines Moreau', '5'], ['Kenji Watanabe', '4'], ['Amara Lim', '3'], ['Marcus Reyes', '2']],
           conversationId: 'shot',
         }
       : null,
@@ -196,6 +196,9 @@ function shotReport(r: TeamReport | undefined, p: URLSearchParams | undefined): 
   if (!r || !p) return r;
   if (p.get('empty') === '1') return { ...r, rows: [], totals: { activeMs: 0, tasksDone: 0, costUsd: 0 } };
   if (p.get('ask')) return { ...r, source: 'databricks', syncedMs: Date.now() - 2 * 60_000 };
+  if (p.get('synced') === '1') {
+    return { ...r, source: 'databricks', syncedMs: Date.now() - 2 * 60_000, experimentUrl: 'https://dbc-example.cloud.databricks.com/ml/experiments/1234567890' };
+  }
   return r;
 }
 
@@ -253,14 +256,24 @@ export function TeamView() {
     body = <EmptyState title="No work yet" description="Numbers appear once your team starts on tasks." />;
   } else {
     body = (
-      <VStack gap={6}>
+      <VStack gap={10}>
         <Figures report={report} range={range} />
         <PeopleTable report={report} />
         {ask ? <Ask /> : null}
         {synced && report.syncedMs ? (
-          <HStack gap={1}>
-            <Text type="supporting">Synced</Text>
+          <HStack gap={1} vAlign="center" data-am-num="" data-am-synced="">
+            <Text type="supporting">{report.source === 'databricks' ? 'Synced with Databricks ·' : 'Synced ·'}</Text>
             <Timestamp value={report.syncedMs} format="relative" />
+            {report.experimentUrl ? (
+              <>
+                <Text type="supporting">·</Text>
+                <Text type="supporting">
+                  <Link href={report.experimentUrl} target="_blank">
+                    Open traces
+                  </Link>
+                </Text>
+              </>
+            ) : null}
           </HStack>
         ) : null}
       </VStack>

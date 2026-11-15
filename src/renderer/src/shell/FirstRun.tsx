@@ -1,13 +1,13 @@
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { Button } from '@astryxdesign/core/Button';
 import { Center } from '@astryxdesign/core/Center';
-import { Avatar, } from '@astryxdesign/core/Avatar';
+import { Portrait } from '../ui/Portrait';
 import { AvatarGroup } from '@astryxdesign/core/AvatarGroup';
 import { routes } from '../../../shared';
 import { useStore } from '../api/store';
 
 const FACES = [
-  { name: 'Maya Okafor', file: 'maya.jpg' },
+  { name: 'Maya Chen', file: 'maya.jpg' },
   { name: 'Priya Raman', file: 'priya.jpg' },
   { name: 'Jonas Weber', file: 'jonas.jpg' },
 ];
@@ -19,7 +19,7 @@ export function FirstRun() {
         icon={
           <AvatarGroup size={72}>
             {FACES.map((f) => (
-              <Avatar key={f.file} name={f.name} src={routes.portrait(f.file)} />
+              <Portrait key={f.file} person={{ id: f.file, name: f.name, portraitUrl: routes.portrait(f.file) }} size={72} />
             ))}
           </AvatarGroup>
         }

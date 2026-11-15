@@ -78,6 +78,11 @@ function createWindow(url: string | null, file: { path: string; shot: string } |
     },
   });
   win.once('ready-to-show', () => win?.show());
+  // Links that ask for a new window (for example "Open traces") open in the user's browser, never in the app.
+  win.webContents.setWindowOpenHandler(({ url: target }) => {
+    if (/^https?:\/\//.test(target) && !TEST_MODE) void shell.openExternal(target);
+    return { action: 'deny' };
+  });
   win.webContents.on('did-finish-load', () => {
     void win?.webContents.insertCSS(DRAG_CSS);
   });

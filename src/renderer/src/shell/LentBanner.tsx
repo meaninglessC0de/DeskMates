@@ -19,7 +19,7 @@ export function LentBanner({ employee }: { employee: Employee }) {
         <StackItem size="fill">
           <VStack gap={0.5}>
             <Text type="label">{`${employee.persona.firstName} is using your screen`}</Text>
-            <Text type="supporting">{until ? <>Ends in <Countdown untilMs={until} /></> : 'Until you take it back'}</Text>
+            <Text type="supporting" data-am-num="">{until ? <>Ends in <Countdown untilMs={until} /></> : 'Until you take it back'}</Text>
           </VStack>
         </StackItem>
         <Button label="Take it back" variant="secondary" size="sm" onClick={() => void useStore.getState().revokeScreen(employee.id)} />

@@ -40,7 +40,7 @@ export function ActivityGroupRow({ group }: { group: ActivityGroup }) {
   );
 
   return (
-    <Collapsible chevronPosition="start" defaultIsOpen={false} trigger={trigger}>
+    <Collapsible data-am-activity="" chevronPosition="start" defaultIsOpen={false} trigger={trigger}>
       <VStack gap={0}>
         {rows.map((step) => (
           <Item
@@ -53,7 +53,7 @@ export function ActivityGroupRow({ group }: { group: ActivityGroup }) {
               </Text>
             }
             description={step.peer ? step.peer.text : undefined}
-            endContent={step.endedMs ? <Text type="supporting" color="secondary">{formatWorked(step.endedMs - step.startedMs)}</Text> : undefined}
+            endContent={step.endedMs ? <Text data-am-num="" type="supporting" color="secondary">{formatWorked(step.endedMs - step.startedMs)}</Text> : undefined}
           />
         ))}
         {hidden > 0 ? <Button label={`Show ${hidden} more`} variant="ghost" size="sm" onClick={() => setShowAll(true)} /> : null}

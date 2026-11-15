@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { AspectRatio } from '@astryxdesign/core/AspectRatio';
 import { Button } from '@astryxdesign/core/Button';
+import { Center } from '@astryxdesign/core/Center';
 import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
@@ -23,12 +25,12 @@ const PLAN_ROWS = 6;
 const NO_PLAN: PlanStep[] = [];
 
 /** "Working · 42 min", or "You're in control". */
-export function StateLine({ employee }: { employee: Employee }) {
+export function StateLine({ employee, hasDot = true }: { employee: Employee; hasDot?: boolean }) {
   const controlling = employee.controlledByUser;
   const label = controlling ? "You're in control" : STATE_LABEL[employee.state];
   return (
     <HStack gap={2} vAlign="center">
-      <StatusDot variant={controlling ? 'neutral' : (DOT[employee.state] ?? 'neutral')} label={label} />
+      {hasDot ? <StatusDot variant={controlling ? 'neutral' : (DOT[employee.state] ?? 'neutral')} label={label} /> : null}
       <Text type="supporting">
         {label}
         {employee.state === 'working' && !controlling ? ' · ' : ''}
@@ -38,31 +40,78 @@ export function StateLine({ employee }: { employee: Employee }) {
   );
 }
 
+/** The shot flag `screen=connecting|error` wins over the stream's own state. */
+export function shownScreenState(state: SpaceState): SpaceState {
+  const forced = getShot()?.params.get('screen');
+  return forced === 'connecting' || forced === 'error' ? forced : state;
+}
+
+/** The header's quiet stream marker: a green dot and "Live", or a spinner and "Connecting". */
+export function LiveMarker({ state }: { state: SpaceState }) {
+  const shown = shownScreenState(state);
+  if (shown === 'live') {
+    return (
+      <HStack gap={1.5} vAlign="center" data-am-live="">
+        <StatusDot variant="success" label="Live" />
+        <Text type="supporting">Live</Text>
+      </HStack>
+    );
+  }
+  if (shown === 'connecting') {
+    return (
+      <HStack gap={1.5} vAlign="center">
+        <Spinner size="sm" aria-label="Connecting" />
+        <Text type="supporting">Connecting</Text>
+      </HStack>
+    );
+  }
+  return null;
+}
+
 /** The live screen and its states: connecting, off, can't show, and lent to the employee. */
-export function Screen({ employee }: { employee: Employee }) {
+export function Screen({ employee, onState }: { employee: Employee; onState?: (s: SpaceState) => void }) {
   const s = useStore.getState();
   const first = employee.persona.firstName;
-  const [state, setState] = useState<SpaceState>('connecting');
+  const [state, setStateLocal] = useState<SpaceState>('connecting');
+  const setState = (next: SpaceState): void => {
+    setStateLocal(next);
+    onState?.(next);
+  };
   const [attempt, setAttempt] = useState(0);
-  const forced = getShot()?.params.get('screen');
-  const shown = forced === 'connecting' || forced === 'error' ? forced : state;
+  const shown = shownScreenState(state);
 
   if (employee.screenGrant) {
-    return <EmptyState isCompact title={`${first} is on your screen`} />;
+    return (
+      <VStack data-am-screen="" data-am-screen-state="lent">
+        <AspectRatio ratio={16 / 10}>
+          <Center height="100%">
+            <EmptyState isCompact title={`${first} is on your screen`} />
+          </Center>
+        </AspectRatio>
+      </VStack>
+    );
   }
   if (employee.state === 'offline' || employee.desktopSinceMs === null) {
     return (
-      <EmptyState
-        isCompact
-        title="Desktop is off"
-        actions={<Button label="Start desktop" variant="primary" onClick={() => void s.desktopAction(employee.id, 'start')} />}
-      />
+      <VStack data-am-screen="" data-am-screen-state="off">
+        <AspectRatio ratio={16 / 10}>
+          <Center height="100%">
+            <EmptyState
+              isCompact
+              title="Desktop is off"
+              actions={<Button label="Start desktop" variant="secondary" onClick={() => void s.desktopAction(employee.id, 'start')} />}
+            />
+          </Center>
+        </AspectRatio>
+      </VStack>
     );
   }
   return (
     <VStack gap={2}>
-      <SpaceView key={attempt} employeeId={employee.id} mode={employee.controlledByUser ? 'control' : 'view'} onState={setState} />
-      {shown === 'connecting' ? (
+      <VStack data-am-screen="" data-am-screen-state={shown} data-am-control={employee.controlledByUser ? 'true' : 'false'}>
+        <SpaceView key={attempt} employeeId={employee.id} mode={employee.controlledByUser ? 'control' : 'view'} onState={setState} />
+      </VStack>
+      {shown === 'connecting' && !onState ? (
         <HStack gap={2} vAlign="center">
           <Spinner size="sm" aria-label="Connecting" />
           <Text type="supporting">{`Connecting to ${first}'s desktop`}</Text>
@@ -119,7 +168,7 @@ function LendScreen({ employee }: { employee: Employee }) {
   );
 }
 
-/** Take control (primary) or Give back, and Lend my screen. */
+/** Take control (secondary: Summon meeting is the window's one filled button) or Give back (filled while you drive), and Lend my screen. */
 export function Actions({ employee }: { employee: Employee }) {
   const s = useStore.getState();
   if (employee.state === 'offline' || employee.desktopSinceMs === null || employee.screenGrant) return null;
@@ -127,7 +176,7 @@ export function Actions({ employee }: { employee: Employee }) {
     <VStack gap={1}>
       <Button
         label={employee.controlledByUser ? 'Give back' : 'Take control'}
-        variant="primary"
+        variant={employee.controlledByUser ? 'primary' : 'secondary'}
         width="100%"
         clickAction={async () => {
           await s.setControl(employee.id, !employee.controlledByUser);
@@ -155,14 +204,14 @@ export function PlanSection({ employee }: { employee: Employee }) {
       {plan.length === 0 ? (
         <Text type="supporting">No plan yet</Text>
       ) : (
-        <VStack gap={0}>
+        <VStack gap={0} data-am-plan="">
           {rows.map((step, i) => (
             <Item
               key={`${i}-${step.title}`}
               density="compact"
               startContent={<PlanIcon step={step} working={employee.state === 'working'} />}
               label={
-                <Text type="body" color={step.status === 'in_progress' ? 'primary' : 'secondary'}>
+                <Text type="body" color={step.status === 'in_progress' ? 'primary' : 'secondary'} maxLines={1}>
                   {step.title}
                 </Text>
               }

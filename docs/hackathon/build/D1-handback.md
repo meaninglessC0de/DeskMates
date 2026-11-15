@@ -6,7 +6,7 @@ Status: done. No store, action, route or component-prop change (two optional pro
 
 ## Evidence
 - `npm run typecheck:area -- src/renderer`: no type errors. `npm run purity -- src/renderer`: 36 files, no findings.
-- `npx vitest run src/renderer/src`: 76 of 77 pass. The one failure, `thread/model.test.ts` "turns the Maya fixture into a day, your message and one employee run", is **time of day, not this pass**: the fixture's messages are minutes before "now", so between 00:00 and about 01:00 they straddle midnight and the timeline (correctly) adds a "Yesterday" divider. I did not touch `model.ts`. It passes after about 01:00; a robust fix is to pin `now` to midday in that test.
+- `npx vitest run src/renderer/src`: 77 of 77 pass. `thread/model.test.ts` now pins the clock to midday with `vi.hoisted` + fake `Date` before the fixtures load, so it no longer fails for the hour after midnight (the fixtures build their times from `Date.now()` at import).
 - `npm run shots` for shell, thread, desktop, hire, profile, settings, team: see the last section for counts (0 failed). Real photos are now the default in every shot; monogram shots: `shell/sidebar-monogram`, `thread/maya-monogram`, `hire/step-2-monogram`, `team/week-monogram`.
 - Live run (mock office `MOCK_LLM=1 DESKTOPS=mock MOCK_SPEED=5 MAX_TEAM=6`, port 4331, `data-d1`, seeded; Vite 4351 proxied; Playwright script in the scratchpad `d1/live.mjs`, no `?shot`): load, open Maya, open the desktop panel, approve, send a message and let the scripted sequence play (15 s), approve the scripted request, hire dialog to step 2 (Writer), Shuffle, profile (⌘I), Team, Settings. **0 console errors, no error boundary.** Screenshots: `shots/live-d1/{desktop-open,thread-after-send,approval,hire-step-2,profile,team,settings}.png`. (One earlier run logged "createRoot() on a container that has already been passed": that is Vite HMR re-running `main.tsx` when another agent edited `ui/styles/stage.ts` mid-run, not an app bug; the rerun was clean.)
 
@@ -41,5 +41,8 @@ Status: done. No store, action, route or component-prop change (two optional pro
 ## Notes for others
 - Stage agent: `Portrait` now uses the square crop and a 1 px hairline for photos; tints 0-3 are the brand hues. Nothing to change on your side.
 - Brand: `Logo` is used at 24 px in the sidebar header (the interim two-ring mark is deleted). Tints use the brand angles (262, 62, 357, 160 from the brand README; 300, 200, 90, 25 between). `--am-tint-line-*` is oklch(0.75 0.15 h), the brand tile strength, for the stage hairline.
-- The cast is 7 now but the office still has a `writer` preset; the fixtures keep Hannah for that preset (her file still exists), and the hire shots use `role=sales` so they show a distinct face.
+- Cast is eight again (Hannah back, Amara has a new face; surnames Chen and Lim). Hire shots use `role=sales` (Marcus).
 - Processes: mock office 4331 and Vite 4351 are stopped at the end of this pass; `data-d1/` can be deleted.
+
+## Shot counts (final run)
+shell 16, thread 30, desktop 20, hire 16, profile 12, settings 6, team 20: all 0 failed (light and dark each).

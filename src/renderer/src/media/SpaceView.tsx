@@ -257,7 +257,7 @@ function SpaceSession({ employeeId, mode, onState, onFallback }: SpaceViewProps)
   }, [view]);
 
   return (
-    <Card variant="muted" padding={0}>
+    <Card variant="muted" padding={0} data-am-space={mode}>
       {view.kind === 'media' ? (
         <AspectRatio ratio={ratio} fit="contain">
           <canvas ref={setCanvas} aria-label={mode === 'control' ? 'Desktop, in control' : 'Desktop'} />

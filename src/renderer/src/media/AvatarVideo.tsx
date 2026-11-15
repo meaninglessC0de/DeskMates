@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import { AspectRatio } from '@astryxdesign/core/AspectRatio';
 
@@ -9,11 +9,15 @@ export interface AvatarVideoProps {
   name: string;
   /** Receives the `<video>` element, for `captureStill`. */
   videoRef?: Ref<HTMLVideoElement>;
+  /** Width over height of the box to fill (cover, anchored at the top so heads are never cut). Default 4:5. */
+  ratio?: number;
 }
 
 /** The avatar's live video (and its voice). With no video track the still `fallbackSrc` shows as the poster. */
-export function AvatarVideo({ track, audio, fallbackSrc, name, videoRef }: AvatarVideoProps) {
+export function AvatarVideo({ track, audio, fallbackSrc, name, videoRef, ratio = 4 / 5 }: AvatarVideoProps) {
   const ref = useRef<HTMLVideoElement | null>(null);
+  // Visual only: whether frames are showing, so the stage can cross-fade from the still (data-am-playing).
+  const [playing, setPlaying] = useState(false);
   const setRef = useCallback(
     (el: HTMLVideoElement | null) => {
       ref.current = el;
@@ -26,12 +30,24 @@ export function AvatarVideo({ track, audio, fallbackSrc, name, videoRef }: Avata
     const el = ref.current;
     if (!el) return;
     const tracks = [track, audio].filter((t): t is MediaStreamTrack => t !== null);
+    setPlaying(false);
     el.srcObject = tracks.length ? new MediaStream(tracks) : null;
     if (tracks.length) void el.play().catch(() => undefined);
   }, [track, audio]);
   return (
-    <AspectRatio ratio={4 / 5} fit="cover">
-      <video ref={setRef} poster={fallbackSrc} autoPlay playsInline muted={audio === null} aria-label={name} />
+    <AspectRatio ratio={ratio} fit="cover" data-am-media="avatar">
+      <video
+        data-am-video=""
+        data-am-playing={playing ? 'on' : 'off'}
+        onPlaying={() => setPlaying(track !== null)}
+        onEmptied={() => setPlaying(false)}
+        ref={setRef}
+        poster={fallbackSrc}
+        autoPlay
+        playsInline
+        muted={audio === null}
+        aria-label={name}
+      />
     </AspectRatio>
   );
 }

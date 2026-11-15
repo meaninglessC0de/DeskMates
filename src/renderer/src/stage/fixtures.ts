@@ -28,7 +28,8 @@ interface Scenario {
 const [MAYA, PRIYA, JONAS, INES] = [EMP.maya, EMP.priya, EMP.jonas, EMP.ines];
 const ONE = [MAYA];
 const THREE = [MAYA, INES, PRIYA];
-const FOUR = [MAYA, INES, PRIYA, JONAS];
+// Hire order and the logo's order (blue, orange / pink, green) once tints follow the four brand colours.
+const FOUR = [MAYA, PRIYA, JONAS, INES];
 
 const MAYA_SAYS = { from: 0, text: "I'd fix the cart total first, then run the tests again." };
 const ASK = { from: 'user' as const, text: 'Can you take a look at the checkout page?', final: true };
@@ -54,7 +55,7 @@ const scenarios: Record<string, Scenario> = {
   'm3': { ids: THREE, speaker: { who: 0, phase: 'speaking' }, captions: [MEETING_SAYS] },
   'm3-quiet': { ids: THREE },
   'm3-thinking': { ids: THREE, speaker: { who: 2, phase: 'thinking' }, captions: [{ from: 'user', text: 'Priya, what do you think?', final: true }] },
-  'm4': { ids: FOUR, speaker: { who: 2, phase: 'speaking' }, captions: [{ from: 2, text: 'I can write the announcement once Maya has deployed.' }] },
+  'm4': { ids: FOUR, speaker: { who: 1, phase: 'speaking' }, captions: [{ from: 1, text: 'I can write the announcement once Maya has deployed.' }] },
   'm4-you-speaking': { ids: FOUR, captions: [{ from: 'user', text: 'Priya, what do you think about the launch email', final: false }] },
   'm3-spotlight': { ids: THREE, speaker: { who: 0, phase: 'speaking' }, captions: [{ from: 0, text: 'Here is the checkout bug.' }], view: { pinned: MAYA } },
   'm4-spotlight': { ids: FOUR, speaker: { who: 0, phase: 'speaking' }, captions: [{ from: 0, text: 'Here is the checkout bug.' }], view: { pinned: MAYA } },
@@ -91,15 +92,21 @@ export function buildScenario(name: string): CallSlice | null {
   return { id: info.id, info, employeeIds: sc.ids, state, mode: 'audio', participants, speaker, captions, captionSeq: captions.length, hands: [] };
 }
 
-/** `s=<scenario>` and `portraits=none` from the shot URL, or null outside shot mode. */
+/**
+ * `s=<scenario>` and `portraits` from the shot URL, or null outside shot mode. Faces are the cast's real stills by
+ * default (`realPortraits`); `portraits=none` shows the monogram fallback.
+ */
 export function stageShot(): { scenario: string | null; view: StageShotView; noPortraits: boolean; realPortraits: boolean } | null {
   const shot = getShot();
   if (!shot || shot.area !== 'stage') return null;
   const scenario = shot.params.get('s');
-  const portraits = shot.params.get('portraits');
-  return { scenario, view: scenarioView(scenario), noPortraits: portraits !== 'yes' && portraits !== 'real', realPortraits: portraits === 'real' };
+  const noPortraits = shot.params.get('portraits') === 'none';
+  return { scenario, view: scenarioView(scenario), noPortraits, realPortraits: !noPortraits };
 }
 
-/** Real JPEGs from config/mock-desktops, used as stand-in portraits to check the composition once portraits exist. */
-export const realPortraitUrl = (index: number): string =>
-  new URL(`../../../../config/mock-desktops/thumb-${(index % 5) + 1}.jpg`, import.meta.url).href;
+/**
+ * The cast's real stills from config/portraits (4:5; the stage derives the square `-sq` file), imported directly
+ * so stage shots show real faces whatever the shot script answers for `/media/portraits/*`.
+ */
+export const realPortraitUrl = (firstName: string): string =>
+  new URL(`../../../../config/portraits/${firstName.toLowerCase()}.jpg`, import.meta.url).href;

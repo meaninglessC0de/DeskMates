@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStreamingText } from '@astryxdesign/core/hooks';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Text } from '@astryxdesign/core/Text';
@@ -48,22 +48,36 @@ function Speech({ line }: { line: Extract<CaptionLine, { kind: 'speech' }> }) {
   return (
     <HStack gap={2} vAlign="center" hAlign="center" maxWidth={MAX_WIDTH}>
       {line.name ? (
-        <Text type="label" color={line.isUser ? 'secondary' : 'primary'}>
+        <Text type="supporting" color="secondary">
           {line.name}
         </Text>
       ) : null}
-      <Text type="body" size="lg" color={line.isUser ? 'secondary' : 'primary'} maxLines={1}>
+      <Text data-am="caption-text" type="large" color={line.isUser ? 'secondary' : 'primary'} maxLines={1}>
         {tail(shown)}
       </Text>
     </HStack>
   );
 }
 
-/** The caption row keeps its height when empty or off, so nothing above it moves. */
+/**
+ * The caption row keeps its height when empty or off, so nothing above it moves. After silence the last line
+ * stays in place and fades out (`data-am-shown`) instead of disappearing at once.
+ */
 export function Captions({ line, isOn }: { line: CaptionLine | null; isOn: boolean }) {
+  const last = useRef<CaptionLine | null>(line);
+  if (line) last.current = line;
+  const kept = isOn ? last.current : null;
   return (
-    <HStack height={ROW_HEIGHT} hAlign="center" vAlign="center" maxWidth={MAX_WIDTH} width="100%" aria-live={isOn ? 'polite' : 'off'}>
-      {!isOn || !line ? null : line.kind === 'hint' ? <Text type="supporting">{line.text}</Text> : <Speech line={line} />}
+    <HStack
+      data-am="caption"
+      data-am-shown={isOn && line ? 'on' : 'off'}
+      height={ROW_HEIGHT}
+      hAlign="center"
+      vAlign="center"
+      maxWidth={MAX_WIDTH}
+      width="100%"
+      aria-live={isOn ? 'polite' : 'off'}>
+      {!kept ? null : kept.kind === 'hint' ? <Text type="supporting">{kept.text}</Text> : <Speech line={kept} />}
     </HStack>
   );
 }

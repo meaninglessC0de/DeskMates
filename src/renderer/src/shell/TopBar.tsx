@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { LayoutHeader } from '@astryxdesign/core/Layout';
 import { HStack } from '@astryxdesign/core/HStack';
 import { StackItem } from '@astryxdesign/core/Stack';
-import { Avatar } from '@astryxdesign/core/Avatar';
 import { AlertDialog } from '@astryxdesign/core/AlertDialog';
 import { Button } from '@astryxdesign/core/Button';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
@@ -18,6 +17,7 @@ import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
 import { Elapsed } from './Elapsed';
 import { topBarLine } from './presence';
+import { Portrait } from '../ui/Portrait';
 
 export interface TopBarProps {
   employee: Employee;
@@ -42,10 +42,10 @@ export function TopBar({ employee }: TopBarProps) {
               <Item
                 density="compact"
                 onClick={() => s.setUi({ profileOpen: true })}
-                startContent={<Avatar name={name} src={portraitUrl || undefined} size={32} tooltip={false} />}
+                startContent={<Portrait person={{ id: employee.id, name, portraitUrl }} size={32} />}
                 label={<Text type="large">{name}</Text>}
                 description={
-                  <Text type="supporting">
+                  <Text type="supporting" data-am-num="">
                     {line.prefix}
                     {line.timer ? <Elapsed startMs={employee.stateSinceMs} /> : null}
                   </Text>
@@ -75,7 +75,7 @@ export function TopBar({ employee }: TopBarProps) {
             hasChevron={false}
             menuWidth={220}
             alignment="end"
-            renderTrigger={(props) => <IconButton {...props} label="More" variant="ghost" icon={<Icon icon={MoreHorizontal} size="sm" />} />}
+            renderTrigger={(props) => <IconButton {...props} label="More" tooltip="More" variant="ghost" icon={<Icon icon={MoreHorizontal} size="sm" />} />}
             items={[
               { label: 'Profile', endContent: <Kbd keys="mod+i" />, onClick: () => s.setUi({ profileOpen: true }) },
               {

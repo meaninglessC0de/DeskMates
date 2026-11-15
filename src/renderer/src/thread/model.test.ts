@@ -1,4 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+
+// The fixtures are built relative to "now" when they are imported; pin the clock to midday so a run near
+// midnight does not split the fixture thread across a day boundary. vi.hoisted runs before the imports.
+vi.hoisted(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 10, 14, 12, 0, 0));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 import { EMP, NOW, ago, threads } from '../fixtures/data';
 import { emptyThread } from '../api/reducer';
 import { bubbleGroups, buildTimeline, dayLabel, formatWorked } from './model';

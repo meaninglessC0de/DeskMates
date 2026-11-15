@@ -36,3 +36,32 @@ Every custom piece is a small wrapper around Astryx components. Styling is CSS t
 | `data-am-synced` | `HStack` | Quiet underlined "Open traces" link in the Databricks synced line | none |
 
 Every motion sits inside `@media (prefers-reduced-motion: no-preference)` and uses `--duration-fast*` and `--ease-entrance`.
+
+## Stage agent (D2): the call and meeting stage
+
+All rules in `ui/styles/stage.ts`, scoped under `[data-am="stage"]` (the stage's `AppShell`, inside the nested dark `Theme`), tokens only; every transition inside the reduced-motion guard.
+
+### `StageTile` (`ui/StageTile.tsx`)
+- **What:** the one frame for every tile on the stage: `SelectableCard` (when pressable) or `Card`, `kind="face" | "desktop"`, `tint`, `hasRing`, `hasMedia`, `isDimmed`, `chip`. Draws a 1 px hairline (`::before`, in the person's `--am-tint-line` for faces, a 10 % ink line for desktops) and the 2 px speaking ring (`::after`, `--color-accent`, fades in `--duration-fast`) **above** video, photo and canvas; container radius, clipped; desktops letterbox on `--color-background-body`. No photo: the person's tint as a dim wash (`--am-tint-line` 34 % into body) and the monogram as a darker mark on a bright soft disc of the same tint (the logo's coloured squares with their dash). Photo or video: a short eased gradient scrim under the label only.
+- **Gap filled:** Astryx has no media tile: SelectableCard's ring is an inset shadow that video covers, there is no per-person colour, and Overlay's scrim is a solid band.
+
+### `StageChip` (`ui/StageChip.tsx`)
+- **What:** the label in a tile's corner: name in label weight, one supporting word (role in a meeting, or "Speaking", "Thinking", "Listening", "Joining", "Couldn't join"), optional spinner before and action after ("Ask again", the spotlight's close). Plain text on a face (over the scrim or the wash); a small blurred capsule on a desktop, so the dock is not darkened by a full-width scrim. Truncates with an ellipsis.
+- **Gap filled:** Token is a tag with one tone and no secondary text.
+
+### `ControlPill` (`ui/ControlPill.tsx`)
+- **What:** a capsule `HStack` (`role="toolbar"`) holding the call controls; buttons inside become 40 px circles (`--size-element-lg` + one step); End is the only coloured control (error mixed into body, primary text) after a divider gap.
+- **Gap filled:** no pill container in Astryx (ux-spec gap G6); Toolbar and Card have fixed radii.
+
+### Styling hooks (attributes on plain Astryx components)
+| Hook | On | What it does | Gap |
+| --- | --- | --- | --- |
+| `data-am="composer"` | `VStack` around `ChatComposer` | One-line type box docked at the bottom of the right column: body laid out as a row with the send button inline, container radius, hairline, input capped at one line | ChatComposer has no single-line layout |
+| `data-am="caption"`, `data-am-shown` | `HStack` | The caption line keeps the last words in place and fades them out after silence; name and words share a baseline | no fade-out on unmount |
+| `data-am="stage-body"` (keyed by layout) and the stage root | `VStack`, `AppShell` | 230 ms cross-fade when the stage opens and when the layout changes | no cross-fade primitive |
+| `data-am="video-layer"`, `data-am-playing` | `VStack` over the still; `<video>` in `media/AvatarVideo` | The live video fades in over the still once frames arrive; still and video share the square framing (`-sq.jpg`), crop (`cover`) and anchor (40 %), so nothing jumps | no media cross-fade |
+| `data-am-video` | `<video>` in `AvatarVideo` | `object-position: center 40%` so heads stay whole in 4:3 tiles | AspectRatio `fit` has no anchor |
+| `data-am-space` | `Card` in `media/SpaceView` | Transparent, square-cornered inside the tile frame | none (composition) |
+| `data-am="stage-top"` | `HStack` | Tabular figures for the call timer | Timer has no tabular option |
+| `data-am="inset"` | `VStack` around a small tile laid on a large one | `--shadow-high` so it lifts off the tile under it | none |
+| `data-am-picker`, `data-am="people-stack"` | `List`, `HStack` in the summon picker | Reuses the sidebar's `data-am-people` row style; overlapping 24 px portraits with a popover-coloured cut | AvatarGroup cannot take `Portrait` |

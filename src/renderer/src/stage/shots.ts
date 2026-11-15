@@ -1,3 +1,4 @@
+// Faces are the cast's real stills (config/portraits) unless the query says portraits=none.
 export const shots: { name: string; query?: string }[] = [
   // one-to-one
   { name: 'connecting', query: 's=connecting' },
@@ -13,8 +14,6 @@ export const shots: { name: string; query?: string }[] = [
   { name: 'mic-blocked', query: 's=mic-blocked' },
   { name: 'face-focus', query: 's=face-focus' },
   { name: 'side-by-side', query: 's=side-by-side' },
-  { name: 'portraits', query: 's=speaking&portraits=yes' },
-  { name: 'portraits-real', query: 's=speaking&portraits=real' },
   // meetings
   { name: 'meeting-2', query: 's=m2' },
   { name: 'meeting', query: 's=m3' },
@@ -30,8 +29,11 @@ export const shots: { name: string; query?: string }[] = [
   { name: 'meeting-3-failed', query: 's=m3-failed' },
   { name: 'meeting-3-no-answer', query: 's=m3-no-answer' },
   { name: 'meeting-3-left', query: 's=m3-left' },
-  { name: 'meeting-3-portraits', query: 's=m3&portraits=yes' },
-  { name: 'meeting-3-portraits-real', query: 's=m3&portraits=real' },
+  // the fallback before photos load or for a face with no photo: the monogram on the person's tint
+  { name: 'one-to-one-monogram', query: 's=speaking&portraits=none' },
+  { name: 'meeting-monogram', query: 's=m3&portraits=none' },
+  { name: 'meeting-4-monogram', query: 's=m4&portraits=none' },
+  { name: 'meeting-4-spotlight-monogram', query: 's=m4-spotlight&portraits=none' },
   // the summon picker over the app
   { name: 'picker', query: 's=picker&open=summon' },
 ];

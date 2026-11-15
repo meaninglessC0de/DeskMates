@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Avatar } from '@astryxdesign/core/Avatar';
-import { AvatarGroup } from '@astryxdesign/core/AvatarGroup';
 import { Button } from '@astryxdesign/core/Button';
 import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
@@ -12,7 +10,7 @@ import { Tooltip } from '@astryxdesign/core/Tooltip';
 import { Check } from 'lucide-react';
 import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
-import { PresenceDot } from '../shell/PresenceDot';
+import { Portrait } from '../ui/Portrait';
 
 export interface SummonPickerProps {
   isOpen: boolean;
@@ -48,15 +46,15 @@ export function SummonPicker({ isOpen, onOpenChange }: SummonPickerProps) {
         header={<DialogHeader title="Summon meeting" onOpenChange={onOpenChange} />}
         content={
           <LayoutContent>
-            <List density="spacious">
+            <List density="balanced" data-am-people="" data-am-picker="">
               <ListItem
-                label="Everyone"
+                label={<Text type="label">Everyone</Text>}
                 startContent={
-                  <AvatarGroup size="sm">
+                  <HStack data-am="people-stack" vAlign="center">
                     {everyone.map((e) => (
-                      <Avatar key={e.id} name={e.persona.name} src={e.persona.portraitUrl || undefined} tooltip={false} />
+                      <Portrait key={e.id} person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={24} />
                     ))}
-                  </AvatarGroup>
+                  </HStack>
                 }
                 endContent={allPicked ? <Icon icon={Check} size="sm" /> : undefined}
                 isDisabled={everyone.length === 0}
@@ -70,9 +68,9 @@ export function SummonPicker({ isOpen, onOpenChange }: SummonPickerProps) {
                 const row = (
                   <ListItem
                     key={e.id}
-                    label={e.persona.name}
+                    label={<Text type="label" maxLines={1}>{e.persona.name}</Text>}
                     description={off ?? e.persona.role}
-                    startContent={<Avatar name={e.persona.name} src={e.persona.portraitUrl || undefined} size={36} tooltip={false} status={<PresenceDot state={e.state} />} />}
+                    startContent={<Portrait person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={40} presence={e.state} />}
                     endContent={
                       isPicked ? (
                         <Icon icon={Check} size="sm" />

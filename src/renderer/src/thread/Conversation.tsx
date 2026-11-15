@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Layout, LayoutContent } from '@astryxdesign/core/Layout';
-import { Avatar } from '@astryxdesign/core/Avatar';
 import { Button } from '@astryxdesign/core/Button';
 import { ChatComposer, ChatLayout, ChatMessageList } from '@astryxdesign/core/Chat';
 import { Drawer } from '@astryxdesign/core/Drawer';
@@ -14,6 +13,7 @@ import { getShot } from '../fixtures/shot';
 import { TopBar } from '../shell/TopBar';
 import { DesktopExpanded, DesktopPanel, DesktopSide } from '../desktop/DesktopPanel';
 import { Messages } from './Messages';
+import { Portrait } from '../ui/Portrait';
 import { StateBanner } from './StateBanner';
 import { buildTimeline } from './model';
 
@@ -92,7 +92,7 @@ export function Conversation({ employeeId }: ConversationProps) {
     );
   } else {
     chat = (
-      <VStack height="100%">
+      <VStack height="100%" data-am-thread="">
         <StateBanner employee={employee} panelOpen={desktopOpen && !narrow} />
         <ChatLayout
           composer={
@@ -110,7 +110,7 @@ export function Conversation({ employeeId }: ConversationProps) {
           }
           emptyState={
             <EmptyState
-              icon={<Avatar name={employee.persona.name} src={employee.persona.portraitUrl || undefined} size={128} tooltip={false} />}
+              icon={<Portrait person={{ id: employee.id, name: employee.persona.name, portraitUrl: employee.persona.portraitUrl }} size={96} />}
               title={`Say hi to ${first}`}
               description="Give them a first task."
               actions={

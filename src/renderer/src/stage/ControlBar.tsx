@@ -5,6 +5,7 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
+import { ControlPill } from '../ui/ControlPill';
 import { Captions as CaptionsIcon, LayoutGrid, Mic, MicOff, PhoneOff } from 'lucide-react';
 
 export interface LayoutChoice {
@@ -27,15 +28,15 @@ export interface ControlBarProps {
   onEnd: () => void;
 }
 
-/** The docked bar: Mute, Captions, Layout, then End, the only filled control. */
+/** The docked pill: Mute, Captions, Layout, a gap, then End, the only coloured control. */
 export function ControlBar({ endOnly, micOn, micBlocked, onMic, captionsOn, onCaptions, layout, layouts, onLayout, onEnd }: ControlBarProps) {
   return (
-    <HStack gap={2} vAlign="center" hAlign="center">
+    <ControlPill label="Call controls">
       {endOnly ? null : (
         <>
           <ToggleButton
             label="Mute"
-            tooltip="Mute (M)"
+            tooltip={micOn ? 'Mute (M)' : 'Unmute (M)'}
             size="lg"
             isIconOnly
             icon={<Icon icon={Mic} size="md" color="inherit" />}
@@ -65,12 +66,12 @@ export function ControlBar({ endOnly, micOn, micBlocked, onMic, captionsOn, onCa
               ))}
             </DropdownMenuRadioGroup>
           </DropdownMenu>
-          <HStack paddingInline={3} height={24}>
+          <HStack data-am="pill-gap" paddingInline={2} height={24}>
             <Divider orientation="vertical" />
           </HStack>
         </>
       )}
-      <Button label="End" tooltip={'End (⌘.)'} size="lg" variant="destructive" icon={<Icon icon={PhoneOff} size="md" color="inherit" />} onClick={onEnd} />
-    </HStack>
+      <Button data-am="end" label="End" tooltip={'End (⌘.)'} size="lg" variant="destructive" icon={<Icon icon={PhoneOff} size="md" color="inherit" />} onClick={onEnd} />
+    </ControlPill>
   );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Drawer, DrawerHeader } from '@astryxdesign/core/Drawer';
+import { Portrait } from '../ui/Portrait';
 import { Layout, LayoutContent } from '@astryxdesign/core/Layout';
 import { AlertDialog } from '@astryxdesign/core/AlertDialog';
-import { Avatar } from '@astryxdesign/core/Avatar';
 import { Button } from '@astryxdesign/core/Button';
 import { Icon } from '@astryxdesign/core/Icon';
 import { HStack } from '@astryxdesign/core/HStack';
@@ -15,7 +15,7 @@ import { Play, Square } from 'lucide-react';
 import type { Employee, PermissionLevel, Permissions } from '../../../shared';
 import { useStore } from '../api/store';
 import { useShot } from '../fixtures/shot';
-import { portraitSrc, withShotState } from './shotState';
+import { withShotState } from './shotState';
 
 export interface ProfileDrawerProps {
   employeeId: string;
@@ -115,15 +115,15 @@ export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawe
   const desktopOff = employee.state === 'offline';
 
   return (
-    <Drawer isOpen={isOpen} onOpenChange={onOpenChange} label="Profile" width={400} hasScrim={false}>
+    <Drawer isOpen={isOpen} onOpenChange={onOpenChange} label="Profile" width={400} hasScrim={false} data-am-drawer="">
       <Layout
         height="fill"
         header={<DrawerHeader title={employee.persona.name} subtitle={employee.persona.role} onOpenChange={onOpenChange} />}
         content={
           <LayoutContent isScrollable>
-            <VStack gap={6}>
-              <VStack gap={2} hAlign="center">
-                <Avatar name={employee.persona.name} src={portraitSrc(employee.persona.portraitUrl)} size={96} tooltip={false} />
+            <VStack gap={8} data-am-sections="">
+              <VStack gap={2} hAlign="center" paddingBlockStart={2}>
+                <Portrait person={{ id: employee.id, name: employee.persona.name, portraitUrl: employee.persona.portraitUrl }} size={96} />
                 {sampleUrl ? (
                   <Button
                     label={playing ? 'Playing' : `Hear ${first}`}
@@ -183,7 +183,7 @@ export function ProfileDrawer({ employeeId, isOpen, onOpenChange }: ProfileDrawe
 
               <VStack gap={2}>
                 <Text type="label">Desktop</Text>
-                <Text type="supporting">{desktopLine(employee, now)}</Text>
+                <Text type="supporting" data-am-num="">{desktopLine(employee, now)}</Text>
                 <HStack gap={2}>
                   <Button
                     label={desktopOff ? 'Start' : 'Restart'}

@@ -1,6 +1,5 @@
 import { SideNav, SideNavHeading, SideNavSection } from '@astryxdesign/core/SideNav';
 import { List, ListItem } from '@astryxdesign/core/List';
-import { Avatar } from '@astryxdesign/core/Avatar';
 import { Badge } from '@astryxdesign/core/Badge';
 import { IconButton } from '@astryxdesign/core/IconButton';
 import { Icon } from '@astryxdesign/core/Icon';
@@ -10,10 +9,12 @@ import { Timestamp } from '@astryxdesign/core/Timestamp';
 import { VStack } from '@astryxdesign/core/VStack';
 import { BarChart3, Plus, Settings } from 'lucide-react';
 import { useStore } from '../api/store';
-import { PresenceDot } from './PresenceDot';
+import { Portrait } from '../ui/Portrait';
+import { Logo } from '../ui/Logo';
+import { HStack } from '@astryxdesign/core/HStack';
 import { rowLine } from './presence';
 
-export const APP_NAME = 'Agent Manager';
+export const APP_NAME = 'Deskmates';
 
 export function Sidebar() {
   const employees = useStore((s) => s.employees);
@@ -29,6 +30,7 @@ export function Sidebar() {
       header={
         <SideNavHeading
           heading={APP_NAME}
+          icon={<Logo size={24} />}
           headerEndContent={
             <IconButton
               label="Hire"
@@ -41,12 +43,19 @@ export function Sidebar() {
           }
         />
       }
-      footer={<Item density="compact" label={userName} startContent={<Avatar name={userName} size="sm" />} />}
-      footerIcons={
-        <>
-          <IconButton label="Team" tooltip="Team (⌘T)" variant="ghost" icon={<Icon icon={BarChart3} size="sm" />} onClick={() => setView('team')} />
-          <IconButton label="Settings" tooltip="Settings (⌘,)" variant="ghost" icon={<Icon icon={Settings} size="sm" />} onClick={() => setUi({ settingsOpen: true })} />
-        </>
+      footer={
+        <Item
+          data-am-footer=""
+          density="compact"
+          label={userName}
+          startContent={<Portrait person={{ id: `user:${userName}`, name: userName }} size={24} />}
+          endContent={
+            <HStack gap={0.5}>
+              <IconButton label="Team" tooltip="Team (⌘T)" variant="ghost" size="sm" icon={<Icon icon={BarChart3} size="sm" />} onClick={() => setView('team')} />
+              <IconButton label="Settings" tooltip="Settings (⌘,)" variant="ghost" size="sm" icon={<Icon icon={Settings} size="sm" />} onClick={() => setUi({ settingsOpen: true })} />
+            </HStack>
+          }
+        />
       }>
       <SideNavSection title="Team" isHeaderHidden>
         {employees.length === 0 ? (
@@ -54,13 +63,14 @@ export function Sidebar() {
             <Text type="supporting">No one yet</Text>
           </VStack>
         ) : (
-          <List density="spacious">
+          <List density="balanced" data-am-people="">
             {employees.map((e) => {
               const line = rowLine(e);
               return (
                 <ListItem
                   key={e.id}
-                  label={e.persona.name}
+                  data-am-row={e.state}
+                  label={<Text type="label" maxLines={1}>{e.persona.name}</Text>}
                   description={
                     line.emphasised ? (
                       <Text type="supporting" color="primary" maxLines={1}>
@@ -72,9 +82,9 @@ export function Sidebar() {
                   }
                   isSelected={view === 'thread' && e.id === selectedId}
                   onClick={() => void selectEmployee(e.id)}
-                  startContent={<Avatar name={e.persona.name} src={e.persona.portraitUrl || undefined} size={40} status={<PresenceDot state={e.state} />} />}
+                  startContent={<Portrait person={{ id: e.id, name: e.persona.name, portraitUrl: e.persona.portraitUrl }} size={40} presence={e.state} />}
                   endContent={
-                    <VStack gap={1} hAlign="end">
+                    <VStack gap={1} hAlign="end" data-am-num="">
                       <Timestamp value={e.lastActivityMs} format="relative_short" />
                       {e.unread > 0 ? <Badge label={String(e.unread)} variant="neutral" /> : null}
                     </VStack>

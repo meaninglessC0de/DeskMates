@@ -66,7 +66,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
         content={
           <LayoutContent>
             {settings ? (
-              <VStack gap={6}>
+              <VStack gap={8} data-am-sections="">
                 <TextInput label="Your name" value={name} onChange={setName} />
 
                 <VStack gap={2}>
@@ -89,7 +89,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                   <Switch label="Captions on by default" labelPosition="start" labelSpacing="spread" value={settings.captions} changeAction={async (v) => set({ captions: v })} />
                 </VStack>
 
-                <VStack gap={1}>
+                <VStack gap={1} data-am-connections="">
                   <Text type="label">Connections</Text>
                   {connections(capabilities).map((c) => (
                     <Item

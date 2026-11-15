@@ -1,5 +1,6 @@
 export const shots: { name: string; query?: string }[] = [
   { name: 'maya' },
+  { name: 'maya-monogram', query: 'portraits=none' },
   { name: 'maya-desktop', query: 'open=desktop' },
   { name: 'approved', query: 'approval=approved' },
   { name: 'typing', query: 'select=priya&typing=1' },

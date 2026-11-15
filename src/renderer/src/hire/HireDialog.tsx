@@ -3,7 +3,7 @@ import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
 import { List, ListItem } from '@astryxdesign/core/List';
 import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList';
-import { Avatar } from '@astryxdesign/core/Avatar';
+import { Center } from '@astryxdesign/core/Center';
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { IconButton } from '@astryxdesign/core/IconButton';
@@ -25,7 +25,7 @@ import type { Candidate, PermissionLevel, RolePreset } from '../../../shared';
 import { useStore } from '../api/store';
 import { ApiClientError } from '../api/client';
 import { useShot } from '../fixtures/shot';
-import { portraitSrc } from '../profile/shotState';
+import { Portrait } from '../ui/Portrait';
 
 export interface HireDialogProps {
   isOpen: boolean;
@@ -203,7 +203,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
       onOpenChange={onOpenChange}
       startContent={
         <VStack height={16} vAlign="center" hAlign="center">
-          <IconButton label="Back" variant="ghost" size="sm" icon={<Icon icon={ChevronLeft} size="sm" />} onClick={back} />
+          <IconButton label="Back" tooltip="Back" variant="ghost" size="sm" icon={<Icon icon={ChevronLeft} size="sm" />} onClick={back} />
         </VStack>
       }
     />
@@ -220,9 +220,13 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
           return (
             <ListItem
               key={p.key}
-              label={p.role}
+              label={<Text type="label">{p.role}</Text>}
               description={p.blurb}
-              startContent={<Icon icon={RoleIcon} size="md" />}
+              startContent={
+                <Center data-am-tile="" width={36} height={36}>
+                  <Icon icon={RoleIcon} size="sm" />
+                </Center>
+              }
               endContent={<Icon icon={ChevronRight} size="sm" color="secondary" />}
               onClick={() => void pick(p.key, undefined, p)}
             />
@@ -254,7 +258,11 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
         <List density="balanced" edge="flush">
           <ListItem
             label="Describe a role"
-            startContent={<Icon icon={Plus} size="md" />}
+            startContent={
+              <Center data-am-tile="" width={36} height={36}>
+                <Icon icon={Plus} size="sm" />
+              </Center>
+            }
             onClick={() => setDescribing(true)}
           />
         </List>
@@ -263,7 +271,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
   );
 
   const proposal = (
-    <VStack gap={6} hAlign="center">
+    <VStack gap={6} hAlign="center" paddingBlockStart={4}>
       {loading || !candidate ? (
         <VStack gap={4} hAlign="center" padding={4}>
           <Skeleton width={144} height={144} radius="rounded" />
@@ -274,14 +282,14 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
         </VStack>
       ) : (
         <>
-          <VStack gap={1} hAlign="center">
-            <Avatar name={candidate.persona.name} src={portraitSrc(candidate.persona.portraitUrl)} size={144} tooltip={false} />
-            <VStack gap={1} hAlign="center" paddingBlockStart={4}>
-              <Text type="large">{name.trim() || candidate.persona.name}</Text>
+          <VStack gap={1} hAlign="center" data-am-identity="" key={candidate.persona.name}>
+            <Portrait person={{ id: candidate.persona.name, name: candidate.persona.name, portraitUrl: candidate.persona.portraitUrl }} size={144} />
+            <VStack gap={0.5} hAlign="center" paddingBlockStart={5}>
+              <Text type="display-3">{name.trim() || candidate.persona.name}</Text>
               <Text type="supporting">{candidate.persona.role}</Text>
             </VStack>
-            <VStack hAlign="center" paddingBlockStart={2} maxWidth={360}>
-              <Text type="supporting" justify="center">{personality.trim() || candidate.persona.personality}</Text>
+            <VStack hAlign="center" paddingBlockStart={3} maxWidth={360}>
+              <Text type="body" color="secondary" justify="center">{personality.trim() || candidate.persona.personality}</Text>
             </VStack>
           </VStack>
           <HStack gap={2} vAlign="center" hAlign="center">
@@ -293,8 +301,8 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
                 onClick={hear}
               />
             ) : null}
-            <IconButton label="Shuffle" variant="ghost" icon={<Icon icon={Shuffle} size="sm" />} isLoading={shuffling} onClick={() => void shuffle()} />
-            <IconButton label="Edit" variant="ghost" icon={<Icon icon={Pencil} size="sm" />} onClick={() => setEditing((v) => !v)} />
+            <Button label="Shuffle" variant="ghost" icon={<Icon icon={Shuffle} size="sm" />} isLoading={shuffling} onClick={() => void shuffle()} />
+            <Button label="Edit" variant="ghost" icon={<Icon icon={Pencil} size="sm" />} onClick={() => setEditing((v) => !v)} />
           </HStack>
           {editing ? (
             <VStack gap={4} width="100%">
@@ -322,7 +330,7 @@ export function HireDialog({ isOpen, onOpenChange }: HireDialogProps) {
         footer={
           meeting ? (
             <LayoutFooter>
-              <HStack hAlign="end">
+              <HStack hAlign="center" data-am-hire-footer="">
                 <Button
                   label={candidate && !loading ? `Hire ${who}` : 'Hire'}
                   variant="primary"

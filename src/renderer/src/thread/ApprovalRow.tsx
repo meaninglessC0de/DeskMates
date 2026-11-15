@@ -22,7 +22,7 @@ export function ApprovalRow({ approval }: { approval: Approval }) {
   const decide = (decision: 'approve' | 'deny'): void => void useStore.getState().decideApproval(approval.id, { decision });
   const screen = approval.kind === 'screen';
   return (
-    <Section variant="muted" padding={3}>
+    <Section data-am-approval="" variant="transparent" padding={3}>
       <Item
         density="compact"
         startContent={<StatusDot variant="warning" label="Needs your approval" />}

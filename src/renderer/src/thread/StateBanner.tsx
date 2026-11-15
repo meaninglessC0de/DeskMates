@@ -31,6 +31,7 @@ export function StateBanner({ employee, panelOpen }: { employee: Employee; panel
       <Banner
         status="info"
         container="section"
+        data-am-quiet=""
         title={`${first}'s desktop is off`}
         endContent={panelOpen ? undefined : <Button label="Start desktop" variant="secondary" size="sm" onClick={() => void s.desktopAction(employee.id, 'start')} />}
       />
@@ -41,6 +42,7 @@ export function StateBanner({ employee, panelOpen }: { employee: Employee; panel
       <Banner
         status="info"
         container="section"
+        data-am-quiet=""
         title={`${first} is paused`}
         endContent={<Button label="Resume" variant="secondary" size="sm" onClick={() => void s.resumeEmployee(employee.id)} />}
       />

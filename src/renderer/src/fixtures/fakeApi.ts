@@ -28,7 +28,7 @@ export async function fakeRequest(method: string, path: string, body?: unknown):
   if (a === 'presets') return presets;
   if (a === 'settings') return method === 'PATCH' ? { ...settings, ...b } : settings;
   if (a === 'team' && id === 'ask') {
-    return { answer: 'Maya closed the most tasks this week.', sql: null, columns: ['name', 'tasks'], rows: [['Maya Okafor', '5'], ['Priya Raman', '3']], conversationId: 'conv_fixture' };
+    return { answer: 'Maya closed the most tasks this week.', sql: null, columns: ['name', 'tasks'], rows: [['Maya Chen', '5'], ['Priya Raman', '3']], conversationId: 'conv_fixture' };
   }
   if (a === 'team') return teamReport((q.get('range') as TeamReport['range'] | null) ?? 'today');
   if (a === 'candidates') {

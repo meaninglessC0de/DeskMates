@@ -37,7 +37,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('pure helpers', () => {
   it('builds tray rows in sidebar order with the sidebar labels', () => {
     expect(trayRows(sortEmployees(employees))).toEqual([
-      { id: EMP.maya, name: 'Maya Okafor', state: 'Needs you' },
+      { id: EMP.maya, name: 'Maya Chen', state: 'Needs you' },
       { id: EMP.priya, name: 'Priya Raman', state: 'Working' },
       { id: EMP.jonas, name: 'Jonas Weber', state: 'Idle' },
       { id: EMP.ines, name: 'Ines Moreau', state: 'Idle' },
