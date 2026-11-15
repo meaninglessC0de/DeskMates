@@ -1,0 +1,102 @@
+[
+ {
+  "id": "n01",
+  "who": "narrator",
+  "text": "This is Sam's Mac. Sam runs a startup with four AI agents."
+ },
+ {
+  "id": "n02",
+  "who": "narrator",
+  "text": "A coder, a marketer, a researcher and a designer. All working at once, in one pile of windows."
+ },
+ {
+  "id": "n03",
+  "who": "narrator",
+  "text": "Who's doing what? Like every founder, Sam scrolls through logs."
+ },
+ {
+  "id": "n04",
+  "who": "narrator",
+  "text": "Now watch what happens when Sam opens Deskmates."
+ },
+ {
+  "id": "n05",
+  "who": "narrator",
+  "text": "Every agent gets its own computer. Maya's code goes to her desk. Priya's post to hers. Jonas's research to his. Ines's designs to hers."
+ },
+ {
+  "id": "n06",
+  "who": "narrator",
+  "text": "And every agent gets a face."
+ },
+ {
+  "id": "n07",
+  "who": "narrator",
+  "text": "So Sam can talk to the team, face to face."
+ },
+ {
+  "id": "n08",
+  "who": "narrator",
+  "text": "Then they get back to work, and they help each other."
+ },
+ {
+  "id": "n09",
+  "who": "narrator",
+  "text": "Big steps still come to Sam first."
+ },
+ {
+  "id": "n10",
+  "who": "narrator",
+  "text": "Every hour, task and dollar is on the record in Databricks, so Sam can just ask."
+ },
+ {
+  "id": "n11",
+  "who": "narrator",
+  "text": "Deskmates. Your AI team, with a desk, a face, and a seat at the table."
+ },
+ {
+  "id": "s01",
+  "who": "sam",
+  "text": "Okay team, standup!"
+ },
+ {
+  "id": "s02",
+  "who": "sam",
+  "text": "Maya, show me the fix?"
+ },
+ {
+  "id": "s03",
+  "who": "sam",
+  "text": "Jonas?"
+ },
+ {
+  "id": "s04",
+  "who": "sam",
+  "text": "Version B. Ship it."
+ },
+ {
+  "id": "s05",
+  "who": "sam",
+  "text": "Approve."
+ },
+ {
+  "id": "m01",
+  "who": "maya",
+  "text": "Morning, Sam! I fixed the checkout bug overnight."
+ },
+ {
+  "id": "m02",
+  "who": "maya",
+  "text": "Sharing my desktop now. Tests are green, and it's ready to push."
+ },
+ {
+  "id": "j01",
+  "who": "jonas",
+  "text": "I compared our three closest competitors. Two cut their prices last month. I'd launch a week early."
+ },
+ {
+  "id": "i01",
+  "who": "ines",
+  "text": "And I made two onboarding designs. Which one should ship?"
+ }
+]
