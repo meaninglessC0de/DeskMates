@@ -21,6 +21,14 @@ export interface DeskmatesDemo {
   pin(employeeId: string | null): void;
   /** During a call or meeting: send typed text into the room; resolves false when there is no connected room. */
   say(text: string): Promise<boolean>;
+  /** Start a one-to-one call; resolves false when it could not start. */
+  startCall(employeeId: string): Promise<boolean>;
+  /** Start a meeting with these people; resolves false when it could not start. */
+  summon(employeeIds: string[]): Promise<boolean>;
+  /** End the current call or meeting. */
+  endCall(): Promise<void>;
+  /** Approve a pending approval by id; resolves false when it was not accepted. */
+  approve(approvalId: string): Promise<boolean>;
 }
 
 export const demo: DeskmatesDemo = {
@@ -42,6 +50,10 @@ export const demo: DeskmatesDemo = {
       return false;
     }
   },
+  startCall: (employeeId) => useStore.getState().startCall([employeeId]),
+  summon: (employeeIds) => useStore.getState().startCall([...employeeIds]),
+  endCall: () => useStore.getState().endCall(),
+  approve: (approvalId) => useStore.getState().decideApproval(approvalId, { decision: 'approve' }),
 };
 
 export function installDemoHook(): void {

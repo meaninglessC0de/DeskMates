@@ -20,6 +20,17 @@ ${S} [data-am-desks-view][data-am-scale="2.25"] { --am-desks-zoom: 2.25; }
 ${S} [data-am-desks-view][data-am-scale="2.5"] { --am-desks-zoom: 2.5; }
 ${S} [data-am-desks-view][data-am-scale="2.75"] { --am-desks-zoom: 2.75; }
 ${S} [data-am-desks-view][data-am-scale="3"] { --am-desks-zoom: 3; }
+/* The face (top-right) and the loader (centre) lie over the desktop; a click goes through them to the tile's own button. */
+${S} [data-am-desks-view] [data-am="desk-face"],
+${S} [data-am-desks-view] [data-am="desk-wait"] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+${S} [data-am-desks-view] [data-am="desk-face"] {
+  height: auto;
+  bottom: auto;
+}
 ${S} [data-am-desks-view] [data-am="tile-chip"] {
   padding: calc(var(--spacing-1) * var(--am-desks-zoom, 1));
 }

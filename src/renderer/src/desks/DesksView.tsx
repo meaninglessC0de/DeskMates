@@ -52,25 +52,21 @@ function Screen({ employee, size }: { employee: Employee; size: Size }) {
       </Center>
     );
   }
-  // The stream has not started: the brand loader over the tile, gone as soon as frames arrive.
-  const waiting = state === 'connecting';
+  // The stream has not started: the brand loader over the tile (laid over by CSS, so a click still reaches the tile's
+  // own button), gone as soon as frames arrive.
   return (
-    <Overlay
-      position="fill"
-      scrim={false}
-      content={
-        waiting ? (
-          <Center data-am="desk-wait" width={size.w} height={size.h}>
-            {loader}
-          </Center>
-        ) : null
-      }>
+    <>
       <Center width={size.w} height={size.h}>
         <VStack width={size.w}>
           <SpaceView employeeId={employee.id} mode="view" onState={setState} />
         </VStack>
       </Center>
-    </Overlay>
+      {state === 'connecting' ? (
+        <Center data-am="desk-wait" width={size.w} height={size.h}>
+          {loader}
+        </Center>
+      ) : null}
+    </>
   );
 }
 
@@ -89,25 +85,31 @@ function Face({ employee, desk }: { employee: Employee; desk: number }) {
   );
 }
 
+/** Opens the person's conversation with the desktop panel open (no-op once the Desks view has been left). */
+function openThread(employee: Employee): void {
+  const s = useStore.getState();
+  if (s.ui.view !== 'desks') return;
+  s.toggleDesktop(employee.id, true);
+  void s.selectEmployee(employee.id);
+}
+
+function openHire(): void {
+  useStore.getState().setUi({ hireOpen: true });
+}
+
 function DeskTile({ employee, desk, size, faces }: { employee: Employee; desk: number; size: Size; faces: boolean }) {
   const first = employee.persona.firstName;
-  const open = (): void => {
-    const s = useStore.getState();
-    s.toggleDesktop(employee.id, true);
-    void s.selectEmployee(employee.id);
-  };
   return (
     <StageTile
       kind="desktop"
       width={size.w}
       height={size.h}
       hasMedia
-      onPress={open}
+      onPress={() => openThread(employee)}
       label={`Desk ${desk + 1}, ${first}`}
       chip={<StageChip name={`Desk ${desk + 1} · ${first}`} />}>
-      <Overlay position="top" align="end" scrim={false} content={faces ? <Face employee={employee} desk={desk} /> : null}>
-        <Screen employee={employee} size={size} />
-      </Overlay>
+      <Screen employee={employee} size={size} />
+      {faces ? <Face employee={employee} desk={desk} /> : null}
     </StageTile>
   );
 }
@@ -119,7 +121,7 @@ function HireTile({ desk, size }: { desk: number; size: Size }) {
       width={size.w}
       height={size.h}
       tint={desk}
-      onPress={() => useStore.getState().setUi({ hireOpen: true })}
+      onPress={openHire}
       label={`Hire for desk ${desk + 1}`}>
       <Center width={size.w} height={size.h}>
         <HStack data-am="desk-hire" gap={2} vAlign="center">
@@ -141,22 +143,23 @@ export function DesksView() {
   const employees = useStore((s) => s.employees);
   const faces = useStore((s) => s.ui.desksFaces);
   const win = useWindowSize();
+  const dialogOpen = useStore((s) => s.ui.hireOpen || s.ui.settingsOpen || s.ui.summonOpen);
   const { tile, gap, scale } = desksLayout(win);
   const seats = seat(employees, (e) => tintIndex(e.id, e.persona.name, e.persona.portraitUrl));
 
   useHotkeys([
-    { keys: 'escape', allowInInputs: true, onPress: () => useStore.getState().closeDesks() },
-    { keys: 'f', onPress: () => useStore.getState().setDeskFaces(!useStore.getState().ui.desksFaces) },
+    { keys: 'escape', allowInInputs: true, isDisabled: dialogOpen, onPress: () => useStore.getState().closeDesks() },
+    { keys: 'f', isDisabled: dialogOpen, onPress: () => useStore.getState().setDeskFaces(!useStore.getState().ui.desksFaces) },
   ]);
 
   const cell = (i: number) => {
     const e = seats[i];
     return e ? (
-      <VStack key={e.id} data-am-desk-tile={String(i)} data-am-employee={e.id}>
+      <VStack key={e.id} data-am-desk-tile={String(i)} data-am-employee={e.id} onClick={() => openThread(e)}>
         <DeskTile employee={e} desk={i} size={tile} faces={faces} />
       </VStack>
     ) : (
-      <VStack key={`hire-${i}`} data-am-desk-tile={String(i)} data-am-hire="">
+      <VStack key={`hire-${i}`} data-am-desk-tile={String(i)} data-am-hire="" onClick={openHire}>
         <HireTile desk={i} size={tile} />
       </VStack>
     );

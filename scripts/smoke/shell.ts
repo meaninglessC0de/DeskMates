@@ -209,7 +209,7 @@ async function runOne(): Promise<void> {
     console.log(`tray labels: ${JSON.stringify(labels)}`);
     const wanted = rows.map((r) => `${r.name}    ${humanize(r.state)}`);
     check('tray lists the four people with their states', wanted.every((w) => labels.includes(w)), wanted.join(' | '));
-    const actions = ['Summon meeting…', 'Hire…', 'Pause everyone', 'Open Deskmates', 'Quit'];
+    const actions = ['Show desks', 'Summon meeting…', 'Hire…', 'Pause everyone', 'Open Deskmates', 'Quit'];
     check('tray has the actions', actions.every((a) => labels.includes(a)));
     await page.evaluate((r) => window.shell?.setTray(r, r[0].id), rows);
     await sleep(300);
