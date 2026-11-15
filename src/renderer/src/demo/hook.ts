@@ -13,6 +13,8 @@ export interface DeskmatesDemo {
   closeDesks(): void;
   /** Show or hide every face on the Desks view. Can be set before the view opens. */
   setFaces(on: boolean): void;
+  /** Show or hide the messages rail on the Desks view (the M key). Shown by default. Can be set before the view opens. */
+  setMessages(on: boolean): void;
   /** Open this person's conversation. */
   openThread(employeeId: string): void;
   /** Open the team view. */
@@ -35,6 +37,7 @@ export const demo: DeskmatesDemo = {
   openDesks: () => useStore.getState().openDesks(),
   closeDesks: () => useStore.getState().closeDesks(),
   setFaces: (on) => useStore.getState().setDeskFaces(Boolean(on)),
+  setMessages: (on) => useStore.getState().setDeskMessages(Boolean(on)),
   openThread: (employeeId) => void useStore.getState().selectEmployee(employeeId),
   openTeam: () => useStore.getState().setView('team'),
   pin: (employeeId) => {

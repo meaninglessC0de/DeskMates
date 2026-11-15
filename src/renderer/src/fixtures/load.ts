@@ -3,6 +3,7 @@ import { useStore } from '../api/store';
 import { emptyThread, initialData, sortEmployees } from '../api/reducer';
 import type { CallSlice, Data } from '../api/reducer';
 import { EMP, callInfo, capabilities, employees, presets, settings, teamReport, threads } from './data';
+import { desksFixture } from './desks';
 import type { ShotRef } from './shot';
 
 /**
@@ -15,7 +16,7 @@ import type { ShotRef } from './shot';
  *   boot=loading|error       the app's loading or can't-reach state
  *   thread=loading|error|empty   the selected employee's thread
  *   open=hire,profile,settings,desktop,summon   open these (comma list)
- *   view=team|desks     (area desks opens the Desks view; employees=2 seats two, faces=0 hides the faces)
+ *   view=team|desks     (area desks opens the Desks view; employees=2 seats two, faces=0 hides the faces, messages=0 hides the rail)
  *   range=today|week|month   team range
  *   team=loading|error
  *   call=one|meeting         a live call; callState=connecting|live|failed; callMode=audio|avatar
@@ -64,7 +65,8 @@ export function loadShot(shot: ShotRef): void {
 
   const none = p.get('employees') === 'none';
   const count = Number(p.get('employees'));
-  const all = sortEmployees(employees);
+  const desksFx = shot.area === 'desks' ? desksFixture(shot.name) : null;
+  const all = sortEmployees(desksFx?.employees ?? employees);
   const list = none ? [] : Number.isInteger(count) && count > 0 ? all.slice(0, count) : all;
   const wanted = FIRST[p.get('select') ?? ''];
   const selectedId = none ? null : wanted ?? list[0]?.id ?? null;
@@ -73,7 +75,7 @@ export function loadShot(shot: ShotRef): void {
   const threadsOut: Data['threads'] = {};
   if (!none) {
     for (const e of list) {
-      const t = threads[e.id];
+      const t = desksFx?.threads[e.id] ?? threads[e.id];
       threadsOut[e.id] = t
         ? { ...emptyThread(), ...t, loaded: true, hasMore: false }
         : { ...emptyThread(), loaded: true };
@@ -121,6 +123,7 @@ export function loadShot(shot: ShotRef): void {
       ...base.ui,
       view,
       desksFaces: p.get('faces') !== '0',
+      desksMessages: p.get('messages') !== '0',
       selectedId,
       hireOpen: open.has('hire'),
       profileOpen: open.has('profile'),

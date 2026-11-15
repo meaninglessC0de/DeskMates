@@ -93,13 +93,13 @@ function msg(n: number, eid: string, from: Message['from'], text: string, create
     taskId: null, createdMs, seenMs: from === 'user' ? createdMs + 2000 : null, ...o,
   };
 }
-function step(n: number, eid: string, taskId: string, sentence: string, startedMs: number, status: ActivityStep['status'] = 'ok', o: Partial<ActivityStep> = {}): ActivityStep {
+export function step(n: number, eid: string, taskId: string, sentence: string, startedMs: number, status: ActivityStep['status'] = 'ok', o: Partial<ActivityStep> = {}): ActivityStep {
   return {
     id: id('evt', `${eid.slice(4, 8)}${n}`), employeeId: eid, taskId, sentence, status,
     startedMs, endedMs: status === 'running' ? null : startedMs + 60_000, ...o,
   };
 }
-function task(tag: string, eid: string, o: Partial<Task>): Task {
+export function task(tag: string, eid: string, o: Partial<Task>): Task {
   return {
     id: id('tsk', tag), employeeId: eid, title: '', assignedBy: 'user', status: 'running', plan: [],
     outcome: null, assignedMs: ago(HOUR), finishedMs: null, activeMs: 0, costUsd: 0,
@@ -151,7 +151,7 @@ const inesTask = task('ines1', EMP.ines, {
   ],
 });
 
-function approval(tag: string, eid: string, taskId: string, o: Partial<Approval>): Approval {
+export function approval(tag: string, eid: string, taskId: string, o: Partial<Approval>): Approval {
   return {
     id: id('apr', tag), employeeId: eid, taskId, title: '', detail: '', kind: 'big_step',
     status: 'pending', createdMs: ago(MIN), resolvedMs: null, ...o,

@@ -80,6 +80,106 @@ ${S} [data-am="desks-back"]:focus-visible {
     animation: am-stage-fade var(--duration-fast-max) var(--ease-entrance) both;
   }
 }
+/* ---------- The pill with its status line, the message bubble, the ring pulse ---------- */
+${S} [data-am-desks-view] [data-am="desk-chip"] {
+  zoom: var(--am-desks-zoom, 1);
+  min-width: 0;
+  max-width: 100%;
+  padding-block: var(--spacing-1-5);
+  padding-inline: var(--spacing-3);
+  border-radius: var(--radius-container);
+  background: color-mix(in oklab, var(--color-background-body) 72%, transparent);
+  backdrop-filter: blur(8px);
+}
+${S} [data-am="desk-chip-head"],
+${S} [data-am="desk-status"] {
+  align-items: baseline;
+  min-width: 0;
+}
+${S} [data-am="desk-chip"] .astryx-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+${S} [data-am="desk-status"] .astryx-text,
+${S} [data-am="desk-progress"] {
+  font-size: var(--text-label-size);
+  color: color-mix(in oklab, var(--color-text-primary) 86%, transparent);
+}
+${S} [data-am="desk-progress"] {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+${S} [data-am="desk-state"] {
+  flex-shrink: 0;
+}
+/* The one colour on the grid: a real needs-you, in the status amber. */
+${S} [data-am="desk-state"][data-am-tone="attention"] {
+  color: var(--color-warning);
+  font-weight: var(--text-label-weight);
+}
+${S} [data-am="desk-bubble-slot"],
+${S} [data-am="desk-pulse"] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+${S} [data-am="desk-bubble-slot"] {
+  inset: 0 auto auto 0;
+  max-width: 58%;
+  height: auto;
+  padding: calc(var(--spacing-3) * var(--am-desks-zoom, 1));
+}
+${S} [data-am="desk-bubble"] {
+  zoom: var(--am-desks-zoom, 1);
+  min-width: 0;
+  border-radius: var(--radius-container);
+  background: color-mix(in oklab, var(--am-tint-line) 28%, var(--color-background-surface));
+  box-shadow: 0 0 0 1px var(--am-tint-line);
+  transform-origin: top left;
+}
+${S} [data-am="desk-bubble"] .astryx-text[data-type="supporting"] {
+  color: var(--am-tint-ink);
+}
+${S} [data-am="desk-pulse"] {
+  border-radius: var(--radius-container);
+  box-shadow: inset 0 0 0 2px var(--am-tint-line), inset 0 0 var(--spacing-8) color-mix(in oklab, var(--am-tint-line) 40%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  ${S} [data-am="desk-bubble"] {
+    animation: am-face-pop 360ms var(--ease-entrance) both;
+  }
+  ${S} [data-am="desk-pulse"] {
+    animation: am-ring-pulse 1400ms var(--ease-standard) both;
+  }
+}
+@keyframes am-ring-pulse {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- The messages rail: a quiet column on the right edge, its text scaled in the same steps as the pill ---------- */
+${[1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3].map((z) => `${S} [data-am-desks-rail][data-am-scale="${z}"] { --am-rail-zoom: ${z}; }`).join('\n')}
+${S} [data-am-desks-rail] {
+  border-inline-start: 1px solid color-mix(in oklab, var(--color-text-primary) 10%, transparent);
+}
+${S} [data-am="desks-rail-body"] {
+  zoom: var(--am-rail-zoom, 1);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+${S} [data-am="rail-head"] {
+  align-items: baseline;
+}
+${S} [data-am="rail-time"] {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 @keyframes am-face-pop {
   from { opacity: 0; transform: scale(0.8); }
   to { opacity: 1; transform: none; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { desksLayout, scaleFor, seat } from './layout';
+import { deskArea, desksLayout, railWidth, scaleFor, seat } from './layout';
 
 describe('desksLayout', () => {
   it.each([[1440, 900], [2560, 1600], [1280, 800], [1920, 1080], [900, 1200]])('fits and centres a window of %i x %i', (w, h) => {
@@ -28,6 +28,31 @@ describe('desksLayout', () => {
     expect(scaleFor(596)).toBe(1.5);
     expect(scaleFor(1058)).toBe(2.75);
     expect(scaleFor(5000)).toBe(3);
+  });
+});
+
+describe('deskArea', () => {
+  it('is the whole window with the rail hidden', () => {
+    expect(deskArea({ w: 1440, h: 900 }, false)).toEqual({ area: { w: 1440, h: 900 }, rail: 0, railScale: 1 });
+  });
+  it('takes about a fifth of the window, never under the four-line minimum', () => {
+    expect(railWidth({ w: 1440, h: 900 })).toBe(288);
+    expect(railWidth({ w: 2560, h: 1600 })).toBe(512);
+    expect(railWidth({ w: 900, h: 700 })).toBe(280);
+  });
+  it('lays the grid out in what is left, and the grid and rail fit together', () => {
+    for (const win of [{ w: 1440, h: 900 }, { w: 2560, h: 1600 }, { w: 1280, h: 800 }]) {
+      const { area, rail } = deskArea(win, true);
+      const { tile, gap } = desksLayout(area);
+      expect(area.w + rail).toBe(win.w);
+      expect(tile.w * 2 + gap).toBeLessThanOrEqual(area.w);
+      expect(tile.h * 2 + gap).toBeLessThanOrEqual(win.h);
+      expect(tile.w).toBeLessThan(desksLayout(win).tile.w);
+    }
+  });
+  it('grows the rail text in steps with its width', () => {
+    expect(deskArea({ w: 1440, h: 900 }, true).railScale).toBe(1);
+    expect(deskArea({ w: 2560, h: 1600 }, true).railScale).toBe(1.75);
   });
 });
 

@@ -49,6 +49,13 @@ describe('actions without the network', () => {
     expect(get().ui.view).toBe('team');
     expect(get().ui.desksFaces).toBe(false);
   });
+  it('the messages rail flag defaults on and is set by setDeskMessages', () => {
+    expect(get().ui.desksMessages).toBe(true);
+    get().setDeskMessages(false);
+    expect(get().ui.desksMessages).toBe(false);
+    get().setDeskMessages(true);
+    expect(get().ui.desksMessages).toBe(true);
+  });
   it('applyServerEvent applies the reducer patch', () => {
     get().applyServerEvent({ type: 'employee', employee: { ...employees[2]!, state: 'stuck', stateDetail: 'Out of ideas' } });
     expect(get().employees.map((e) => e.persona.firstName).slice(0, 2)).toEqual(['Maya', 'Jonas']);

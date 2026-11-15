@@ -49,3 +49,27 @@ export function seat<T extends { id: string }>(people: T[], tintOf: (p: T) => nu
   const sorted = [...people].sort((a, b) => tintOf(a) - tintOf(b) || a.id.localeCompare(b.id)).slice(0, 4);
   return [0, 1, 2, 3].map((i) => sorted[i] ?? null);
 }
+
+/** The messages rail: about a fifth of the window, never under what four lines of text need at the base size (px). */
+export const RAIL_RATIO = 0.2;
+export const RAIL_MIN = 280;
+
+export interface DesksArea {
+  /** The space the two-by-two is laid out in: the window, less the rail when it is shown. */
+  area: Size;
+  /** Rail width in px; 0 when hidden. */
+  rail: number;
+  /** The rail's text scale, in the same steps as the pill (its width over its base width). */
+  railScale: DesksScale;
+}
+
+export function railWidth(win: Size): number {
+  return Math.max(RAIL_MIN, Math.round(win.w * RAIL_RATIO));
+}
+
+/** Split the window into the grid's area and the rail. With the rail hidden the area is the whole window. */
+export function deskArea(win: Size, showRail: boolean): DesksArea {
+  if (!showRail) return { area: win, rail: 0, railScale: 1 };
+  const rail = Math.min(railWidth(win), win.w);
+  return { area: { w: win.w - rail, h: win.h }, rail, railScale: scaleFor(rail * (BASE_TILE / RAIL_MIN)) };
+}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActivityStep, Approval, Employee, Message, ServerEvent, Task } from '../../../shared';
 import { employees as fx, threads, capabilities, EMP } from '../fixtures/data';
 import {
-  emptyThread, initialData, mergeThread, reduceEvent, sortEmployees, THREAD_PAGE,
+  emptyThread, initialData, MAX_STEPS, mergeThread, reduceEvent, sortEmployees, THREAD_PAGE,
 } from './reducer';
 import type { Data } from './reducer';
 
@@ -75,6 +75,15 @@ describe('events', () => {
     expect(s.threads[EMP.priya]!.typing).toBe(true);
     s = apply(s, { type: 'message', message: message({}) });
     expect(s.threads[EMP.priya]!.typing).toBe(false);
+  });
+  it('step keeps a recent window per employee', () => {
+    let s = base();
+    for (let i = 0; i < MAX_STEPS + 20; i++) {
+      s = apply(s, { type: 'step', step: { id: `evt_${String(i).padStart(4, '0')}`, employeeId: EMP.priya, taskId: null, sentence: 'x', status: 'ok', startedMs: i, endedMs: null } });
+    }
+    const steps = s.threads[EMP.priya]!.steps;
+    expect(steps).toHaveLength(MAX_STEPS);
+    expect(steps[steps.length - 1]!.startedMs).toBe(MAX_STEPS + 19);
   });
   it('step upserts by id', () => {
     const step: ActivityStep = { id: 'evt_1', employeeId: EMP.priya, taskId: null, sentence: 'Opened it', status: 'running', startedMs: 10, endedMs: null };

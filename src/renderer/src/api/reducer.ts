@@ -39,6 +39,8 @@ export interface UiState {
   viewBeforeDesks: 'thread' | 'team';
   /** Faces on the Desks view: shown or hidden (the F key, the demo hook). Kept here so it can be set before the view opens. */
   desksFaces: boolean;
+  /** The messages rail on the Desks view: shown or hidden (the M key, the demo hook). */
+  desksMessages: boolean;
   selectedId: string | null;
   hireOpen: boolean;
   profileOpen: boolean;
@@ -73,13 +75,15 @@ export interface Data {
 
 export const THREAD_PAGE = 50;
 export const MAX_CAPTIONS = 12;
+/** Steps kept per employee when they arrive over the socket (the Desks view needs the recent ones for every desk). */
+export const MAX_STEPS = 300;
 
 export function emptyThread(): ThreadSlice {
   return { messages: [], steps: [], approvals: [], task: null, typing: false, loaded: false, loading: false, error: null, hasMore: false };
 }
 
 export const initialUi = (): UiState => ({
-  view: 'thread', viewBeforeDesks: 'thread', desksFaces: true, selectedId: null, hireOpen: false, profileOpen: false, settingsOpen: false, summonOpen: false, desktopOpen: {},
+  view: 'thread', viewBeforeDesks: 'thread', desksFaces: true, desksMessages: true, selectedId: null, hireOpen: false, profileOpen: false, settingsOpen: false, summonOpen: false, desktopOpen: {},
 });
 
 export const initialData = (): Data => ({
@@ -193,7 +197,7 @@ export function reduceEvent(s: Data, e: ServerEvent, ctx: ReduceContext = { focu
       return { patch: withThread(s, e.employeeId, (t) => ({ ...t, typing: e.on })), effects: [] };
 
     case 'step':
-      return { patch: withThread(s, e.step.employeeId, (t) => ({ ...t, steps: mergeSteps(t.steps, [e.step]) })), effects: [] };
+      return { patch: withThread(s, e.step.employeeId, (t) => ({ ...t, steps: mergeSteps(t.steps, [e.step]).slice(-MAX_STEPS) })), effects: [] };
 
     case 'task':
       return {
