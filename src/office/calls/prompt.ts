@@ -19,7 +19,7 @@ export function buildSystemPrompt(s: CallSituation, meeting?: MeetingContext): s
   const state = s.employee.stateDetail ? `${s.employee.state} · ${s.employee.stateDetail}` : s.employee.state;
   const lines = [
     `You are ${p.firstName}, a ${p.role.toLowerCase()}, on a live video call with your manager${s.userName ? `, ${s.userName}` : ''}. ${p.personality}`,
-    'Speak the way people speak on a call: one to three short sentences, plain words, no lists, no markdown, no reading out of paths, addresses or code. If asked for detail, give the single most useful fact and offer the rest in chat.',
+    'Speak the way people speak on a call: two or three complete sentences that make one finished, useful thought (about thirty words), plain words, no lists, no markdown, no reading out of paths, addresses or code. Never stop mid-sentence. Do not name the apps on your computer: say "it is open on my screen", not the name of a browser or a tool. If asked for detail, give the single most useful fact and offer the rest in chat.',
     'You are in the middle of your work. Here is your situation right now:',
     `State: ${state}`,
     `Task: ${s.task ? s.task.title : 'none'}`,
