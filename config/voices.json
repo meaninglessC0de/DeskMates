@@ -1,0 +1,11 @@
+{
+  "_source": "Deepgram Aura-2 catalogue (https://developers.deepgram.com/docs/tts-models) served through LiveKit Inference as model deepgram/aura-2 (https://docs.livekit.io/agents/models/tts/inference/deepgram/); ElevenLabs default voices (ids from https://wavespeed.ai/docs/docs-api/elevenlabs/elevenlabs-voice-id, reported; ElevenLabs says its Default voices expire 2026-12-31). Looked up 2026-11-14.",
+  "Maya":   { "gender": "woman", "label": "Calm, unhurried",     "livekit": { "model": "deepgram/aura-2", "voiceId": "harmonia" }, "deepgram": { "voiceId": "aura-2-harmonia-en" }, "elevenlabs": { "voiceId": "XrExE9yKIg1WjnnlVkGX" } },
+  "Priya":  { "gender": "woman", "label": "Bright and quick",    "livekit": { "model": "deepgram/aura-2", "voiceId": "aurora" },   "deepgram": { "voiceId": "aura-2-aurora-en" },   "elevenlabs": { "voiceId": "cgSgspJ2msm6clMCkdW9" } },
+  "Jonas":  { "gender": "man",   "label": "Even baritone",       "livekit": { "model": "deepgram/aura-2", "voiceId": "mars" },     "deepgram": { "voiceId": "aura-2-mars-en" },     "elevenlabs": { "voiceId": "nPczCjzI2devNBz1zQrb" } },
+  "Ines":   { "gender": "woman", "label": "Soft, expressive",    "livekit": { "model": "deepgram/aura-2", "voiceId": "vesta" },    "deepgram": { "voiceId": "aura-2-vesta-en" },    "elevenlabs": { "voiceId": "EXAVITQu4vr4xnSDxMaL" } },
+  "Kenji":  { "gender": "man",   "label": "Low and calm",        "livekit": { "model": "deepgram/aura-2", "voiceId": "pluto" },    "deepgram": { "voiceId": "aura-2-pluto-en" },    "elevenlabs": { "voiceId": "onwK4e9ZLuTAKqWW03F9" } },
+  "Amara":  { "gender": "woman", "label": "Clear and steady",    "livekit": { "model": "deepgram/aura-2", "voiceId": "athena" },   "deepgram": { "voiceId": "aura-2-athena-en" },   "elevenlabs": { "voiceId": "9BWtsMINqrJLrRacOk9x" } },
+  "Marcus": { "gender": "man",   "label": "Warm and relaxed",    "livekit": { "model": "deepgram/aura-2", "voiceId": "apollo" },   "deepgram": { "voiceId": "aura-2-apollo-en" },   "elevenlabs": { "voiceId": "iP95p4xoKVk53GoZ742B" } },
+  "Hannah": { "gender": "woman", "label": "Crisp and light",     "livekit": { "model": "deepgram/aura-2", "voiceId": "callista" }, "deepgram": { "voiceId": "aura-2-callista-en" }, "elevenlabs": { "voiceId": "pFZP5JQG7iQjIQuC4Bku" } }
+}

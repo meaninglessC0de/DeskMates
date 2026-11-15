@@ -1,0 +1,20 @@
+[project]
+name = "agent-manager-voice"
+version = "0.1.0"
+description = "LiveKit voice worker for Agent Manager calls"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "livekit-agents[silero,deepgram,elevenlabs,openai]==1.8.12",
+  "livekit-plugins-synthesia==1.8.12",
+  "python-dotenv",
+  "pillow",
+  "httpx",
+]
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "aiohttp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

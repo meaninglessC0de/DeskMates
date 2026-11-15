@@ -248,7 +248,7 @@ export async function buildServer(office: Office): Promise<FastifyInstance> {
     const body = parse(schemas.voiceChat, req.body);
     const speaker = req.headers['x-speaker'];
     const ac = new AbortController();
-    req.raw.on('close', () => ac.abort());
+    reply.raw.on('close', () => ac.abort());   // not req.raw: on current Node the request emits close as soon as its body is read
     const id = `chatcmpl-${Date.now()}`;
     const chunk = (delta: Record<string, string>, finish: string | null) =>
       `data: ${JSON.stringify({ id, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: body.model, choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;

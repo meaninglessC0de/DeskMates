@@ -1,0 +1,11 @@
+{
+  "_note": "Synthesia interactive avatar ids from config/cast-ids.txt, each checked on 2026-11-15 with a real session (all eight start and publish video, 512x512). Mapped to the cast by gender, then by look. Gender and look come from the captured stills. Amara and Hannah used to share one face (workspace avatar 4 and the Synthesia sample Jenny look the same); on 2026-11-15 Amara was moved to a new workspace avatar (6, verified with a real session), and workspace avatar 4 (01ee56f6-4aa5-4eb2-a6f1-178c1c17f7b3) is now spare. realCalls.ts and scripts/capture-portraits.ts read this file when a cast member's avatarId is null in config/cast.json.",
+  "Maya":   { "avatarId": "4b638067-6319-46e1-b634-371a4bdfceb9", "portrait": "maya.jpg",   "source": "sample Mei (woman, dark curly hair)" },
+  "Priya":  { "avatarId": "e929d062-a7b1-4801-a762-b38aabab9fb7", "portrait": "priya.jpg",  "source": "workspace avatar 5 (woman, dark curly hair, striped shirt and pink vest)" },
+  "Jonas":  { "avatarId": "a2250632-b4ad-4bd9-ae01-5ff8320c00c6", "portrait": "jonas.jpg",  "source": "workspace avatar 2 (man, 40s, light brown hair)" },
+  "Ines":   { "avatarId": "b9ff108b-1bd4-45b6-9bb3-35b73db03e70", "portrait": "ines.jpg",   "source": "workspace avatar 3 (woman, blond, purple earrings)" },
+  "Kenji":  { "avatarId": "7572faa9-15da-400d-8227-ef1ab8932523", "portrait": "kenji.jpg",  "source": "sample Kenji (man, grey hair, glasses)" },
+  "Amara":  { "avatarId": "a861a646-ad59-4960-adab-5aa2eac9c2b5", "portrait": "amara.jpg",  "source": "workspace avatar 6 (woman, straight dark bob, grey blazer, blue blouse)" },
+  "Marcus": { "avatarId": "570fcdf6-bc33-4cbd-a102-7cb7aa53b165", "portrait": "marcus.jpg", "source": "workspace avatar 1 (man, 30s, dark curly hair)" },
+  "Hannah": { "avatarId": "8788bef1-8020-46e0-a8f4-510ea9989b25", "portrait": "hannah.jpg", "source": "sample Jenny (woman, red hair, denim shirt)" }
+}
