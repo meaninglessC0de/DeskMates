@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-export const APP_NAME = 'Agent Manager';
+export const APP_NAME = 'Deskmates';
 export const TEST_MODE = process.env.AGENT_MANAGER_TEST === '1';
 export const OFFICE_PORT = process.env.OFFICE_PORT || '4317';
 export const REPO_ROOT = resolve(import.meta.dirname, '../..');

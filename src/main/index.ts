@@ -1,12 +1,26 @@
-import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } from 'electron';
+import { BrowserWindow, Menu, app, dialog, ipcMain, nativeImage, shell, systemPreferences } from 'electron';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { TrayAction } from '../shared/shell';
-import { APP_NAME, CH, TEST_MODE } from './constants';
+import { APP_NAME, CH, RESOURCES, TEST_MODE } from './constants';
 import { LOG_PATH, killOfficeNow, officePid, officeUrl, startOffice, stopOffice } from './office';
 import { notify, recorded, type NotifyArgs } from './notify';
 import { clickTrayItem, createTray, trayLabels, updateTray, type TrayRow } from './tray';
 
 app.setName(APP_NAME);
+
+const ICON_PATH = join(RESOURCES, 'icon.png');
+
+// In development the Dock shows the Electron logo; swap in the Deskmates icon. A missing file never crashes.
+function setDockIcon(): void {
+  try {
+    if (process.platform !== 'darwin' || app.isPackaged || !existsSync(ICON_PATH)) return;
+    const img = nativeImage.createFromPath(ICON_PATH);
+    if (!img.isEmpty()) app.dock?.setIcon(img);
+  } catch {
+    /* the default icon stays */
+  }
+}
 
 let win: BrowserWindow | null = null;
 let quitting = false;
@@ -53,6 +67,7 @@ function createWindow(url: string | null, file: { path: string; shot: string } |
     minHeight: 640,
     show: false,
     title: APP_NAME,
+    icon: ICON_PATH,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
       contextIsolation: true,
@@ -180,6 +195,7 @@ if (!app.requestSingleInstanceLock()) {
   process.on('exit', killOfficeNow);
 
   void app.whenReady().then(async () => {
+    setDockIcon();
     setAppMenu();
     installIpc();
     createTray(trayDeps);

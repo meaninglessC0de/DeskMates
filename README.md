@@ -1,6 +1,8 @@
-# Agent Manager
+<img src="resources/brand/deskmates-mark.svg" width="72" height="72" alt="Deskmates" />
 
-An Electron app where you hire AI employees, each with its own desktop. Read `docs/hackathon/README.md` first.
+# Deskmates
+
+A Mac app where you hire a small team of AI employees, each with a name, a face and its own desktop. Read `docs/hackathon/README.md` first.
 
 ```
 npm install && node node_modules/electron/install.js   # once

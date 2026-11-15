@@ -209,7 +209,7 @@ async function runOne(): Promise<void> {
     console.log(`tray labels: ${JSON.stringify(labels)}`);
     const wanted = rows.map((r) => `${r.name}    ${humanize(r.state)}`);
     check('tray lists the four people with their states', wanted.every((w) => labels.includes(w)), wanted.join(' | '));
-    const actions = ['Summon meeting…', 'Hire…', 'Pause everyone', 'Open Agent Manager', 'Quit'];
+    const actions = ['Summon meeting…', 'Hire…', 'Pause everyone', 'Open Deskmates', 'Quit'];
     check('tray has the actions', actions.every((a) => labels.includes(a)));
     await page.evaluate((r) => window.shell?.setTray(r, r[0].id), rows);
     await sleep(300);
@@ -284,9 +284,9 @@ async function runOne(): Promise<void> {
     const hidden = !(await hook<boolean>(app, 'windowVisible'));
     const alive = await app.evaluate(() => process.pid > 0);
     check('closing the window hides it and the app keeps running', hidden && alive);
-    await hook(app, 'clickTrayItem', 'Open Agent Manager');
+    await hook(app, 'clickTrayItem', 'Open Deskmates');
     await sleep(400);
-    check('"Open Agent Manager" shows the window again', await hook<boolean>(app, 'windowVisible'));
+    check('"Open Deskmates" shows the window again', await hook<boolean>(app, 'windowVisible'));
 
     // single instance
     await hook(app, 'closeWindow');
