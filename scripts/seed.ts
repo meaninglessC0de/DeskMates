@@ -28,35 +28,77 @@ async function until<T>(what: string, fn: () => Promise<T | null | false | undef
   }
 }
 
-const PEOPLE: { roleKey: string; titles: string[]; steps: string[]; ack: string }[] = [
+const PEOPLE: { roleKey: string; titles: string[]; steps: string[]; ack: string; acks?: string[]; outcomes: string[] }[] = [
   {
     roleKey: 'web_developer',
     titles: ['Fix the cart total on checkout', 'Build the pricing page', 'Review the signup form code', 'Speed up the home page', 'Add a contact form', 'Fix the broken footer links'],
     steps: ['Opened the project folder', 'Edited the page', 'Ran the checks'],
     ack: 'On it. I will run the checks before I call it done.',
+    acks: ['On it. I\'ll run the checks before I call it done.', 'Looking now.', 'Sure, starting with the failing case.'],
+    outcomes: [
+      'The cart total was adding shipping twice. Fixed, and the checkout tests pass.',
+      'The pricing page is up on staging: three plans, monthly and yearly, and it holds up on a phone.',
+      'The signup form is in good shape. Two things worth changing: the password rule message and a missing label. I\'ve left notes in the file.',
+      'The home page now loads in 1.1 s, down from 2.9. Most of it was two oversized images.',
+      'The contact form is in. It checks the email address and sends to the shared inbox.',
+      'Six footer links pointed at pages we renamed. All fixed and checked.',
+    ],
   },
   {
     roleKey: 'marketer',
     titles: ['Plan the launch campaign', 'Write the launch email', 'Research three competitors', 'Draft the newsletter', 'Outline a social calendar', 'Compare ad channels'],
     steps: ['Looked at competitors', 'Drafted three options', 'Picked the strongest'],
     ack: 'Sure. I will bring you three options.',
+    acks: ['Sure. I\'ll bring you three options.', 'Happy to. Give me a few minutes.', 'On it. I\'ll start with what competitors are doing.'],
+    outcomes: [
+      'Three campaign options are in the doc. I\'d go with the second: one clear promise and a two-week run.',
+      'The launch email is drafted, with three subject lines to choose from. The short one reads best.',
+      'Notes on the three competitors are ready. All three lead with price; none of them shows the product.',
+      'The newsletter draft is ready: four short items and one link each.',
+      'A four-week social calendar is in the sheet, three posts a week.',
+      'Search wins on cost per signup, social on reach. A one-page comparison is in the folder.',
+    ],
   },
   {
     roleKey: 'researcher',
     titles: ['Find the facts on pricing models', 'Compare two hosting options', 'Summarise the market report', 'Check the claims in the draft', 'List open questions on privacy', 'Read the new regulation'],
     steps: ['Read the sources', 'Kept notes', 'Wrote the summary'],
     ack: 'Starting now. I will mark what is uncertain.',
+    acks: ['Starting now. I\'ll mark what is uncertain.', 'On it. I\'ll keep the sources.', 'Sure. I\'ll come back with what holds up and what doesn\'t.'],
+    outcomes: [
+      'There are three common pricing models. Per-seat is the norm in our space. Sources and two caveats are in the note.',
+      'Both hosts would do. The first is cheaper at our size and the second is simpler to run. Details in the note.',
+      'The market report in one page: growth is slowing, and small teams are the part still growing.',
+      'Two claims in the draft don\'t hold up. I\'ve marked them and suggested wording that does.',
+      'Seven open questions on privacy, in order of risk. The first two need a lawyer.',
+      'The new regulation mostly restates the old one. Two changes affect us, and both are in the note.',
+    ],
   },
   {
     roleKey: 'designer',
     titles: ['Sketch the settings layout', 'Improve the pricing page', 'Make a simple logo', 'Review the colour palette', 'Tidy the icon set', 'Mock up the empty state'],
     steps: ['Sketched two directions', 'Compared them', 'Wrote up the why'],
     ack: 'Happy to. Two directions coming.',
+    acks: ['Happy to. Two directions coming.', 'On it. I\'ll sketch before I polish.', 'Sure. I\'ll show you options first.'],
+    outcomes: [
+      'Two layouts for settings are in the file. The grouped one is calmer and I\'d build that.',
+      'The pricing page reads better now: one highlighted plan and less small print.',
+      'Three logo directions are ready. The simple mark holds up best at small sizes.',
+      'The palette works. I\'d drop the second blue: it fights the first.',
+      'The icon set is tidy: one stroke weight and one corner style, 24 icons.',
+      'The empty state is mocked up: one line and one button, nothing else.',
+    ],
   },
 ];
 
 function pad<T>(arr: T[], i: number): T {
   return arr[i % arr.length];
+}
+
+/** The manager's request, written the way a person asks: "Can you fix the cart total on checkout?" */
+function ask(title: string, i: number): string {
+  const rest = title[0]!.toLowerCase() + title.slice(1);
+  return [`Can you ${rest}?`, `Please ${rest}.`, `${title} when you get a moment.`][i % 3]!;
 }
 
 function historyFor(e: Employee, spec: (typeof PEOPLE)[number], now: number) {
@@ -78,7 +120,7 @@ function historyFor(e: Employee, spec: (typeof PEOPLE)[number], now: number) {
     const finished = start + activeMs + 60_000;
     const task: Task = {
       id: id('tsk'), employeeId: e.id, title, assignedBy: 'user', status: failed ? 'failed' : 'done',
-      plan: [], outcome: failed ? 'Could not finish: the site did not load.' : `Done. ${title} is finished and saved.`,
+      plan: [], outcome: failed ? "I couldn't finish this one: the site didn't load after three tries." : pad(spec.outcomes, i),
       assignedMs: start, finishedMs: finished, activeMs, costUsd: Math.round((0.12 + ((i * 13) % 30) / 100) * 100) / 100,
       inputTokens: 20_000 + i * 900, outputTokens: 3_000 + i * 120, numTurns: 6 + (i % 5), traceId: null,
     };
@@ -87,8 +129,8 @@ function historyFor(e: Employee, spec: (typeof PEOPLE)[number], now: number) {
     const m = (from: Message['from'], kind: Message['kind'], text: string, createdMs: number): Message => ({
       id: id('msg'), employeeId: e.id, from, kind, text, taskId: task.id, createdMs, seenMs: from === 'user' ? createdMs + 4_000 : null,
     });
-    messages.push(m('user', 'text', title, start));
-    messages.push(m('employee', 'text', spec.ack, start + 9_000));
+    messages.push(m('user', 'text', ask(title, i), start));
+    messages.push(m('employee', 'text', pad(spec.acks ?? [spec.ack], i), start + 9_000));
     spec.steps.forEach((sentence, k) => {
       const s = start + 20_000 + k * Math.floor(activeMs / 3);
       steps.push({ id: id('evt'), employeeId: e.id, taskId: task.id, sentence, status: 'ok', startedMs: s, endedMs: s + Math.floor(activeMs / 3) - 1000 });
