@@ -308,7 +308,8 @@ export class ClaudeRuntime implements EmployeeRuntime {
       cwd: this.deps.home,
       env: employeeEnv(this.deps.home, this.deps.env),
       settingSources: [],
-      tools: ['TodoWrite', 'WebSearch', 'WebFetch'],
+      // ON_SCREEN=1 (the live demo): no background web tools, so reading the web happens in Firefox on the desktop, where it can be watched
+      tools: process.env.ON_SCREEN === '1' ? ['TodoWrite'] : ['TodoWrite', 'WebSearch', 'WebFetch'],
       strictMcpConfig: true,
       mcpServers: this.servers(false),
       permissionMode: 'default',

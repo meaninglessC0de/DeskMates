@@ -11,7 +11,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "demo:app": "electron-vite build && DATA_DIR=data-demo electron-vite preview --skipBuild",
+    "demo:app": "electron-vite build && DATA_DIR=data-demo ON_SCREEN=1 electron-vite preview --skipBuild",
     "demo": "tsx scripts/demo/live.ts",
     "demo:quick": "tsx scripts/demo/run.ts",
     "seed": "tsx scripts/seed.ts",

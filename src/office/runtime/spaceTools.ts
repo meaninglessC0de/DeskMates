@@ -11,6 +11,28 @@ export function cap(text: string): string {
   return `${text.slice(0, OUTPUT_CAP)}\n[truncated: ${text.length - OUTPUT_CAP} more characters]`;
 }
 
+/**
+ * ON_SCREEN=1 (the live demo): every command the employee runs is also written to ~/.worklog on her own desktop, where a
+ * small always-on-top terminal tails it (see cuaSpaces.ts). The work is the same; it just happens where people can see it.
+ */
+const ON_SCREEN = process.env.ON_SCREEN === '1';
+function workLog(spaces: Spaces, employeeId: string, text: string): void {
+  if (!ON_SCREEN || !text.trim()) return;
+  const b64 = Buffer.from(text.endsWith('\n') ? text : `${text}\n`).toString('base64');
+  void spaces.exec(employeeId, `echo ${b64} | base64 -d >> "$HOME/.worklog"`, { timeoutMs: 5000 }).catch(() => undefined);
+}
+function commandLine(command: string): string {
+  const lines = command.split('\n');
+  const first = lines[0].length > 150 ? `${lines[0].slice(0, 150)}…` : lines[0];
+  return lines.length > 1 ? `$ ${first}  (+${lines.length - 1} lines)` : `$ ${first}`;
+}
+function outputHead(text: string): string {
+  const lines = text.split('\n');
+  const head = lines.slice(0, 12).map((l) => (l.length > 110 ? `${l.slice(0, 110)}…` : l));
+  if (lines.length > 12) head.push(`… ${lines.length - 12} more lines`);
+  return head.join('\n');
+}
+
 /** `shell`, `read_file` and `write_file`, executed in this employee's own Space through the `Spaces` seam. */
 export function spaceToolSpecs(spaces: Spaces, employeeId: string): ToolSpec[] {
   return [
@@ -25,6 +47,7 @@ export function spaceToolSpecs(spaces: Spaces, employeeId: string): ToolSpec[] {
       handler: async (a) => {
         const timeoutMs = Math.min(Math.max(Number(a.timeout_ms) || DEFAULT_TIMEOUT_MS, 1000), MAX_TIMEOUT_MS);
         try {
+          workLog(spaces, employeeId, commandLine(String(a.command)));
           const r = await spaces.exec(employeeId, String(a.command), { timeoutMs });
           const parts: string[] = [];
           if (r.stdout) parts.push(r.stdout.replace(/\n$/, ''));
@@ -32,6 +55,7 @@ export function spaceToolSpecs(spaces: Spaces, employeeId: string): ToolSpec[] {
           if (r.timedOut) parts.push(`[timed out after ${Math.round(timeoutMs / 1000)} s]`);
           else if (r.exitCode !== 0) parts.push(`[exit ${r.exitCode}]`);
           const text = parts.join('\n') || '(no output)';
+          workLog(spaces, employeeId, outputHead(text));
           // a non-zero exit is normal (grep, test): it is shown in the text, not flagged as a tool error
           return textResult(cap(text), r.timedOut);
         } catch (err) {

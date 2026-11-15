@@ -149,8 +149,33 @@ export function createCuaSpaces(opts: CuaSpacesOptions): Spaces {
       throw new Error('The new desktop did not answer.');
     }
     await setUpBrowser(employeeId);
+    if (process.env.ON_SCREEN === '1') await setUpWorkLog(employeeId);
     say('Desktop is ready');
     return info(employeeId, 'running');
+  }
+
+  /**
+   * ON_SCREEN=1 (the live demo): a small always-on-top terminal in the bottom-right corner that tails ~/.worklog, the file the
+   * shell tool mirrors every command into (spaceTools.ts). A failure is logged and never fails the hire.
+   */
+  async function setUpWorkLog(employeeId: string): Promise<void> {
+    const script = [
+      'export DISPLAY="${DISPLAY:-:0}"',
+      'touch "$HOME/.worklog"',
+      'if ! wmctrl -l 2>/dev/null | grep -q "Work log"; then',
+      '  (setsid xfce4-terminal --title="Work log" --geometry=62x11 --hide-menubar --hide-scrollbar --hide-toolbar -e "tail -n 40 -F $HOME/.worklog" >/dev/null 2>&1 &)',
+      '  for i in 1 2 3 4 5 6 7 8 9 10 11 12; do wmctrl -l 2>/dev/null | grep -q "Work log" && break; sleep 0.3; done',
+      'fi',
+      'wmctrl -r "Work log" -b add,above 2>/dev/null',
+      'wmctrl -r "Work log" -e 0,770,560,-1,-1 2>/dev/null',
+      'true',
+    ].join('\n');
+    try {
+      const h = await running(employeeId);
+      await withTimeout(h.bash(script, 10_000), 11_000, 'work log setup');
+    } catch (e) {
+      console.warn(`[spaces] ${nameOf(employeeId)}: work log setup failed: ${errorText(e)}`);
+    }
   }
 
   /** One clean Firefox, no popups (see browserSetup.ts). A failure is logged and never fails the hire. */
