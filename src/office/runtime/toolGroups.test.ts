@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ACT, DESKTOP_ALLOW, KNOWN_DESKTOP_TOOLS, OBSERVE, RISKY, buildDisallowed, desktopGroup, fullName, isAllowedDesktopTool,
-  isRiskyShell, splitToolName,
+  isRiskyShell, riskyShellPatterns, splitToolName,
 } from './toolGroups.ts';
 
 const live71: string[] = JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures/cua-desktop-tools.json'), 'utf8'));
@@ -74,4 +74,12 @@ describe('risky shell pattern', () => {
     'ls -la ~/work', 'echo hello > ~/work/hello.txt', 'date +%F', 'git status', 'git commit -m "x"', 'rm notes.txt',
     'cat package.json', 'node index.js', 'curl https://example.com', 'python3 script.py', 'mkdir -p ~/work/site',
   ])('allows %s', (cmd) => expect(isRiskyShell(cmd)).toBe(false));
+});
+
+describe('riskyShellPatterns', () => {
+  it('returns every pattern a command matches, none for a safe one', () => {
+    expect(riskyShellPatterns('git push origin main')).toHaveLength(1);
+    expect(riskyShellPatterns('git push origin main && rm -rf build')).toHaveLength(2);
+    expect(riskyShellPatterns('ls ~/work')).toHaveLength(0);
+  });
 });

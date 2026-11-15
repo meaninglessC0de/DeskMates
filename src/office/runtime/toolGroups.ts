@@ -101,6 +101,12 @@ export function isRiskyShell(command: string): boolean {
   return RISKY_SHELL.some(([re]) => re.test(c));
 }
 
+/** Every RISKY_SHELL pattern the command matches (not just the first), for deciding whether an approval covers all of it. */
+export function riskyShellPatterns(command: string): RegExp[] {
+  const c = command.toLowerCase();
+  return RISKY_SHELL.filter(([re]) => re.test(c)).map(([re]) => re);
+}
+
 /**
  * What the big step in a risky command is, in the manager's words, and the part of the command that does it
  * (a long chain shows the step that matters, not whatever happens to come first). Null when nothing is risky.

@@ -20,6 +20,9 @@ import { experimentUrl } from '../sync/tracing.ts';
 import { decodeToken, makeCandidate, type CandidateInput, type RoleClient } from './hiring.ts';
 import { EmployeeSupervisor, type SupervisorContext } from './supervisor.ts';
 
+/** Messages in one chain between the same two people (since the manager last spoke to either) before the guard refuses. */
+export const PAIR_LIMIT = 8;
+
 export interface OfficeDeps {
   env: Env;
   store: Store;
@@ -137,7 +140,7 @@ export class Office implements SupervisorContext {
     if (this.wakeLog.length >= 20) return 'Too many messages between teammates right now. Ask your manager instead.';
     const since = Math.max(this.lastManagerMs.get(fromId) ?? 0, this.lastManagerMs.get(toId) ?? 0);
     const chain = this.colleagueLog.filter((l) => l.ms > since && ((l.from === fromId && l.to === toId) || (l.from === toId && l.to === fromId)));
-    if (chain.length >= 3) return 'Limit reached. Ask your manager instead.';
+    if (chain.length >= PAIR_LIMIT) return 'Limit reached. Ask your manager instead.';
     this.colleagueLog.push({ from: fromId, to: toId, ms: now });
     this.colleagueLog = this.colleagueLog.slice(-200);
     this.wakeLog.push(now);

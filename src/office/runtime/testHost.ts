@@ -7,7 +7,7 @@ import { readEnv } from '../../shared/index.ts';
 import { buildPresets, DEFAULT_PERMISSIONS } from '../presets.ts';
 import { MockHost } from '../spaces/mock/mockHost.ts';
 import { createMockSpaces } from '../spaces/mock/mockSpaces.ts';
-import type { ApprovalOutcome, RuntimeDeps, RuntimeHost, ToolFamily, TurnResult } from './types.ts';
+import type { ApprovalOutcome, GrantedApproval, RuntimeDeps, RuntimeHost, ToolFamily, TurnResult } from './types.ts';
 import type { ApprovalRequest } from './gateTypes.ts';
 
 process.env.MOCK_SPEED = process.env.MOCK_SPEED ?? '400';
@@ -100,6 +100,16 @@ export class FakeHost implements RuntimeHost {
   messageColleague(to: string, text: string): string {
     this.colleagueCalls.push({ to, text });
     return `Sent to ${to}.`;
+  }
+  /** What `grantedApprovals()` reports: approvals the manager granted for the open task. */
+  granted: GrantedApproval[] = [];
+  grantedApprovals(): GrantedApproval[] {
+    return this.granted;
+  }
+  waiting: { name: string; reason?: string }[] = [];
+  waitForColleague(name: string, reason?: string): string {
+    this.waiting.push({ name, reason });
+    return `Noted. Stop now: the office will wake you when ${name}'s message arrives.`;
   }
   listColleagues(): string {
     return 'Priya, Marketer, idle';

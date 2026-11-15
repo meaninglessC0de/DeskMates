@@ -309,7 +309,7 @@ describe('desktop actions and removal', () => {
 });
 
 describe('colleagues', () => {
-  it('delivers by first name, lists valid names, honours the switch and stops a loop after three', async () => {
+  it('delivers by first name, lists valid names, honours the switch and stops a loop after eight', async () => {
     const { h, e } = await hired();
     const b = await h.hire('marketer');
     await h.state(b.id, 'idle');
@@ -321,9 +321,10 @@ describe('colleagues', () => {
     const step = await h.waitFor('peer step on Priya', (x): x is Ev<'step'> => x.type === 'step' && x.step.employeeId === b.id && x.step.peer?.direction === 'from', { from });
     expect(step.step.sentence).toBe('Maya asked something');
     expect(maya.listColleagues()).toBe('Priya, Marketer, idle');
-    expect(priya.messageColleague('Maya', 'One')).toBe('Sent to Maya.');
-    expect(maya.messageColleague('Priya', 'Two')).toBe('Sent to Priya.');
-    expect(priya.messageColleague('Maya', 'Three')).toBe('Limit reached. Ask your manager instead.');
+    for (let i = 2; i <= 8; i++) {
+      expect((i % 2 === 0 ? priya : maya).messageColleague(i % 2 === 0 ? 'Maya' : 'Priya', `Message ${i}`)).toMatch(/^Sent to /);
+    }
+    expect(priya.messageColleague('Maya', 'Nine')).toBe('Limit reached. Ask your manager instead.');
     h.office.sendMessage(e.id, 'Carry on.'); // a manager message resets the chain
     expect(priya.messageColleague('Maya', 'Four')).toBe('Sent to Maya.');
     await h.office.patchEmployee(e.id, { permissions: { teammates: false } });
@@ -441,6 +442,158 @@ describe('the keep-going rules (with a runtime that stops early)', () => {
     h.office.sendMessage(e.id, 'No, stop.');
     expect((h.office.thread(e.id, {}).task as Task).status).toBe('cancelled');
     expect(h.office.getEmployee(e.id).state).toBe('idle');
+  });
+});
+
+describe('waiting for a teammate', () => {
+  const NOTE = /has not replied yet\. Carry on with anything you can do without them, message them again, or ask your manager\.$/;
+  /** Manager text "wait" makes her call wait_for_colleague and stop; a colleague message or the timeout note finishes the task. */
+  function waitingRuntime(log: InboxItem[], answers: string[] = []) {
+    return (deps: RuntimeDeps): EmployeeRuntime => {
+      let started = false;
+      const timers = new Set<NodeJS.Timeout>();
+      const turn = (fn: () => void) => {
+        const t = setTimeout(() => { timers.delete(t); deps.host.turnStarted(); fn(); }, 5);
+        timers.add(t);
+      };
+      const rt: EmployeeRuntime = {
+        async start() { started = true; },
+        deliver(item) {
+          log.push(item);
+          if (!started) return;
+          if (item.kind === 'office' && /just been hired/.test(item.text)) return turn(() => deps.host.turnEnded({}));
+          if (item.kind === 'manager') {
+            return turn(() => {
+              deps.host.toolUsed('space');
+              answers.push(deps.host.waitForColleague(/nobody/i.test(item.text) ? 'Nobody' : 'Priya'));
+              deps.host.turnEnded({ costUsd: 0.01, numTurns: 1 });
+            });
+          }
+          if (item.kind === 'colleague' || (item.kind === 'office' && NOTE.test(item.text))) {
+            return turn(() => {
+              deps.host.toolUsed('space');
+              if (item.kind === 'colleague') deps.host.finishTask('Used what Priya sent.');
+              deps.host.turnEnded({ costUsd: 0.01, numTurns: 1 });
+            });
+          }
+          if (item.kind === 'office' && /You stopped without finishing/.test(item.text)) return turn(() => deps.host.turnEnded({}));
+        },
+        async interrupt() {}, async setPaused() {}, onPermissionsChanged() {}, async attachHost() {}, async detachHost() {},
+        async dispose() { for (const t of timers) clearTimeout(t); timers.clear(); },
+      };
+      return rt;
+    };
+  }
+  const nudges = (log: InboxItem[]) => log.filter((i) => i.kind === 'office' && /You stopped without finishing/.test(i.text));
+
+  async function rig(log: InboxItem[], answers: string[] = []) {
+    h = await harness({ boot: { createRuntime: waitingRuntime(log, answers) } });
+    const maya = await h.hire('web_developer');
+    await h.state(maya.id, 'idle');
+    const priya = await h.hire('marketer');
+    await h.state(priya.id, 'idle');
+    return { maya, priya, mayaSup: h.office.peers(priya.id)[0], priyaSup: h.office.peers(maya.id)[0] };
+  }
+
+  it('shows "Waiting for Priya", and neither nudges nor fails her', async () => {
+    const log: InboxItem[] = [];
+    const answers: string[] = [];
+    const { maya } = await rig(log, answers);
+    const from = h!.mark();
+    h!.office.sendMessage(maya.id, 'Build the page, then wait.');
+    await h!.waitFor('waiting detail', (x): x is Ev<'employee'> => x.type === 'employee' && x.employee.id === maya.id && x.employee.stateDetail === 'Waiting for Priya', { from });
+    expect(answers[0]).toMatch(/^Noted\. Stop now: the office will wake you when Priya's message arrives\.$/);
+    await new Promise((r) => setTimeout(r, 400));
+    const e = h!.office.getEmployee(maya.id);
+    expect(e).toMatchObject({ state: 'working', stateDetail: 'Waiting for Priya' });
+    expect(nudges(log)).toHaveLength(0);
+    expect((h!.office.thread(maya.id, {}).task as Task).status).toBe('running');
+  });
+
+  it('a colleague message wakes her and clears the flag', async () => {
+    const log: InboxItem[] = [];
+    const { maya, priyaSup } = await rig(log);
+    h!.office.sendMessage(maya.id, 'Build the page, then wait.');
+    await h!.waitFor('waiting', (x): x is Ev<'employee'> => x.type === 'employee' && x.employee.id === maya.id && x.employee.stateDetail === 'Waiting for Priya');
+    const from = h!.mark();
+    expect(priyaSup.messageColleague('Maya', 'Here is the copy.')).toBe('Sent to Maya.');
+    const idle = await h!.state(maya.id, 'idle', from);
+    expect(idle.stateDetail).not.toMatch(/Waiting/);
+    expect(log.some((i) => i.kind === 'colleague' && i.text === 'Here is the copy.')).toBe(true);
+    expect((h!.office.thread(maya.id, {}).task as Task).status).toBe('done');
+    expect(nudges(log)).toHaveLength(0);
+  });
+
+  it('after four minutes (shortened here) the office delivers one note, then the normal rules apply', async () => {
+    const log: InboxItem[] = [];
+    const { maya, mayaSup } = await rig(log);
+    mayaSup.waitTimeoutMs = 80;
+    h!.office.sendMessage(maya.id, 'Build the page, then wait.');
+    await h!.waitFor('waiting', (x): x is Ev<'employee'> => x.type === 'employee' && x.employee.id === maya.id && x.employee.stateDetail === 'Waiting for Priya');
+    const stuck = await h!.state(maya.id, 'stuck');
+    expect(stuck.stateDetail).toBe('Stopped making progress');
+    const notes = log.filter((i) => i.kind === 'office' && NOTE.test(i.text));
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatchObject({ text: 'Priya has not replied yet. Carry on with anything you can do without them, message them again, or ask your manager.' });
+    expect(nudges(log)).toHaveLength(2);
+  });
+
+  it('an unknown name gets an error and does not start waiting', async () => {
+    const log: InboxItem[] = [];
+    const answers: string[] = [];
+    const { maya } = await rig(log, answers);
+    h!.office.sendMessage(maya.id, 'Wait for nobody.');
+    await h!.state(maya.id, 'stuck');
+    expect(answers[0]).toBe('No teammate called Nobody. Valid names: Priya.');
+    expect(h!.office.getEmployee(maya.id).stateDetail).toBe('Stopped making progress');
+    expect(nudges(log)).toHaveLength(2);
+  });
+
+  it('pausing stops the clock and resuming starts it again; the stall watchdog leaves a waiting employee alone', async () => {
+    const log: InboxItem[] = [];
+    const { maya, mayaSup } = await rig(log);
+    mayaSup.waitTimeoutMs = 150;
+    h!.office.sendMessage(maya.id, 'Build the page, then wait.');
+    await h!.waitFor('waiting', (x): x is Ev<'employee'> => x.type === 'employee' && x.employee.id === maya.id && x.employee.stateDetail === 'Waiting for Priya');
+    mayaSup.pause();
+    await new Promise((r) => setTimeout(r, 300));
+    expect(log.some((i) => i.kind === 'office' && NOTE.test(i.text))).toBe(false);
+    mayaSup.resume();
+    await h!.state(maya.id, 'stuck');
+    expect(log.filter((i) => i.kind === 'office' && NOTE.test(i.text))).toHaveLength(1);
+  });
+});
+
+describe('one approval for one step (supervisor side)', () => {
+  it('remembers an approved request_approval for the open task only; denied and tool asks are not remembered', async () => {
+    let host: RuntimeDeps['host'] | null = null;
+    const factory = (deps: RuntimeDeps): EmployeeRuntime => {
+      host = deps.host;
+      return {
+        async start() {}, deliver() {}, async interrupt() {}, async setPaused() {}, onPermissionsChanged() {},
+        async attachHost() {}, async detachHost() {}, async dispose() {},
+      };
+    };
+    h = await harness({ boot: { createRuntime: factory } });
+    const e = await h.hire('web_developer');
+    for (let i = 0; i < 200 && !host; i++) await new Promise((r) => setTimeout(r, 10));
+    const sup = h.office.peers('none').find((s) => s.id === e.id)!;
+    const ask = async (title: string, kind: 'tool' | 'big_step', decision: 'approve' | 'deny') => {
+      const from = h!.mark();
+      const p = host!.requestApproval({ title, detail: 'git push -u origin fix', kind });
+      const ap = await h!.waitFor('approval', isApproval('pending', e.id), { from });
+      h!.office.decideApproval(ap.approval.id, decision, 'once');
+      await p;
+    };
+    host!.toolUsed('space'); // opens a task
+    await ask('Push fix', 'big_step', 'deny');
+    await ask('Run a command', 'tool', 'approve');
+    expect(sup.grantedApprovals()).toEqual([]);
+    await ask('Push fix', 'big_step', 'approve');
+    expect(sup.grantedApprovals()).toMatchObject([{ title: 'Push fix', detail: 'git push -u origin fix' }]);
+    host!.finishTask('done'); // the task closes: another task starts with a clean slate
+    host!.toolUsed('space');
+    expect(sup.grantedApprovals()).toEqual([]);
   });
 });
 

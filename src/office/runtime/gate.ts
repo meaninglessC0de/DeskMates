@@ -1,7 +1,7 @@
 import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk';
 import type { Employee } from '../../shared/index.ts';
-import { desktopGroup, isAllowedDesktopTool, isRiskyShell, riskyShellStep, splitToolName } from './toolGroups.ts';
-import type { ApprovalOutcome } from './types.ts';
+import { desktopGroup, isAllowedDesktopTool, isRiskyShell, riskyShellPatterns, riskyShellStep, splitToolName } from './toolGroups.ts';
+import type { ApprovalOutcome, GrantedApproval } from './types.ts';
 
 export type Family = 'desktop' | 'shell' | 'files';
 
@@ -15,7 +15,12 @@ export interface GateHost {
   requestApproval(a: { title: string; detail: string; kind: 'tool' }): Promise<ApprovalOutcome>;
   /** A tool is about to be asked for: the work has started, so a task is open before the approval is created. */
   toolUsed?(family: 'desktop' | 'space' | 'web'): void;
+  /** Approvals the employee raised herself (request_approval) that the manager approved in the task now open. */
+  grantedApprovals?(): GrantedApproval[];
 }
+
+/** An approval the employee asked for and got covers a risky command of the same kind for this long. */
+export const APPROVAL_COVER_MS = 10 * 60_000;
 
 /** The one tool the mock host offers (MockHost has no real MCP server). */
 export const MOCK_HOST_TOOLS: ReadonlySet<string> = new Set(['read_window']);
@@ -105,6 +110,9 @@ export class PermissionGate {
     const risky = group === 'risky';
     const riskyShell = server === 'space' && tool === 'shell' && isRiskyShell(str(input.command));
 
+    // 6b. the manager just approved this very step when she asked for it herself: do not ask a second time
+    if (riskyShell && this.coveredByGrant(str(input.command))) return { kind: 'allow' };
+
     // 7. asks before big steps
     if (perms.level === 'asks_big_steps') {
       if (risky || riskyShell) return this.ask(toolName, input, first);
@@ -118,6 +126,18 @@ export class PermissionGate {
     const d = this.ask(toolName, input, first);
     if (d.kind === 'ask' && d.family && this.remembered.has(d.family)) return { kind: 'allow' };
     return d;
+  }
+
+  /**
+   * True when every risky pattern the command matches also matches the title or detail of an approval granted in this
+   * task within the last 10 minutes (approving a push never covers a delete).
+   */
+  private coveredByGrant(command: string): boolean {
+    const grants = (this.host.grantedApprovals?.() ?? []).filter((g) => Date.now() - g.atMs <= APPROVAL_COVER_MS);
+    if (grants.length === 0) return false;
+    const patterns = riskyShellPatterns(command);
+    if (patterns.length === 0) return false;
+    return patterns.every((re) => grants.some((g) => re.test(g.title.toLowerCase()) || re.test(g.detail.toLowerCase())));
   }
 
   private ask(toolName: string, input: Record<string, unknown>, first: string): Decision {

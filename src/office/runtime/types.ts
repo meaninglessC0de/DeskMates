@@ -26,6 +26,13 @@ export interface ApprovalOutcome {
   scope: 'once' | 'task';
 }
 
+/** An approval the employee raised with request_approval and the manager approved. */
+export interface GrantedApproval {
+  title: string;
+  detail: string;
+  atMs: number;
+}
+
 export interface TurnResult {
   /** The turn was cut short by interrupt() or dispose(): the supervisor applies no keep-going rule. */
   interrupted?: boolean;
@@ -39,7 +46,7 @@ export interface TurnResult {
 }
 
 /**
- * What the supervisor offers a runtime. The first eleven are the office tools of contracts section 5
+ * What the supervisor offers a runtime. The first twelve are the office tools of contracts section 5
  * (each returns the text the model sees); the rest are reports from the loop.
  * The runtime never touches the store, the bus or other employees directly.
  */
@@ -55,8 +62,12 @@ export interface RuntimeHost {
   reportStuck(reason: string, tried: string): string;
   setActivity(sentence: string): string;
   messageColleague(to: string, text: string): string;
+  /** wait_for_colleague: she has nothing to do until that teammate writes. The office wakes her when a message arrives. */
+  waitForColleague(name: string, reason?: string): string;
   listColleagues(): string;
   saveNote(text: string): string;
+  /** Optional: what the manager approved in the open task (the gate uses it to avoid a second ask for the same step). */
+  grantedApprovals?(): GrantedApproval[];
   /** Resolves to the tool text: "approved", "denied: <note>" or a refusal sentence. */
   requestScreen(reason: string, minutes: number): Promise<string>;
   releaseScreen(): string;

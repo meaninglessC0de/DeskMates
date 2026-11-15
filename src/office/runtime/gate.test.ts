@@ -16,7 +16,7 @@ describe('gate order, row by row', () => {
   describe('1. office tools', () => {
     it.each(['asks_first', 'asks_big_steps', 'independent'] as const)('are allowed at level %s', (level) => {
       const { gate } = rig({ level });
-      for (const t of ['message_user', 'ask_user', 'request_approval', 'finish_task', 'report_stuck', 'set_activity', 'message_colleague', 'list_colleagues', 'save_note', 'request_screen', 'release_screen']) {
+      for (const t of ['message_user', 'ask_user', 'request_approval', 'finish_task', 'report_stuck', 'set_activity', 'message_colleague', 'wait_for_colleague', 'list_colleagues', 'save_note', 'request_screen', 'release_screen']) {
         expect(kind(d(gate, `mcp__office__${t}`))).toBe('allow');
       }
     });
@@ -258,6 +258,44 @@ describe('approval round trip (canUseTool)', () => {
     await host.answer(0, { approved: false, scope: 'task' });
     await p;
     expect(gate.rememberedFamilies()).toEqual([]);
+  });
+
+  describe('one approval for one step (I-20)', () => {
+    const push = 'git push -u origin fix/checkout-discount';
+    const grant = (host: FakeHost, over: Partial<{ title: string; detail: string; atMs: number }> = {}) => {
+      host.granted = [{ title: 'Push fix/checkout-discount', detail: `${push} (the fix is committed)`, atMs: Date.now() - 1000, ...over }];
+    };
+
+    it('covered: the push she asked about is not asked a second time', async () => {
+      const { gate, host } = rig({ level: 'asks_big_steps' });
+      grant(host);
+      expect(kind(d(gate, 'mcp__space__shell', { command: push }))).toBe('allow');
+      expect((await gate.canUseTool('mcp__space__shell', { command: `cd ~/work/app && ${push}` })).behavior).toBe('allow');
+      expect(host.approvals).toHaveLength(0);
+    });
+    it('covered at the asks-first level too', () => {
+      const { gate, host } = rig({ level: 'asks_first' });
+      grant(host);
+      expect(kind(d(gate, 'mcp__space__shell', { command: push }))).toBe('allow');
+    });
+    it('not covered: a push approval never covers a delete, or a command that also deletes', () => {
+      const { gate, host } = rig({ level: 'asks_big_steps' });
+      grant(host);
+      expect(d(gate, 'mcp__space__shell', { command: 'rm -rf ~/work/app' })).toMatchObject({ kind: 'ask', title: 'Delete files' });
+      expect(kind(d(gate, 'mcp__space__shell', { command: `${push} && rm -rf ~/work/app` }))).toBe('ask');
+      expect(kind(d(gate, 'mcp__space__shell', { command: 'npm publish' }))).toBe('ask');
+    });
+    it('not covered: nothing was approved', () => {
+      const { gate } = rig({ level: 'asks_big_steps' });
+      expect(kind(d(gate, 'mcp__space__shell', { command: push }))).toBe('ask');
+    });
+    it('expired: an approval older than ten minutes covers nothing', () => {
+      const { gate, host } = rig({ level: 'asks_big_steps' });
+      grant(host, { atMs: Date.now() - 10 * 60_000 - 1000 });
+      expect(kind(d(gate, 'mcp__space__shell', { command: push }))).toBe('ask');
+      grant(host, { atMs: Date.now() - 9 * 60_000 });
+      expect(kind(d(gate, 'mcp__space__shell', { command: push }))).toBe('allow');
+    });
   });
 
   it('asks every time for risky tools at the big-steps level', async () => {

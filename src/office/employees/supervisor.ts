@@ -7,7 +7,7 @@ import type { Bus } from '../bus.ts';
 import { OfficeError } from '../errors.ts';
 import { newId } from '../ids.ts';
 import { isRuntimeUnavailable } from '../runtime/errors.ts';
-import type { EmployeeRuntime, InboxItem, RuntimeFactory, RuntimeHost, ToolFamily, TurnResult, ApprovalOutcome } from '../runtime/types.ts';
+import type { EmployeeRuntime, GrantedApproval, InboxItem, RuntimeFactory, RuntimeHost, ToolFamily, TurnResult, ApprovalOutcome } from '../runtime/types.ts';
 import type { HostDriver, Spaces } from '../spaces/types.ts';
 import type { Store } from '../store/store.ts';
 import { buildBriefing } from './briefing.ts';
@@ -40,6 +40,9 @@ const HIRED_NOTE =
   'You have just been hired. Say hello to your manager in one short sentence with message_user: your first name, your role, and that you are ready for a first task. It is a greeting, not a question, so do not use ask_user.';
 const NUDGE =
   'You stopped without finishing or asking. If the task is complete, call finish_task with a short summary. If you need a decision from your manager, call ask_user. If you are blocked with no way forward, call report_stuck. Otherwise carry on with the next unfinished step of your plan.';
+
+/** How long an employee waits for a teammate before the office tells her to carry on. */
+export const WAIT_TIMEOUT_MS = 4 * 60_000;
 
 const MAX_DETAIL = 40;
 function clip(s: string, n = MAX_DETAIL): string {
@@ -82,7 +85,12 @@ export class EmployeeSupervisor implements RuntimeHost {
   private turnTaskId: string | null = null;
   private inTurn = false;
   private messaged = new Map<string, number>();
-  private flags = { asked: false, finished: false, stuck: false };
+  private flags = { asked: false, finished: false, stuck: false, waited: false };
+  /** Set by wait_for_colleague: who she is waiting for. Cleared by a manager or colleague message, the timeout, or a task close. */
+  /** How long she waits for a teammate before the office nudges her on (tests shorten it). */
+  waitTimeoutMs = WAIT_TIMEOUT_MS;
+  private granted: { title: string; detail: string; atMs: number; taskId: string | null }[] = [];
+  private waiting: { name: string; timer: NodeJS.Timeout | null } | null = null;
   private nudges = 0;
   private errorRestarts = 0;
   private lastStep: { id: string; sentence: string; startedMs: number; taskId: string | null } | null = null;
@@ -192,7 +200,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     if (pending.length > 0) return { state: 'needs_you', detail: pending[0].title };
     if (this.question) return { state: 'needs_you', detail: this.question };
     if (this.call) return { state: 'on_call', detail: 'On a call with you' };
-    if (this.task) return { state: 'working', detail: this.activity ?? this.task.title };
+    if (this.task) return { state: 'working', detail: this.waiting ? `Waiting for ${this.waiting.name}` : this.activity ?? this.task.title };
     return { state: 'idle', detail: e.persona.role };
   }
 
@@ -322,6 +330,8 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   /** Put an item in the runtime's inbox, or hold it until the runtime is up. */
   deliver(item: InboxItem): void {
+    // a teammate or the manager wrote: whoever she was waiting for no longer matters, she is awake again
+    if (this.waiting && (item.kind === 'manager' || item.kind === 'colleague')) this.clearWaiting();
     // a new hire writes her greeting first: what people say to her in the meantime is handled right after it
     if (this.greeting && (item.kind === 'manager' || item.kind === 'colleague')) {
       this.greetHeld.push(item);
@@ -375,6 +385,8 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.lastClosedTask = closed;
     this.task = null;
     this.activity = null;
+    this.clearWaiting(false);
+    this.granted = [];
     this.workingSince = null;
     this.budgetPrompt = null;
     this.refresh();
@@ -551,9 +563,20 @@ export class EmployeeSupervisor implements RuntimeHost {
     const resolved = this.ctx.store.updateApproval(approvalId, approved ? 'approved' : 'denied', this.now());
     this.waiters.delete(approvalId);
     this.ctx.bus.emit({ type: 'approval', approval: resolved });
+    if (approved && existing.kind === 'big_step') {
+      this.granted.push({ title: existing.title, detail: existing.detail, atMs: this.now(), taskId: existing.taskId });
+      this.granted = this.granted.slice(-20);
+    }
     waiter.resolve({ approved, note, scope });
     this.refresh();
     return resolved;
+  }
+
+  /** Approvals she raised herself and the manager approved, for the task that is open now (see the gate). */
+  grantedApprovals(): GrantedApproval[] {
+    const id = this.task?.id;
+    if (!id) return [];
+    return this.granted.filter((g) => g.taskId === id || g.taskId === null).map(({ title, detail, atMs }) => ({ title, detail, atMs }));
   }
 
   finishTask(summary: string): string {
@@ -609,6 +632,56 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.addStep(`Messaged ${target.firstName}`, { status: 'ok', peer: { employeeId: target.id, direction: 'to', text } });
     target.receiveColleague(this, text);
     return `Sent to ${target.firstName}.`;
+  }
+
+  waitForColleague(name: string, _reason?: string): string {
+    const e = this.employee();
+    if (!e.permissions.teammates) return 'Messaging teammates is switched off for you.';
+    const peers = this.ctx.peers(this.id);
+    const target = peers.find((p) => p.firstName.toLowerCase() === name.trim().toLowerCase());
+    if (!target) {
+      const names = peers.map((p) => p.firstName).join(', ');
+      return `No teammate called ${name}. ${names ? `Valid names: ${names}.` : 'You have no teammates yet.'}`;
+    }
+    this.clearWaiting(false);
+    this.flags.waited = true;
+    this.waiting = { name: target.firstName, timer: null };
+    this.armWaitTimer();
+    this.addStep(`Waiting for ${target.firstName}`, { status: 'ok' });
+    this.refresh();
+    return `Noted. Stop now: the office will wake you when ${target.firstName}'s message arrives.`;
+  }
+
+  private armWaitTimer(): void {
+    const w = this.waiting;
+    if (!w || this.paused) return;
+    if (w.timer) clearTimeout(w.timer);
+    w.timer = setTimeout(() => this.waitTimedOut(w), this.waitTimeoutMs);
+    w.timer.unref();
+  }
+
+  /** Stops the clock but keeps the flag (pause: the clock starts again on resume). */
+  private pauseWaitTimer(): void {
+    if (this.waiting?.timer) clearTimeout(this.waiting.timer);
+    if (this.waiting) this.waiting.timer = null;
+  }
+
+  private waitTimedOut(w: { name: string; timer: NodeJS.Timeout | null }): void {
+    if (this.removed || this.waiting !== w) return;
+    this.clearWaiting();
+    this.deliver({
+      kind: 'office',
+      text: `${w.name} has not replied yet. Carry on with anything you can do without them, message them again, or ask your manager.`,
+    });
+  }
+
+  /** Forget who she was waiting for and stop the clock. `announce` refreshes the state line. */
+  private clearWaiting(announce = true): void {
+    const w = this.waiting;
+    if (!w) return;
+    if (w.timer) clearTimeout(w.timer);
+    this.waiting = null;
+    if (announce) this.refresh();
   }
 
   listColleagues(): string {
@@ -670,7 +743,9 @@ export class EmployeeSupervisor implements RuntimeHost {
     if (!this.inTurn) {
       this.inTurn = true;
       this.turnTaskId = this.task?.id ?? null;
-      this.flags = { asked: false, finished: false, stuck: false };
+      this.flags = { asked: false, finished: false, stuck: false, waited: false };
+      // a new turn is starting (a queued message, a note): she is no longer waiting
+      this.clearWaiting();
     }
     if (this.greeting) return; // a message sent during the greeting has not reached her yet
     const now = this.now();
@@ -740,7 +815,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       return;
     }
     this.errorRestarts = 0;
-    if (this.flags.asked || this.flags.finished || this.flags.stuck) {
+    if (this.flags.asked || this.flags.finished || this.flags.stuck || this.flags.waited) {
       this.refresh();
       return;
     }
@@ -871,6 +946,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.abort?.abort();
     this.abort = null;
     this.inTurn = false;
+    this.clearWaiting(false);
     this.flushClose();
     this.flushHeldFinal();
     this.endGreeting(true);
@@ -1059,6 +1135,7 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   pause(): Employee {
     this.paused = true;
+    this.pauseWaitTimer();
     this.ctx.store.setExtra(this.id, { paused: true });
     void this.runtime?.setPaused(true);
     return this.refresh();
@@ -1069,6 +1146,7 @@ export class EmployeeSupervisor implements RuntimeHost {
     return this.batch(() => {
       const wasStuck = !!this.stuckReason;
       this.paused = false;
+      this.armWaitTimer();
       this.ctx.store.setExtra(this.id, { paused: false });
       if (wasStuck) {
         this.setStuckFlag(null);
@@ -1174,7 +1252,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       });
       return;
     }
-    if (this.task && this.employee().state === 'working' && this.runtime && now - this.lastSdkMs > 4 * 60_000) {
+    if (this.task && !this.waiting && this.employee().state === 'working' && this.runtime && now - this.lastSdkMs > 4 * 60_000) {
       this.stalls++;
       this.lastSdkMs = now;
       if (this.stalls >= 2) {
@@ -1189,6 +1267,7 @@ export class EmployeeSupervisor implements RuntimeHost {
   // ------------------------------------------------------------------ removal
 
   private clearTimers(): void {
+    this.clearWaiting(false);
     if (this.pendingClose) clearTimeout(this.pendingClose.timer);
     this.pendingClose = null;
     if (this.heldFinal) clearTimeout(this.heldFinal.timer);

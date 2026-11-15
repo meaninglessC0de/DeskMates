@@ -2,12 +2,15 @@ import { z } from 'zod';
 import { makeSdkServer, textResult, type ToolSpec } from './sdkServers.ts';
 import type { RuntimeHost } from './types.ts';
 
+/** The longest teammate message the tool accepts (a whole small web page fits). */
+export const MAX_COLLEAGUE_TEXT = 12_000;
+
 export interface OfficeToolHooks {
   /** finish_task and report_stuck close the task: forget what "for this task" approvals allowed. */
   taskClosed(): void;
 }
 
-/** The eleven office tools of contracts section 5. Each returns the text the model sees. */
+/** The twelve office tools of contracts section 5. Each returns the text the model sees. */
 export function officeToolSpecs(host: RuntimeHost, hooks: OfficeToolHooks): ToolSpec[] {
   return [
     {
@@ -62,8 +65,24 @@ export function officeToolSpecs(host: RuntimeHost, hooks: OfficeToolHooks): Tool
       description: 'Send a message to a teammate. `to` is their first name. Be specific about what you need. Also use it to answer a teammate who asked you something.',
       shape: { to: z.string(), text: z.string() },
       handler: async (a) => {
-        const r = host.messageColleague(String(a.to), String(a.text));
+        const text = String(a.text);
+        if (text.length > MAX_COLLEAGUE_TEXT) {
+          return textResult(
+            `Too long: ${text.length} characters, the limit is ${MAX_COLLEAGUE_TEXT}. Save the long content as a file on your computer and send a short message that says where it is, or split it into parts.`,
+            true,
+          );
+        }
+        const r = host.messageColleague(String(a.to), text);
         return textResult(r, /^(No teammate|Messaging|Limit|Too many)/.test(r));
+      },
+    },
+    {
+      name: 'wait_for_colleague',
+      description: 'Call this when you cannot continue until a teammate replies or sends you something. Then stop: the office wakes you when their message arrives.',
+      shape: { name: z.string().describe("The teammate's first name."), reason: z.string().optional().describe('What you are waiting for.') },
+      handler: async (a) => {
+        const r = host.waitForColleague(String(a.name), a.reason === undefined ? undefined : String(a.reason));
+        return textResult(r, /^(No teammate|Messaging)/.test(r));
       },
     },
     {
