@@ -18,7 +18,7 @@ function useShortcuts(): void {
   const s = useStore.getState();
   useHotkeys([
     { keys: 'mod+n', allowInInputs: true, onPress: () => s.setUi({ hireOpen: true }) },
-    { keys: 'mod+shift+m', allowInInputs: true, isDisabled: peers < 2, onPress: () => s.setUi({ summonOpen: true }) },
+    { keys: 'mod+shift+m', allowInInputs: true, isDisabled: peers < 2 || callsOff, onPress: () => s.setUi({ summonOpen: true }) },
     { keys: 'mod+shift+d', allowInInputs: true, isDisabled: !selected, onPress: () => selected && s.toggleDesktop(selected.id) },
     { keys: 'mod+shift+v', allowInInputs: true, isDisabled: !selected || callsOff, onPress: () => selected && void s.startCall([selected.id]) },
     { keys: 'mod+i', allowInInputs: true, isDisabled: !selected, onPress: () => s.setUi({ profileOpen: !profileOpen }) },

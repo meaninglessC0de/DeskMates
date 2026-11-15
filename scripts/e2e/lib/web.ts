@@ -39,7 +39,10 @@ export class PageGuard {
       const t = m.type();
       const line = `[${t}] ${m.text()}`;
       this.lines.push(line);
-      if (t === 'error') this.problems.push(`console error: ${m.text().slice(0, 300)}`);
+      // The browser logs its own line when a socket or request cannot reach the office (a test restarts the office under
+      // the page on purpose). That is the network, not the app: the app's own handling is what the scenario checks.
+      const network = /WebSocket connection to .* failed|net::ERR_CONNECTION_REFUSED|net::ERR_EMPTY_RESPONSE|net::ERR_CONNECTION_RESET/.test(m.text());
+      if (t === 'error' && !network) this.problems.push(`console error: ${m.text().slice(0, 300)}`);
     });
     page.on('pageerror', (e) => {
       this.lines.push(`[pageerror] ${e.message}`);

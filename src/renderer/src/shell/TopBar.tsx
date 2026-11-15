@@ -93,8 +93,8 @@ export function TopBar({ employee }: TopBarProps) {
         <Button
           label="Summon meeting"
           variant="primary"
-          isDisabled={peers < 2}
-          tooltip={peers < 2 ? 'Hire another employee to start a meeting' : undefined}
+          isDisabled={callsOff || peers < 2}
+          tooltip={callsOff ? 'Calls are off' : peers < 2 ? 'Hire another deskmate to start a meeting' : undefined}
           icon={<Icon icon={Users} size="sm" color="inherit" />}
           onClick={() => s.setUi({ summonOpen: true })}
         />

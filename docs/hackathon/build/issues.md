@@ -85,7 +85,7 @@ Format: `I-<n>`, scenario, expected, observed, evidence, best reading of the cau
 
 - Cause: Astryx `Timestamp` reads the current time once unless `isLive` is set, so a later value is in its future. Fix: `isLive` and a key on the value, in the sidebar and the Team "synced" line.
 
-## I-10 · S17 · "Summon meeting" stays enabled when calls are off (medium)
+## I-17 · S17 · "Summon meeting" stays enabled when calls are off (medium)
 
 - Found by W11 with `scripts/e2e/ui.ts` (layer 4, mock desktops, an office started with no LiveKit and no Databricks settings; `/api/health` reports `capabilities.calls: "off"`).
 - Expected (test plan S17): with no LiveKit keys the Call and Summon buttons are disabled, each with a one-line reason.
