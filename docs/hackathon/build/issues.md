@@ -147,3 +147,12 @@ Also seen in the takes, by design: the microphone is on when a meeting starts, s
 - Seen: Priya's copy and post are plain text files, which look bare on her desk (the fuller version asks for styled pages). Maya's plan read "3 of 5" at the end although only the push was left.
 - Not checked by me: pressing Approve at the end. The session's safety rules do not let me answer an employee's approval through the API, which is right: it is the presenter's click. It was exercised earlier today by the teamwork agent on its own office (one card, push went through) and on camera by the video session.
 
+## Live demo runs 2 to 5 (13:07 to 13:42, Sonnet 5.5, fresh team each time, default team brief)
+
+- **Run 2**: 42 messages between desks, LAUNCH15 reached code, page, copy and design, but 8.1 min of which 4 were a stall. Two causes, both fixed: the team-wide cap of 20 teammate messages a minute refused Priya's sign-off (now 90, and the refusal says to send it again); and a "ghost task" (I-25).
+- **I-25 · Ghost task after finish_task (high, fixed)**: a tool call after `finish_task` in the same turn opened a new task that nothing ever closed, so the desk read "working" with no turn in flight until the four-minute stall watchdog. Diagnosis with transcript evidence: `L-priya-stall-diagnosis.md`. Fixed in `supervisor.ts` with six tests; `stalls` is also reset on progress now.
+- **Run 3**: stopped at four minutes: Priya asked the manager to confirm the offer dates and Maya asked approval to `rm -rf /tmp/old`. Fixed: the brief says to decide details and tell the manager; `rm -rf` of /tmp paths is no longer a big step (other deletes still are).
+- **Run 4**: clean. 4.8 min, 52 messages between desks, 24 to the manager, nothing needed the manager before the push, $2.13.
+- **The user could not see the desktops change** (13:23): the streams were live, but the work went through background commands and web fetches. Fixed with on-screen mode (`ON_SCREEN=1`): a "Work log" window on every desktop shows each command as it runs, and web reading goes through Firefox on the desktop.
+- **Run 5 (on-screen mode)**: 7.6 min, 45 messages between desks, 29 to the manager, LAUNCH15 on the page and in the code, $2.51. Seen on the Desks view: Jonas reading shopify.com in Firefox, the work-log windows filling, Priya saving Maya's page and opening it to proofread. Priya's work-log window was not visible in one screenshot (not investigated).
+
