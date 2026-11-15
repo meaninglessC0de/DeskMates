@@ -156,3 +156,8 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **D-044.** Time worked under an hour is shown in minutes. Take control reads "You have control". A new hire's first message is a hello, not a question, so they start idle.
 - **D-045.** Genie space "Deskmates team" is created by script (`scripts/genie-setup.ts`), with table descriptions, six sample questions and four instructions; answers are shown as plain text.
 - **D-046.** (User, 15 Nov) `main` holds the whole build: it was fast-forwarded to `build/night-1` on the user's say, and the two are kept at the same commit. The repository stays private until the user says otherwise.
+
+## 2026-11-15 (10:55) · video session: demo video from the user's one-shot script
+- **D-V1 · user said** make the 2-minute demo video from their one-continuous-shot script, corrected against the built app; record the live app with **Recordly**; have the build session build (a) a screen showing a grid of the live desktops working together and (b) a simple end-to-end pipeline of agents doing real long-horizon tasks; the two sessions coordinate by messaging.
+- **D-V2 · video session decided** (script v2, `demo-video-script.md`): the human founder is **Sam** (Priya is an AI marketer in the app); the team is **Maya, Priya, Jonas, Ines**, seated by desk in the logo's four hues; the 2x2 world is the new in-app Desks view; agents' lines are targets and the subtitles follow what they really say; v1's double-booked customer call (not a feature) becomes teammates, an approval, the Databricks Team view and a notification in the same choreography; the end line names the real stack.
+- **D-V3.** Brief to the build session: `video/brief-to-build.md`. The video session does not edit `src/` or `scripts/`.
