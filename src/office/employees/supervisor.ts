@@ -39,7 +39,7 @@ interface Waiter {
 const HIRED_NOTE =
   'You have just been hired. Say hello to your manager in one short sentence with message_user: your first name, your role, and that you are ready for a first task. It is a greeting, not a question, so do not use ask_user.';
 const NUDGE =
-  'You stopped without finishing or asking. If the task is complete, call finish_task with a short summary. If you need your manager, call ask_user. Otherwise carry on with the next unfinished step of your plan.';
+  'You stopped without finishing or asking. If the task is complete, call finish_task with a short summary. If you need a decision from your manager, call ask_user. If you are blocked with no way forward, call report_stuck. Otherwise carry on with the next unfinished step of your plan.';
 
 const MAX_DETAIL = 40;
 function clip(s: string, n = MAX_DETAIL): string {
@@ -366,7 +366,10 @@ export class EmployeeSupervisor implements RuntimeHost {
     if (!this.task) return null;
     const now = this.now();
     const activeMs = this.task.activeMs + (this.workingSince !== null ? now - this.workingSince : 0);
-    const closed: Task = { ...this.task, status, outcome, finishedMs: now, activeMs };
+    // A task reported done has a finished plan: employees often write the plan once and stop ticking it, and a done
+    // task with open steps reads as unfinished work. A failed or cancelled task keeps its plan as it was.
+    const plan = status === 'done' ? this.task.plan.map((p) => (p.status === 'done' ? p : { ...p, status: 'done' as const })) : this.task.plan;
+    const closed: Task = { ...this.task, plan, status, outcome, finishedMs: now, activeMs };
     this.ctx.store.upsertTask(closed);
     this.ctx.bus.emit({ type: 'task', task: closed });
     this.lastClosedTask = closed;
@@ -555,6 +558,9 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   finishTask(summary: string): string {
     if (this.removed) return 'Task closed.';
+    // Nothing is open (a greeting, a chat answer): there is no task to close and nothing more to tell the manager.
+    // Without this a new hire says hello and then reports "I said hello" as finished work.
+    if (!this.task) return 'There is no open task, so there is nothing to finish. You are done for now.';
     this.flags.finished = true;
     this.settleHeldFinal(summary);
     this.closeAfterTurn('done', summary, null, (taskId) => this.postEmployee('done', summary, 'done', taskId));
