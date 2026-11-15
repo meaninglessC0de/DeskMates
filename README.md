@@ -11,6 +11,7 @@ Built at the Imperial AI Hack (14 to 15 November 2026). Main track: Autonomous A
 - **Hire.** Pick a role, meet a candidate, hire. Their desktop starts in seconds and they say hello by themselves.
 - **Delegate.** Give a task in plain words. They plan it, work on their own Linux desktop (browser, files, terminal) and report when it is done. You can steer mid-task.
 - **Watch.** A live view of each desktop beside the conversation. Take control with your own mouse and keyboard when you want to.
+- **Desks.** Every desktop live on one screen, each at its own desk with its owner's face.
 - **Stay in charge.** Three permission levels per person. Big steps (publishing, sending, deleting) arrive as an approval you answer in the chat.
 - **Call.** One-to-one video call: a moving, speaking face and their live desktop. **Summon meeting** brings several into one room; they take turns and answer by name.
 - **Teamwork.** Employees message each other when the other's role is the right one for the job.
