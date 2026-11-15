@@ -12,7 +12,7 @@ import { Item } from '@astryxdesign/core/Item';
 import { Kbd } from '@astryxdesign/core/Kbd';
 import { Text } from '@astryxdesign/core/Text';
 import { ToggleButton } from '@astryxdesign/core/ToggleButton';
-import { Monitor, MoreHorizontal, Users, Video } from 'lucide-react';
+import { Grid2x2, Monitor, MoreHorizontal, Users, Video } from 'lucide-react';
 import type { Employee } from '../../../shared';
 import { useStore } from '../api/store';
 import { Elapsed } from './Elapsed';
@@ -62,6 +62,14 @@ export function TopBar({ employee }: TopBarProps) {
             isDisabled={callsOff}
             icon={<Icon icon={Video} size="sm" />}
             onClick={() => void s.startCall([employee.id])}
+          />
+          <IconButton
+            data-am="desks-open"
+            label="Desks"
+            tooltip="Desks (⌘D)"
+            variant="ghost"
+            icon={<Icon icon={Grid2x2} size="sm" />}
+            onClick={() => s.openDesks()}
           />
           <ToggleButton
             label="Desktop"

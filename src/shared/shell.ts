@@ -3,7 +3,7 @@ export interface ShellBridge {
   onNotificationClick(cb: (employeeId: string) => void): void;
   setBadge(count: number): void;                       // Dock badge = employees in needs_you or stuck
   setTray(rows: { id: string; name: string; state: string }[], lent: string | null): void;
-  onTrayAction(cb: (a: { type: 'open'; employeeId: string } | { type: 'summon' } | { type: 'hire' } | { type: 'take_back' } | { type: 'pause_all' } | { type: 'resume_all' }) => void): void;
+  onTrayAction(cb: (a: { type: 'open'; employeeId: string } | { type: 'summon' } | { type: 'desks' } | { type: 'hire' } | { type: 'take_back' } | { type: 'pause_all' } | { type: 'resume_all' }) => void): void;
   askMicrophone(): Promise<boolean>;
   platform: 'darwin';
 }

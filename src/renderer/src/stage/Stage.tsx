@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AppShell } from '@astryxdesign/core/AppShell';
 import { Banner } from '@astryxdesign/core/Banner';
@@ -28,6 +28,7 @@ import { BOTTOM_RESERVE, MARK_GAP, TOP_STRIP, gridLayout, oneToOneLayout, spotli
 import type { OneToOneLayout } from './layout';
 import { useLastSpeaker, useLeftNotice, useRing, useRinging, useThinking } from './signals';
 import { DesktopTile, FaceTile } from './Tile';
+import { PIN_EVENT } from './pin';
 import type { ChipState } from './Tile';
 import { useCall } from './useCall';
 import { useWindowSize } from './useWindowSize';
@@ -196,6 +197,25 @@ export function Stage() {
     { keys: 'mod+.', onPress: () => session.end(), allowInInputs: true },
     ...[0, 1, 2, 3].map((i) => ({ keys: String(i + 1), onPress: () => people[i] && address(people[i]!.employee.id), isDisabled: failed || !isMeeting })),
   ]);
+
+  // The demo hook (demo/hook.ts) pins from outside the stage: a meeting spotlights that person's desktop, a one-to-one
+  // call shows the desktop large. `null` goes back to the grid, or to the face in a one-to-one call.
+  const pinRef = useRef({ isMeeting, ids: people.map((p) => p.employee.id) });
+  pinRef.current = { isMeeting, ids: people.map((p) => p.employee.id) };
+  useEffect(() => {
+    const on = (e: Event): void => {
+      const id = (e as CustomEvent<{ employeeId: string | null }>).detail?.employeeId ?? null;
+      const { isMeeting: meeting, ids } = pinRef.current;
+      if (id !== null && !ids.includes(id)) return;
+      if (meeting) setPinned(id);
+      else {
+        setPinned(id);
+        setOneLayout(id === null ? 'face' : 'desktop');
+      }
+    };
+    window.addEventListener(PIN_EVENT, on);
+    return () => window.removeEventListener(PIN_EVENT, on);
+  }, []);
 
   const retry = (): void => {
     const ids = useStore.getState().call?.employeeIds ?? [];

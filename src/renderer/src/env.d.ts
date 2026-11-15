@@ -5,3 +5,8 @@ declare module '*/astryx-themes.js' {
   export const themes: Record<string, DefinedTheme>;
   export const defaultThemeSlug: string;
 }
+
+interface Window {
+  /** Demo hook for scripted recordings (demo/hook.ts). */
+  __deskmatesDemo?: import('./demo/hook').DeskmatesDemo;
+}

@@ -9,6 +9,13 @@ import { clickTrayItem, createTray, trayLabels, updateTray, type TrayRow } from 
 
 app.setName(APP_NAME);
 
+// Demo recording: DESKMATES_CDP_PORT opens the DevTools protocol on this Mac only, so a script can drive the window.
+const cdpPort = process.env.DESKMATES_CDP_PORT;
+if (cdpPort && /^\d+$/.test(cdpPort)) {
+  app.commandLine.appendSwitch('remote-debugging-port', cdpPort);
+  app.commandLine.appendSwitch('remote-debugging-address', '127.0.0.1');
+}
+
 const ICON_PATH = join(RESOURCES, 'icon.png');
 
 // In development the Dock shows the Electron logo; swap in the Deskmates icon. A missing file never crashes.

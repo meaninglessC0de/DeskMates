@@ -95,6 +95,8 @@ describe('startShellBridge', () => {
     expect(get().ui.summonOpen).toBe(true);
     tray({ type: 'hire' });
     expect(get().ui.hireOpen).toBe(true);
+    tray({ type: 'desks' });
+    expect(get().ui.view).toBe('desks');
     tray({ type: 'take_back' });
     expect(revokeScreen).toHaveBeenCalledWith(EMP.priya);
     tray({ type: 'pause_all' });

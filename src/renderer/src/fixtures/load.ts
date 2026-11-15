@@ -15,7 +15,7 @@ import type { ShotRef } from './shot';
  *   boot=loading|error       the app's loading or can't-reach state
  *   thread=loading|error|empty   the selected employee's thread
  *   open=hire,profile,settings,desktop,summon   open these (comma list)
- *   view=team
+ *   view=team|desks     (area desks opens the Desks view; employees=2 seats two, faces=0 hides the faces)
  *   range=today|week|month   team range
  *   team=loading|error
  *   call=one|meeting         a live call; callState=connecting|live|failed; callMode=audio|avatar
@@ -63,7 +63,9 @@ export function loadShot(shot: ShotRef): void {
   };
 
   const none = p.get('employees') === 'none';
-  const list = none ? [] : sortEmployees(employees);
+  const count = Number(p.get('employees'));
+  const all = sortEmployees(employees);
+  const list = none ? [] : Number.isInteger(count) && count > 0 ? all.slice(0, count) : all;
   const wanted = FIRST[p.get('select') ?? ''];
   const selectedId = none ? null : wanted ?? list[0]?.id ?? null;
 
@@ -85,7 +87,7 @@ export function loadShot(shot: ShotRef): void {
   }
 
   const open = new Set([...(AREA_OPEN[shot.area] ?? []), ...(p.get('open') ?? '').split(',').filter(Boolean)]);
-  const view = shot.area === 'team' || p.get('view') === 'team' ? 'team' : 'thread';
+  const view = shot.area === 'desks' || p.get('view') === 'desks' ? 'desks' : shot.area === 'team' || p.get('view') === 'team' ? 'team' : 'thread';
   const boot = p.get('boot');
   const range = (p.get('range') as Data['teamRange'] | null) ?? 'today';
   const team = p.get('team');
@@ -118,6 +120,7 @@ export function loadShot(shot: ShotRef): void {
     ui: {
       ...base.ui,
       view,
+      desksFaces: p.get('faces') !== '0',
       selectedId,
       hireOpen: open.has('hire'),
       profileOpen: open.has('profile'),

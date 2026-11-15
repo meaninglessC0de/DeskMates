@@ -39,6 +39,7 @@ export function buildTrayMenu(rows: TrayRow[], lent: string | null, deps: TrayDe
     template.push({ label: `${r.name}    ${stateLabel(r.state)}`, click: act({ type: 'open', employeeId: r.id }) });
   }
   if (rows.length) template.push({ type: 'separator' });
+  template.push({ label: 'Show desks', accelerator: 'Shift+CommandOrControl+D', click: act({ type: 'desks' }) });
   template.push({ label: 'Summon meeting…', accelerator: 'Shift+CommandOrControl+M', click: act({ type: 'summon' }) });
   template.push({ label: 'Hire…', accelerator: 'CommandOrControl+N', click: act({ type: 'hire' }) });
   template.push({ type: 'separator' });

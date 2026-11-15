@@ -33,6 +33,9 @@ export interface Actions {
   // ui (all synchronous)
   setUi(patch: Partial<UiState>): void;
   setView(view: UiState['view']): void;
+  openDesks(): void;
+  closeDesks(): void;
+  setDeskFaces(on: boolean): void;
   toggleDesktop(employeeId: string, open?: boolean): void;
   showToast(text: string, tone?: 'info' | 'error'): void;
   // employees
@@ -153,6 +156,15 @@ export const useStore = create<Store>()((set, get) => {
     },
     setView(view) {
       set((s) => ({ ui: { ...s.ui, view } }));
+    },
+    openDesks() {
+      set((s) => ({ ui: { ...s.ui, view: 'desks', viewBeforeDesks: s.ui.view === 'desks' ? s.ui.viewBeforeDesks : s.ui.view } }));
+    },
+    closeDesks() {
+      set((s) => (s.ui.view === 'desks' ? { ui: { ...s.ui, view: s.ui.viewBeforeDesks } } : {}));
+    },
+    setDeskFaces(on) {
+      set((s) => (s.ui.desksFaces === on ? {} : { ui: { ...s.ui, desksFaces: on } }));
     },
     toggleDesktop(employeeId, open) {
       set((s) => ({ ui: { ...s.ui, desktopOpen: { ...s.ui.desktopOpen, [employeeId]: open ?? !s.ui.desktopOpen[employeeId] } } }));

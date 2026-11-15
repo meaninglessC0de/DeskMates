@@ -15,6 +15,7 @@ import { applyShotState } from './shell/shotState';
 import { FirstRun } from './shell/FirstRun';
 import { Conversation } from './thread/Conversation';
 import { TeamView } from './team/TeamView';
+import { DesksView } from './desks/DesksView';
 import { HireDialog } from './hire/HireDialog';
 import { ProfileDrawer } from './profile/ProfileDrawer';
 import { SettingsDialog } from './settings/SettingsDialog';
@@ -124,9 +125,13 @@ export function App() {
   } else {
     body = (
       <>
-        <AppFrame>
-          {employees.length === 0 ? <FirstRun /> : ui.view === 'team' ? <TeamView /> : selected ? <Conversation key={selected.id} employeeId={selected.id} /> : null}
-        </AppFrame>
+        {ui.view === 'desks' ? (
+          <DesksView />
+        ) : (
+          <AppFrame>
+            {employees.length === 0 ? <FirstRun /> : ui.view === 'team' ? <TeamView /> : selected ? <Conversation key={selected.id} employeeId={selected.id} /> : null}
+          </AppFrame>
+        )}
         <HireDialog isOpen={ui.hireOpen} onOpenChange={(o) => setUi({ hireOpen: o })} />
         <SettingsDialog isOpen={ui.settingsOpen} onOpenChange={(o) => setUi({ settingsOpen: o })} />
         <SummonPicker isOpen={ui.summonOpen} onOpenChange={(o) => setUi({ summonOpen: o })} />

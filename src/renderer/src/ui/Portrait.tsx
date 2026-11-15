@@ -30,6 +30,8 @@ export interface PortraitProps {
   size?: 24 | 32 | 40 | 56 | 96 | 144 | number;
   /** Shows the presence dot, cut out of the circle. */
   presence?: EmployeeState;
+  /** `rounded` is the Desks view's face window; the default is a circle. */
+  shape?: 'circle' | 'rounded';
   /** Built-in name tooltip. Off by default: the name is almost always written next to the face. */
   tooltip?: boolean;
 }
@@ -39,7 +41,7 @@ export interface PortraitProps {
  * (also the state while the photo loads or if it fails).
  * Fills the Astryx gap "Avatar fallback colour per person": Avatar's initials are always grey.
  */
-export function Portrait({ person, size = 40, presence, tooltip = false }: PortraitProps) {
+export function Portrait({ person, size = 40, presence, shape = 'circle', tooltip = false }: PortraitProps) {
   const noPhotos = getShot()?.params.get('portraits') === 'none';
   const url = noPhotos ? '' : person.portraitUrl || '';
   const square = url ? squareCrop(url) : undefined;
@@ -54,6 +56,7 @@ export function Portrait({ person, size = 40, presence, tooltip = false }: Portr
       src={src}
       fallbackSrc={square ? url : undefined}
       size={px}
+      shape={shape}
       tooltip={tooltip}
       status={presence ? <PresenceDot state={presence} /> : undefined}
     />

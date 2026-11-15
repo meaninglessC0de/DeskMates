@@ -8,8 +8,10 @@ import { App, initApp } from './App';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useStore } from './api/store';
 import { installStyles } from './ui/styles';
+import { installDemoHook } from './demo/hook';
 
 installStyles();
+installDemoHook();
 initApp();
 
 function Root() {

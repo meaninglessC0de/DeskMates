@@ -64,6 +64,9 @@ export function startShellBridge(store: Pick<StoreApi<Store>, 'getState' | 'subs
       case 'summon':
         s.setUi({ summonOpen: true });
         break;
+      case 'desks':
+        s.openDesks();
+        break;
       case 'hire':
         s.setUi({ hireOpen: true });
         break;

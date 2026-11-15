@@ -34,7 +34,11 @@ export interface CallSlice {
 }
 
 export interface UiState {
-  view: 'thread' | 'team';
+  view: 'thread' | 'team' | 'desks';
+  /** The view the Desks view returns to (Esc, the back control). */
+  viewBeforeDesks: 'thread' | 'team';
+  /** Faces on the Desks view: shown or hidden (the F key, the demo hook). Kept here so it can be set before the view opens. */
+  desksFaces: boolean;
   selectedId: string | null;
   hireOpen: boolean;
   profileOpen: boolean;
@@ -75,7 +79,7 @@ export function emptyThread(): ThreadSlice {
 }
 
 export const initialUi = (): UiState => ({
-  view: 'thread', selectedId: null, hireOpen: false, profileOpen: false, settingsOpen: false, summonOpen: false, desktopOpen: {},
+  view: 'thread', viewBeforeDesks: 'thread', desksFaces: true, selectedId: null, hireOpen: false, profileOpen: false, settingsOpen: false, summonOpen: false, desktopOpen: {},
 });
 
 export const initialData = (): Data => ({

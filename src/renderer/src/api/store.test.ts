@@ -37,6 +37,18 @@ describe('actions without the network', () => {
     get().setView('team');
     expect(get().ui.view).toBe('team');
   });
+  it('the Desks view remembers where it came from and keeps the faces flag', () => {
+    get().setDeskFaces(false);
+    get().setView('team');
+    get().openDesks();
+    expect(get().ui.view).toBe('desks');
+    get().openDesks();
+    get().closeDesks();
+    expect(get().ui.view).toBe('team');
+    get().closeDesks();
+    expect(get().ui.view).toBe('team');
+    expect(get().ui.desksFaces).toBe(false);
+  });
   it('applyServerEvent applies the reducer patch', () => {
     get().applyServerEvent({ type: 'employee', employee: { ...employees[2]!, state: 'stuck', stateDetail: 'Out of ideas' } });
     expect(get().employees.map((e) => e.persona.firstName).slice(0, 2)).toEqual(['Maya', 'Jonas']);

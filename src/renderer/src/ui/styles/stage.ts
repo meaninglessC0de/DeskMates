@@ -6,6 +6,75 @@
  */
 const S = '[data-am="stage"]';
 
+/**
+ * The Desks view (desks/DesksView.tsx): the pill, the face and the Hire label grow with the tile. \`zoom\` takes a
+ * unitless factor, set from the tile width in steps (desks/layout.ts SCALE_STEPS), so nothing here is a raw length.
+ */
+const desksCss = /* css */ `
+${S} [data-am-desks-view][data-am-scale="1"] { --am-desks-zoom: 1; }
+${S} [data-am-desks-view][data-am-scale="1.25"] { --am-desks-zoom: 1.25; }
+${S} [data-am-desks-view][data-am-scale="1.5"] { --am-desks-zoom: 1.5; }
+${S} [data-am-desks-view][data-am-scale="1.75"] { --am-desks-zoom: 1.75; }
+${S} [data-am-desks-view][data-am-scale="2"] { --am-desks-zoom: 2; }
+${S} [data-am-desks-view][data-am-scale="2.25"] { --am-desks-zoom: 2.25; }
+${S} [data-am-desks-view][data-am-scale="2.5"] { --am-desks-zoom: 2.5; }
+${S} [data-am-desks-view][data-am-scale="2.75"] { --am-desks-zoom: 2.75; }
+${S} [data-am-desks-view][data-am-scale="3"] { --am-desks-zoom: 3; }
+${S} [data-am-desks-view] [data-am="tile-chip"] {
+  padding: calc(var(--spacing-1) * var(--am-desks-zoom, 1));
+}
+${S} [data-am-desks-view] [data-am="chip"],
+${S} [data-am-desks-view] [data-am="desk-hire"],
+${S} [data-am-desks-view] [data-am="desk-face-window"] {
+  zoom: var(--am-desks-zoom, 1);
+}
+${S} [data-am-desks-view] [data-am="desk-face"] {
+  padding: calc(var(--spacing-3) * var(--am-desks-zoom, 1));
+}
+${S} [data-am="desk-face-window"] {
+  border-radius: var(--radius-container);
+  background: color-mix(in oklab, var(--am-tint-line) 28%, var(--color-background-surface));
+  box-shadow: 0 0 0 2px var(--am-tint-line);
+  transform-origin: top right;
+  min-width: 0;
+}
+${S} [data-am="desk-hire"] {
+  color: var(--am-tint-ink);
+}
+/* An empty desk is quiet: a faint wash of its desk's colour and a neutral hairline, not the full face wash. */
+${S} [data-am-hire] [data-am="tile"][data-am-kind="face"] {
+  background: color-mix(in oklab, var(--am-tint-line) 9%, var(--color-background-surface));
+}
+${S} [data-am-hire] [data-am="tile"][data-am-kind="face"]::before {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-text-primary) 10%, transparent);
+}
+${S} [data-am-hire] [data-am="tile"]:hover {
+  background: color-mix(in oklab, var(--am-tint-line) 16%, var(--color-background-surface));
+}
+${S} [data-am="desks-back"] {
+  opacity: 0.7;
+}
+${S} [data-am="desks-back"]:hover,
+${S} [data-am="desks-back"]:focus-visible {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  ${S} [data-am="desk-face-window"] {
+    animation: am-face-pop 360ms var(--ease-entrance) both;
+  }
+  ${S} [data-am-desk-index="1"] [data-am="desk-face-window"] { animation-delay: 150ms; }
+  ${S} [data-am-desk-index="2"] [data-am="desk-face-window"] { animation-delay: 300ms; }
+  ${S} [data-am-desk-index="3"] [data-am="desk-face-window"] { animation-delay: 450ms; }
+  ${S} [data-am="desk-wait"] {
+    animation: am-stage-fade var(--duration-fast-max) var(--ease-entrance) both;
+  }
+}
+@keyframes am-face-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+`;
+
 export const stageCss = /* css */ `
 /* ---------- Ground ---------- */
 ${S},
@@ -311,4 +380,5 @@ ${S} [data-am="pill-gap"] {
     animation: am-stage-fade var(--duration-fast-max) var(--ease-entrance) both;
   }
 }
+${desksCss}
 `;

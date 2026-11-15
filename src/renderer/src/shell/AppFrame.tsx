@@ -22,6 +22,7 @@ function useShortcuts(): void {
     { keys: 'mod+shift+d', allowInInputs: true, isDisabled: !selected, onPress: () => selected && s.toggleDesktop(selected.id) },
     { keys: 'mod+shift+v', allowInInputs: true, isDisabled: !selected || callsOff, onPress: () => selected && void s.startCall([selected.id]) },
     { keys: 'mod+i', allowInInputs: true, isDisabled: !selected, onPress: () => s.setUi({ profileOpen: !profileOpen }) },
+    { keys: 'mod+d', allowInInputs: true, onPress: () => s.openDesks() },
     { keys: 'mod+t', allowInInputs: true, onPress: () => s.setView('team') },
     { keys: 'mod+,', allowInInputs: true, onPress: () => s.setUi({ settingsOpen: true }) },
     {

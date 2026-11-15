@@ -35,6 +35,12 @@ interface Media {
 
 const NO_MEDIA: Media = { videoTrack: null, audioTrack: null };
 
+/** The room of the call that is connected now, set on connect and cleared on disconnect (for the demo hook's `say`). */
+let currentRoom: Room | null = null;
+export function getConnectedRoom(): Room | null {
+  return currentRoom && currentRoom.state === ConnectionState.Connected ? currentRoom : null;
+}
+
 /**
  * Joins the call's LiveKit room with the microphone on. `info` is the call to join, or null while there is nothing to
  * join (always null for mock calls). State, participants, speaker and captions are not here: they come from the
@@ -88,6 +94,7 @@ export function useLiveKit(info: CallInfo | null): LiveKitMedia | null {
         if (!room.canPlaybackAudio) void room.startAudio().catch(() => undefined);
       })
       .on(RoomEvent.Disconnected, () => {
+        if (currentRoom === room) currentRoom = null;
         remote.clear();
         refresh();
       });
@@ -96,6 +103,7 @@ export function useLiveKit(info: CallInfo | null): LiveKitMedia | null {
       try {
         await room.connect(url, token);
         if (closed) return;
+        currentRoom = room;
         await room.startAudio().catch(() => undefined);
         try {
           await room.localParticipant.setMicrophoneEnabled(true);
@@ -115,6 +123,7 @@ export function useLiveKit(info: CallInfo | null): LiveKitMedia | null {
       playing.clear();
       if (room.state !== ConnectionState.Disconnected) void room.disconnect();
       if (roomRef.current === room) roomRef.current = null;
+      if (currentRoom === room) currentRoom = null;
       setMedia(NO_MEDIA);
     };
   }, [callId, url, token]);
