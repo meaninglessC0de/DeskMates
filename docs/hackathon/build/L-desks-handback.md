@@ -42,3 +42,9 @@
 - Pill capped at 60 % of the tile width (detail stays one line with an ellipsis). "Done" now shows no outcome text.
 - Pill scale is now proportional to the tile (`chipScaleFor` in `desks/layout.ts`, tile width / 580 in 0.05 steps, min 0.7), set as `data-am-chip-scale` on the view; the face and rail keep their own steps. Measured two-line pill height: 14-16 % of tile height, width at most 58 %, at 1280x800, 1440x900 and 2560x1600 with the rail on.
 - New worst-case fixture `desks/worst` (long Working sentence, Done desk, Waiting, long Needs you title); screenshots `shots/desks/worst-<size>-chip.png` and `working-<size>-chip.png`.
+
+## Update: the rail is the whole team's feed
+- `desks/feed.ts` `feedRows(threads)`: desk-to-desk rows (unchanged) + employee messages to the manager ("Maya to <userName>", kind `done` gets a "Done" tag, `question` an "Asks" tag; `system` lines and call dividers skipped) + the manager's messages ("<userName> to Maya"). The same text sent to several people within 2 s is one row "<userName> to the team". Manager name is `settings.userName`; without it "You to Maya" and "Maya to you". Manager avatar is the Portrait monogram. Newest 60 rows, oldest first, newest kept in view (scrolls again after the area has measured).
+- Source is `threads[id].messages` plus steps, already loaded by the view's backfill. Bubbles and pulses still use desk-to-desk steps only.
+- Message kinds in `src/shared/types.ts` are `text | question | done | system` (there is no `stuck` kind), so no stuck row exists.
+- Tag selector: `[data-am="rail-tag"]`. Fixture `desks/working` now has a team brief, a message to Maya, Maya's question and Jonas's done (9 rows). Screenshots: `shots/desks/working-1280x800-feed.png`, `working-2560x1600-feed.png`.

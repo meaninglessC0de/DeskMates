@@ -176,6 +176,10 @@ ${S} [data-am="desks-rail-body"] {
 ${S} [data-am="rail-head"] {
   align-items: baseline;
 }
+${S} [data-am="rail-tag"] {
+  flex-shrink: 0;
+  color: color-mix(in oklab, var(--color-text-primary) 70%, transparent);
+}
 ${S} [data-am="rail-time"] {
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;

@@ -3,7 +3,7 @@
  * message from the step's employee to `peer.employeeId` (the receiver gets a mirror step, direction 'from', which is
  * ignored here so nothing shows twice). Pure functions; the view calls them on every render with `Date.now()`.
  */
-import type { ActivityStep } from '../../../shared';
+import type { ActivityStep, Message } from '../../../shared';
 
 export interface DeskMessage {
   /** The step's id. */
@@ -60,4 +60,55 @@ export function nextExpiry(msgs: DeskMessage[], now: number): number | null {
     }
   }
   return next;
+}
+
+/** The rail shows the newest of these rows. */
+export const FEED_MAX = 60;
+/** The same text sent to several people within this long is one row, "to the team". */
+export const TEAM_WINDOW_MS = 2000;
+
+/**
+ * One row of the rail. `fromId` / `toId` are employee ids; null means the manager (the user). `team` is the manager
+ * writing to several people at once. `tag` is the only extra: a quiet "Done" or "Asks" beside the name.
+ */
+export interface FeedRow {
+  id: string;
+  fromId: string | null;
+  toId: string | null;
+  team: boolean;
+  text: string;
+  ms: number;
+  tag: 'Done' | 'Asks' | null;
+}
+
+type MessageThreads = Record<string, { steps: ActivityStep[]; messages: Message[] } | undefined>;
+
+/**
+ * The whole team's feed: desk-to-desk messages (unchanged), what employees send the manager (employee messages, but
+ * not system lines or call dividers), and what the manager sends employees. Oldest first, newest 60 kept.
+ */
+export function feedRows(threads: MessageThreads): FeedRow[] {
+  const rows: FeedRow[] = peerMessages(threads).map((m) => ({ id: m.id, fromId: m.from, toId: m.to, team: false, text: m.text, ms: m.ms, tag: null }));
+  const outgoing: { id: string; to: string; text: string; ms: number }[] = [];
+  for (const [employeeId, t] of Object.entries(threads)) {
+    for (const m of t?.messages ?? []) {
+      const text = m.text.trim();
+      if (!text || m.kind === 'system' || m.from === 'system') continue;
+      if (m.from === 'employee') rows.push({ id: m.id, fromId: employeeId, toId: null, team: false, text, ms: m.createdMs, tag: m.kind === 'done' ? 'Done' : m.kind === 'question' ? 'Asks' : null });
+      else if (m.from === 'user') outgoing.push({ id: m.id, to: employeeId, text, ms: m.createdMs });
+    }
+  }
+  outgoing.sort((a, b) => a.ms - b.ms || a.id.localeCompare(b.id));
+  const groups: { first: (typeof outgoing)[number]; to: Set<string> }[] = [];
+  for (const m of outgoing) {
+    const g = groups.find((x) => x.first.text === m.text && m.ms - x.first.ms <= TEAM_WINDOW_MS);
+    if (g) g.to.add(m.to);
+    else groups.push({ first: m, to: new Set([m.to]) });
+  }
+  for (const g of groups) {
+    const team = g.to.size > 1;
+    rows.push({ id: g.first.id, fromId: null, toId: team ? null : g.first.to, team, text: g.first.text, ms: g.first.ms, tag: null });
+  }
+  rows.sort((a, b) => a.ms - b.ms || a.id.localeCompare(b.id));
+  return rows.slice(-FEED_MAX);
 }

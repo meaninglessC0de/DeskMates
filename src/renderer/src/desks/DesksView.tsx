@@ -23,7 +23,7 @@ import { StageTile } from '../ui/StageTile';
 import { tintIndex } from '../ui/tint';
 import { deskArea, desksLayout, seat } from './layout';
 import { MessagesRail } from './Rail';
-import { liveBubbles, livePulses, nextExpiry, peerMessages } from './feed';
+import { feedRows, liveBubbles, livePulses, nextExpiry, peerMessages } from './feed';
 import type { DeskMessage } from './feed';
 import { deskStatus } from './status';
 import type { Size } from '../stage/layout';
@@ -222,6 +222,8 @@ export function DesksView() {
   const { area, rail, railScale } = deskArea(win, showRail);
   const { tile, gap, scale, chipScale } = desksLayout(area);
   const messages = useMemo(() => peerMessages(threads), [threads]);
+  const feed = useMemo(() => feedRows(threads), [threads]);
+  const managerName = useStore((s) => s.settings?.userName ?? null);
   useExpiry(messages);
   const now = Date.now();
   const bubbles = liveBubbles(messages, now);
@@ -293,7 +295,7 @@ export function DesksView() {
                 {row(2, 3)}
               </VStack>
             </Center>
-            {showRail ? <MessagesRail messages={messages} employees={employees} width={rail} height={win.h} scale={railScale} /> : null}
+            {showRail ? <MessagesRail messages={feed} employees={employees} managerName={managerName} width={rail} height={win.h} scale={railScale} /> : null}
           </HStack>
         </Overlay>
       </AppShell>
