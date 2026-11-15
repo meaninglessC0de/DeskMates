@@ -78,6 +78,15 @@ export function buildDisallowed(server: string, reported: readonly string[]): st
 }
 
 /** Risky shell commands (case-insensitive), each with the words the manager sees on the approval. employee-runtime.md section 6. */
+/** `rm -rf` whose targets all sit under /tmp is housekeeping on the employee's own machine, not a big step (seen live: an approval card for `rm -rf /tmp/old`). */
+const TMP_RM = /^\s*rm\s+(?:-[a-z]+\s+|--recursive\s+|--force\s+)+(?:\/tmp\/[\w.\-\/*]+\s*)+$/;
+function withoutHousekeeping(command: string): string {
+  return command
+    .split(/(&&|\|\||;|\n)/)
+    .filter((part) => !(TMP_RM.test(part.toLowerCase()) && !part.includes('..')))
+    .join('');
+}
+
 const RISKY_SHELL: [RegExp, string][] = [
   [/\brm\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\b/, 'Delete files'],
   [/\brm\s+(?:-r\s+-f|-f\s+-r)\b/, 'Delete files'],
@@ -97,13 +106,13 @@ const RISKY_SHELL: [RegExp, string][] = [
 ];
 
 export function isRiskyShell(command: string): boolean {
-  const c = command.toLowerCase();
+  const c = withoutHousekeeping(command).toLowerCase();
   return RISKY_SHELL.some(([re]) => re.test(c));
 }
 
 /** Every RISKY_SHELL pattern the command matches (not just the first), for deciding whether an approval covers all of it. */
 export function riskyShellPatterns(command: string): RegExp[] {
-  const c = command.toLowerCase();
+  const c = withoutHousekeeping(command).toLowerCase();
   return RISKY_SHELL.filter(([re]) => re.test(c)).map(([re]) => re);
 }
 
@@ -111,7 +120,8 @@ export function riskyShellPatterns(command: string): RegExp[] {
  * What the big step in a risky command is, in the manager's words, and the part of the command that does it
  * (a long chain shows the step that matters, not whatever happens to come first). Null when nothing is risky.
  */
-export function riskyShellStep(command: string): { title: string; part: string } | null {
+export function riskyShellStep(raw: string): { title: string; part: string } | null {
+  const command = withoutHousekeeping(raw);
   const parts = command.split(/&&|\|\||;|\n/).map((p) => p.trim()).filter(Boolean);
   for (const [re, title] of RISKY_SHELL) {
     const part = parts.find((p) => re.test(p.toLowerCase()));

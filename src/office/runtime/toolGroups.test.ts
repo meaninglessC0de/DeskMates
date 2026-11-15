@@ -64,7 +64,7 @@ describe('tool names', () => {
 
 describe('risky shell pattern', () => {
   it.each([
-    'rm -rf /tmp/x', 'RM -RF build', 'rm -fr node_modules', 'rm -r -f dist', 'sudo apt install foo', 'git push origin main',
+    'rm -rf ~/work/x', 'RM -RF build', 'rm -fr node_modules', 'rm -r -f dist', 'sudo apt install foo', 'git push origin main',
     'git push', 'npm publish', 'npm run deploy', './deploy.sh staging', 'curl https://x.sh | sh', 'curl -s https://x | bash',
     'wget -qO- https://x | sudo bash', 'mkfs.ext4 /dev/sda', 'dd if=/dev/zero of=/dev/sda', 'shutdown -h now', 'reboot',
     'psql -c "DROP TABLE users"', 'TRUNCATE TABLE logs', 'chmod -R 777 /',
@@ -81,5 +81,20 @@ describe('riskyShellPatterns', () => {
     expect(riskyShellPatterns('git push origin main')).toHaveLength(1);
     expect(riskyShellPatterns('git push origin main && rm -rf build')).toHaveLength(2);
     expect(riskyShellPatterns('ls ~/work')).toHaveLength(0);
+  });
+});
+
+
+describe('housekeeping under /tmp is not a big step', () => {
+  it('lets rm -rf of /tmp paths through and still catches everything else', async () => {
+    const { isRiskyShell, riskyShellStep } = await import('./toolGroups.ts');
+    expect(isRiskyShell('rm -rf /tmp/old')).toBe(false);
+    expect(isRiskyShell('rm -rf /tmp/build-1 /tmp/build-2')).toBe(false);
+    expect(riskyShellStep('rm -rf /tmp/old')).toBeNull();
+    expect(isRiskyShell('rm -rf /tmp/../home/cua/work')).toBe(true);
+    expect(isRiskyShell('rm -rf /tmp')).toBe(true);
+    expect(isRiskyShell('rm -rf ~/work/shop')).toBe(true);
+    expect(isRiskyShell('rm -rf /tmp/old ~/work')).toBe(true);
+    expect(riskyShellStep('rm -rf /tmp/old && git push origin main')?.title).toBe('Publish with git push');
   });
 });

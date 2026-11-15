@@ -130,9 +130,12 @@ function teamText(p: Person): string {
   const who = n === 4 ? 'the four of you own it together' : n === 3 ? 'the three of you own it together' : n === 2 ? 'the two of you own it together' : 'you own it';
   const opening =
     `Hi ${p.first}, Sam here. Today is launch day, and ${who}: by the end, our fixed checkout and a launch page that sells it are ready to publish. ` +
-    'I am not going to hand out step-by-step instructions. Work it out between you, talk to each other directly and take the initiative: if you see what the launch needs from your side, do it, and if something a teammate sends you is wrong or could be better, tell them how. ' +
+    'I am not going to hand out step-by-step instructions, and you do not need my answer on details: decide, and tell me what you decided. Work it out between you, talk to each other directly and take the initiative: if you see what the launch needs from your side, do it, and if something a teammate sends you is wrong or could be better, tell them how. ' +
     'Your desktops do not share files, so anything you pass to a teammate has to be in the message itself.';
-  const closing = 'Tell me in a line when something important happens. I am watching your desks.';
+  const closing =
+    'I am watching your desks live, so do the work on screen where I can see it: read and browse in Firefox on your own desktop rather than fetching pages in the background, ' +
+    'keep whatever you are making open and reload it after every change, scroll through anything you review, and run your checks in a visible terminal. ' +
+    'Tell me in a line when something important happens.';
   let own = '';
   switch (p.key) {
     case 'maya': {
@@ -146,7 +149,7 @@ function teamText(p: Person): string {
           ? `Nothing ships until ${signoffs.length > 1 ? signoffs.slice(0, -1).join(', ') + ' and ' + signoffs[signoffs.length - 1] : signoffs[0]} on the page you built. ` +
             `When ${count === 1 ? 'that is done' : count === 2 ? 'both have' : 'all three have'}, commit on a branch called fix/checkout-discount and publish it with git push; I will approve the push myself. `
           : 'When you are happy with it, commit on a branch called fix/checkout-discount and publish it with git push; I will approve the push myself. ') +
-        'Keep the page and the terminal open on your desktop.';
+        'Keep the page and the terminal open on your desktop, and try the page in Firefox the way a customer would: scroll it and click through it.';
       break;
     }
     case 'priya':
@@ -158,7 +161,7 @@ function teamText(p: Person): string {
       break;
     case 'jonas':
       own =
-        'You own the facts: how Shopify, Squarespace and BigCommerce handle pricing and discount codes on their public pages, no logins. ' +
+        'You own the facts: how Shopify, Squarespace and BigCommerce handle pricing and discount codes on their public pages, no logins. Do the research in Firefox on your desktop, page by page, so I can see what you are reading. ' +
         `Get the most useful facts to ${has('priya') ? 'Priya' : 'me'} early, then make a comparison chart with real bars as a web page and keep it open on your desktop. ` +
         (has('priya') || has('maya')
           ? `Check every factual claim in ${[has('priya') ? "Priya's copy" : '', has('maya') ? 'the page Maya builds' : ''].filter(Boolean).join(' and ')}, and tell ${has('priya') && has('maya') ? 'them' : has('priya') ? 'her' : 'her'} exactly what to change. `
@@ -169,7 +172,7 @@ function teamText(p: Person): string {
       own =
         'You own the look: a style guide (colours, type, spacing) and a mockup of the launch page at desktop and phone widths, kept open on your desktop. ' +
         (has('maya')
-          ? 'Maya builds from your spec, so send her one she can build from. Review what she builds against your mockup, and keep reviewing until you would put your name on it.'
+          ? 'Maya builds from your spec, so send her one she can build from. Review what she builds against your mockup: save what she sends, open it in Firefox on your desktop and scroll through it, and keep reviewing until you would put your name on it.'
           : '');
       break;
   }
@@ -181,7 +184,7 @@ const CHANGE_REQUEST =
   'Team, a change from me before we ship. First, we are adding a launch-week offer: 15% off with the code LAUNCH15, valid for seven days. ' +
   'Second, I want a short "How the fix works" section on the page for customers who are not technical, with a simple diagram. ' +
   'Both have to be consistent everywhere: in the shop\'s code and on the page, in the copy and the posts, and in the design. ' +
-  'Jonas, check how our competitors run launch offers so what we claim is fair. Sort out between you who does what, and get every change signed off again.';
+  'Jonas, check how our competitors run launch offers so what we claim is fair. Sort out between you who does what, and get every change signed off again. The offer starts today. Where I have not given a detail, decide it between you and tell me what you chose: do not wait for my answer.';
 
 const taskText = (p: Person): string => (quick ? quickText(p) : teamText(p));
 

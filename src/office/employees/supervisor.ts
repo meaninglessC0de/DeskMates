@@ -108,6 +108,12 @@ export class EmployeeSupervisor implements RuntimeHost {
   private nudgedThisTurn = false;
   private lastSdkMs = Date.now();
   private stalls = 0;
+  /** A manager message arrived since the last task opened: the next tool call may legitimately open a new task. */
+  private freshAssignment = false;
+  /** ...and the model has taken that message into a turn (the runtime's turnStarted), so finish_task here already covers it. */
+  private assignmentAbsorbed = false;
+  /** A task opened after finish_task / report_stuck in the same turn without a new assignment: closed quietly at turn end. */
+  private ghostTaskId: string | null = null;
   private removed = false;
   private chain: Promise<void> = Promise.resolve();
   private watchdogTimer: NodeJS.Timeout | null = null;
@@ -330,6 +336,10 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   /** Put an item in the runtime's inbox, or hold it until the runtime is up. */
   deliver(item: InboxItem): void {
+    if (item.kind === 'manager') {
+      this.freshAssignment = true;
+      this.assignmentAbsorbed = false;
+    }
     // a teammate or the manager wrote: whoever she was waiting for no longer matters, she is awake again
     if (this.waiting && (item.kind === 'manager' || item.kind === 'colleague')) this.clearWaiting();
     // a new hire writes her greeting first: what people say to her in the meantime is handled right after it
@@ -355,14 +365,34 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   // ------------------------------------------------------------------ tasks, steps, plan
 
+  /**
+   * After finish_task or report_stuck in this very turn, further tool calls are tail work on a closed task and must not
+   * open a new one, unless the manager sent something new in the meantime (a message absorbed mid-turn is a real next task).
+   */
+  private mayOpenTask(): boolean {
+    return !(this.inTurn && (this.flags.finished || this.flags.stuck) && !this.freshAssignment);
+  }
+
   private openTask(): Task {
+    const ghost = !this.mayOpenTask();
     const task: Task = {
       id: newId('tsk'), employeeId: this.id, title: cleanTitle(this.lastAssignment) || 'Task', assignedBy: 'user',
       status: 'running', plan: [], outcome: null, assignedMs: this.now(), finishedMs: null, activeMs: 0, costUsd: 0,
       inputTokens: 0, outputTokens: 0, numTurns: 0, traceId: null,
     };
     this.task = task;
-    this.turnTaskId = task.id;
+    if (ghost) {
+      this.ghostTaskId = task.id; // its cost stays with the task that was really finished (turnTaskId unchanged)
+    } else {
+      this.turnTaskId = task.id;
+      if (this.inTurn) {
+        // a real next task inside a turn that already finished or stopped the previous one: its own obligations start now
+        this.flags.finished = false;
+        this.flags.stuck = false;
+      }
+    }
+    this.freshAssignment = false;
+    this.assignmentAbsorbed = false;
     this.nudges = 0;
     this.budgetExtraUsd = 0;
     this.turnsExtra = 0;
@@ -585,14 +615,17 @@ export class EmployeeSupervisor implements RuntimeHost {
     // Without this a new hire says hello and then reports "I said hello" as finished work.
     if (!this.task) return 'There is no open task, so there is nothing to finish. You are done for now.';
     this.flags.finished = true;
+    // a manager message the model had already taken in before this call is part of the work it is finishing
+    if (this.assignmentAbsorbed) this.freshAssignment = false;
     this.settleHeldFinal(summary);
     this.closeAfterTurn('done', summary, null, (taskId) => this.postEmployee('done', summary, 'done', taskId));
-    return 'Task closed.';
+    return this.freshAssignment ? 'Task closed.' : 'Task closed. Stop now and call no more tools.';
   }
 
   reportStuck(reason: string, tried: string): string {
     if (this.removed) return 'Noted.';
     this.flags.stuck = true;
+    if (this.assignmentAbsorbed) this.freshAssignment = false;
     const said = `${reason} ${tried}`.trim();
     this.settleHeldFinal(said);
     this.closeAfterTurn('failed', reason, reason, (taskId) => this.postEmployee('text', said, 'stuck', taskId));
@@ -747,6 +780,7 @@ export class EmployeeSupervisor implements RuntimeHost {
       // a new turn is starting (a queued message, a note): she is no longer waiting
       this.clearWaiting();
     }
+    if (this.freshAssignment) this.assignmentAbsorbed = true;
     if (this.greeting) return; // a message sent during the greeting has not reached her yet
     const now = this.now();
     for (const m of this.ctx.store.markSeen(this.id, now)) {
@@ -758,8 +792,9 @@ export class EmployeeSupervisor implements RuntimeHost {
     this.noteSdkMessage();
     this.setTyping(false);
     this.nudges = 0;
+    this.stalls = 0;
     this.flushClose();
-    if (!this.task) this.openTask();
+    if (!this.task && this.mayOpenTask()) this.openTask();
   }
 
   step(sentence: string, opts?: { status?: 'running' | 'ok' | 'error'; peer?: ActivityStep['peer'] }): string {
@@ -778,6 +813,7 @@ export class EmployeeSupervisor implements RuntimeHost {
 
   setPlan(steps: PlanStep[]): void {
     this.noteSdkMessage();
+    if (!this.task && !this.mayOpenTask()) return;
     const task = this.task ?? this.openTask();
     this.saveTask({ ...task, plan: steps });
   }
@@ -815,6 +851,13 @@ export class EmployeeSupervisor implements RuntimeHost {
       return;
     }
     this.errorRestarts = 0;
+    this.stalls = 0;
+    if (this.task && this.ghostTaskId === this.task.id && (this.flags.finished || this.flags.stuck)) {
+      // a task opened by tail work after finish_task: no second "done" bubble, nothing to nudge
+      this.ghostTaskId = null;
+      this.closeTask('cancelled', null);
+      return;
+    }
     if (this.flags.asked || this.flags.finished || this.flags.stuck || this.flags.waited) {
       this.refresh();
       return;

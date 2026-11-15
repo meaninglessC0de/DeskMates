@@ -598,6 +598,139 @@ describe('one approval for one step (supervisor side)', () => {
   });
 });
 
+describe('tail work after finish_task (the ghost task)', () => {
+  /** A runtime that does nothing: the test plays the model by calling the host itself. */
+  async function rig() {
+    let host: RuntimeDeps['host'] | null = null;
+    const log: InboxItem[] = [];
+    const factory = (deps: RuntimeDeps): EmployeeRuntime => {
+      host = deps.host;
+      return {
+        async start() {}, deliver(i) { log.push(i); }, async interrupt() {}, async setPaused() {}, onPermissionsChanged() {},
+        async attachHost() {}, async detachHost() {}, async dispose() {},
+      };
+    };
+    h = await harness({ boot: { createRuntime: factory } });
+    const e = await h.hire('web_developer');
+    for (let i = 0; i < 200 && !host; i++) await new Promise((r) => setTimeout(r, 10));
+    const hostNow = host as unknown as RuntimeDeps['host'];
+    hostNow.turnStarted(); // the greeting turn
+    hostNow.turnEnded({});
+    await h.state(e.id, 'idle');
+    const sup = h.office.peers('none').find((x) => x.id === e.id)!;
+    const task = () => h!.office.thread(e.id, {}).task as Task;
+    const nudges = () => log.filter((i) => i.kind === 'office' && /You stopped without finishing/.test(i.text));
+    return { h: h!, e, host: hostNow, sup, log, task, nudges };
+  }
+
+  it('a plan or tool call after finish_task in the same turn opens no task, and she is idle at turn end', async () => {
+    const { h, e, host, task, nudges } = await rig();
+    h.office.sendMessage(e.id, 'Write the launch post.');
+    host.turnStarted();
+    host.toolUsed('space');
+    const first = task();
+    expect(host.finishTask('Post written.')).toBe('Task closed. Stop now and call no more tools.');
+    host.setPlan([{ title: 'Everything', status: 'done' }]); // TodoWrite inside the 3 s window
+    host.toolUsed('space');
+    host.setPlan([{ title: 'Everything', status: 'done' }]);
+    expect(task().id).toBe(first.id);
+    expect(task().status).toBe('done');
+    expect(h.office.getEmployee(e.id).state).toBe('idle');
+    host.turnEnded({ costUsd: 0.01, numTurns: 1 });
+    expect(h.office.getEmployee(e.id).state).toBe('idle');
+    expect(task().id).toBe(first.id);
+    expect(nudges()).toHaveLength(0);
+    expect(h.events.filter((x) => x.type === 'message' && x.message.kind === 'done')).toHaveLength(1);
+  });
+
+  it('report_stuck is the same: tail work opens no task', async () => {
+    const { h, e, host, task } = await rig();
+    h.office.sendMessage(e.id, 'Write the launch post.');
+    host.turnStarted();
+    host.toolUsed('space');
+    const first = task();
+    host.reportStuck('No access.', 'Tried twice.');
+    host.toolUsed('space');
+    host.turnEnded({});
+    expect(task().id).toBe(first.id);
+    expect(task().status).toBe('failed');
+    expect(h.office.getEmployee(e.id).state).toBe('stuck');
+  });
+
+  it('a manager message absorbed mid-turn after finish_task opens the next task, which is then watched like any other', async () => {
+    const { h, e, host, task, nudges } = await rig();
+    h.office.sendMessage(e.id, 'Write the launch post.');
+    host.turnStarted();
+    host.toolUsed('space');
+    const first = task();
+    expect(host.finishTask('Post written.')).toBe('Task closed. Stop now and call no more tools.');
+    h.office.sendMessage(e.id, 'One change: add a discount code line.');
+    host.turnStarted(); // the runtime hands the new message to the running turn
+    host.toolUsed('space');
+    expect(task().id).not.toBe(first.id);
+    expect(task()).toMatchObject({ status: 'running', title: 'One change: add a discount code line.' });
+    expect(h.office.getEmployee(e.id).state).toBe('working');
+    host.turnEnded({}); // she stopped without finishing the new task: she is nudged, not left alone
+    expect(nudges()).toHaveLength(1);
+  });
+
+  it('a message she had already taken in before finish_task is not a reason to open another task', async () => {
+    const { h, e, host, task } = await rig();
+    h.office.sendMessage(e.id, 'Write the launch post.');
+    host.turnStarted();
+    host.toolUsed('space');
+    const first = task();
+    h.office.sendMessage(e.id, 'Also mention the free delivery.');
+    host.turnStarted(); // absorbed mid-turn, handled inside this task
+    host.finishTask('Post written, with free delivery.');
+    host.setPlan([{ title: 'Everything', status: 'done' }]);
+    host.toolUsed('space');
+    host.turnEnded({});
+    expect(task().id).toBe(first.id);
+    expect(h.office.getEmployee(e.id).state).toBe('idle');
+  });
+
+  it('safety net: a task that still opens after finish_task is closed quietly at turn end, its cost on the finished task', async () => {
+    const { h, e, host, sup, task, nudges } = await rig();
+    h.office.sendMessage(e.id, 'Write the launch post.');
+    host.turnStarted();
+    host.toolUsed('space');
+    const first = task();
+    host.finishTask('Post written.');
+    (sup as unknown as { flushClose(): void }).flushClose(); // the 3 s timer fires
+    (sup as unknown as { openTask(): Task }).openTask(); // something got past the guard
+    expect(h.office.getEmployee(e.id).state).toBe('working');
+    host.turnEnded({ costUsd: 0.05, numTurns: 1 });
+    const state = h.office.getEmployee(e.id);
+    expect(state.state).toBe('idle');
+    expect(h.office.store.getTask(first.id)!.costUsd).toBeCloseTo(0.05);
+    expect(task().id).not.toBe(first.id);
+    expect(task().status).toBe('cancelled');
+    expect(nudges()).toHaveLength(0);
+    expect(h.events.filter((x) => x.type === 'message' && x.message.kind === 'done')).toHaveLength(1);
+  });
+
+  it('a second stall in her life is nudged again, not failed: progress resets the count', async () => {
+    const { h, e, host, sup, log } = await rig();
+    h.office.sendMessage(e.id, 'Write the launch post.');
+    host.turnStarted();
+    host.toolUsed('space');
+    const stale = () => ((sup as unknown as { lastSdkMs: number }).lastSdkMs = Date.now() - 5 * 60_000);
+    stale();
+    await sup.watchdogTick();
+    expect(log.filter((i) => i.kind === 'office' && /You stalled/.test(i.text))).toHaveLength(1);
+    host.toolUsed('space'); // she is moving again
+    stale();
+    await sup.watchdogTick();
+    expect(log.filter((i) => i.kind === 'office' && /You stalled/.test(i.text))).toHaveLength(2);
+    expect(h.office.getEmployee(e.id).state).toBe('working');
+    // without progress the next stall does fail the task
+    stale();
+    await sup.watchdogTick();
+    expect(h.office.getEmployee(e.id).state).toBe('stuck');
+  });
+});
+
 describe('API-level behaviour', () => {
   it('keeps the thread paged newest first and sorts needs_you, stuck, then recent', async () => {
     const { h, e } = await hired();

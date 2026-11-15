@@ -67,3 +67,10 @@ Run C (I-20): after seeding the shop with `seedMaya`, Maya fixed the bug, commit
 
 ## Spend
 About $0.04 by the office's own team totals (5 tasks, costUsd 0.037; the report can lag), well under the $1.50 limit. No Sonnet run.
+
+## Addendum: ghost task after finish_task (supervisor.ts only, unit tests only, no office started)
+- `mayOpenTask()`: in a turn where finish_task or report_stuck already ran, `toolUsed` and `setPlan` open no task unless `freshAssignment` (a manager message arrived since the last task opened). `openTask` resets it; a real next task inside the same turn also clears `flags.finished/stuck` so it is nudged like any task.
+- Residual edge: `assignmentAbsorbed` (set when the runtime's `turnStarted` hands the message to the model) lets `finishTask`/`reportStuck` clear `freshAssignment` when she already took the message in before finishing.
+- Safety net: a task opened past the guard is marked ghost; at turn end it is closed as `cancelled` with no "done" bubble and no nudge, and its cost stays on the finished task (`turnTaskId` is not moved).
+- `stalls` resets on any tool call and on every completed turn. `finishTask` now returns "Task closed. Stop now and call no more tools." unless a fresh assignment is pending ("Task closed.").
+- Tests: six new in `supervisor.test.ts` ("tail work after finish_task").
