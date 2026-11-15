@@ -155,3 +155,4 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **D-043.** An approval raised by the gate for a risky command is titled by the step ("Publish with git push", "Delete files"), never "Run a command", and shows the part of the command that matters.
 - **D-044.** Time worked under an hour is shown in minutes. Take control reads "You have control". A new hire's first message is a hello, not a question, so they start idle.
 - **D-045.** Genie space "Deskmates team" is created by script (`scripts/genie-setup.ts`), with table descriptions, six sample questions and four instructions; answers are shown as plain text.
+- **D-046.** (User, 15 Nov) `main` holds the whole build: it was fast-forwarded to `build/night-1` on the user's say, and the two are kept at the same commit. The repository stays private until the user says otherwise.

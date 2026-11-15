@@ -30,7 +30,7 @@ That is the Mac app (window, menu bar, notifications); it starts everything else
 ## What only you can decide
 
 - **The repository is private.** If the hackathon needs a public repository, make it public (or tell me to): `.env.local` and all data folders are untracked and were never committed. The three videos in the repository root (`A_pitch.mp4` and so on, 38 MB) were committed by your other session.
-- **Branch.** Everything is on `build/night-1` (pushed). Nothing was merged into `main`; say the word and I will open the pull request.
+- **Branch.** Everything is on `build/night-1` and, since you asked on 15 November, on `main` too (a fast-forward; the two branches are the same commit).
 
 ## What only you can check (ten minutes, before recording)
 
