@@ -137,3 +137,13 @@ Also seen in the takes, by design: the microphone is on when a meeting starts, s
 
 - Found by reading `turnEndedInner`: with a task open and nothing to do, the office nudges twice and then fails the task as "Stopped making progress". The first demo run only worked because every reply came within a few seconds. Fix in progress: `wait_for_colleague` (D-055).
 
+## I-24 · Integration · Rebuilding while the app runs leaves a blank window on reload (low, open, documented)
+
+- The office lists the renderer's files when it starts, so after `npm run build` the new asset names are answered with the page itself and the window stays blank. Restart the app after a build. Does not affect a normal run.
+
+## Live demo run 1 (12:49 to 12:53, Sonnet 5.5, fresh team, `scripts/demo/live.ts --reset`)
+
+- Worked first time. Hires 1 min 50 s; work 2 min; $0.62. Eight messages between desks (Jonas to Priya; Maya to Priya and Ines asking; Priya to Maya twice; Ines to Maya with the spec; Maya to Ines with the full page; Ines to Maya with two fixes, one of them removing a pricing claim the page could not back up). Maya waited for Ines, Ines waited for Maya: both shown as "Waiting for …", nobody nudged or failed. Plans ticked during the work. Maya's push approval left pending.
+- Seen: Priya's copy and post are plain text files, which look bare on her desk (the fuller version asks for styled pages). Maya's plan read "3 of 5" at the end although only the push was left.
+- Not checked by me: pressing Approve at the end. The session's safety rules do not let me answer an employee's approval through the API, which is right: it is the presenter's click. It was exercised earlier today by the teamwork agent on its own office (one card, push went through) and on camera by the video session.
+
