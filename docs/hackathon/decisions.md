@@ -133,3 +133,5 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **D-D2-3.** Face tiles use the square still (`<name>-sq.jpg`) so still and live video share one crop (`cover`, anchor 40 %) and the video cross-fades in without a jump.
 - **D-D2-4.** Short spotlight strip tiles (and the 160 px bottom strip) are rows / stacks with the portrait circle, not cropped photo bands.
 - **D-D2-5.** Bottom reserve 104 -> 112 for the control pill; max stage width 1600 -> 1680. Changed cells listed in `build/D2-handback.md`.
+- **D-035 · 2026-11-15 · user** · After round one of the design pass ("really, really professional... we've reached 99%"): do a second round for "that final 1%": Opus agents again, "critique every tiny layer", fix, and reach a design that "oozes character and follows great UI practices". · Direction in `design/polish-brief-2.md`: exactness layer by layer with measurement, and character through "four desks, four mates" (the logo is four desks; the team is at most four). An independent Opus juror writes `design/critique-round-2.md`; the two round-one agents are resumed to build.
+
