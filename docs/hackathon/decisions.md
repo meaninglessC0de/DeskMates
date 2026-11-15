@@ -126,3 +126,10 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **Q-CAST-1 · open, owner user or orchestrator:** bring Hannah back into the cast (she no longer shares a face with anyone)?
 - **Q-CAST-1 answered · 2026-11-15 · orchestrator:** Hannah Brooks is back in `config/cast.json` (sample avatar Jenny, voice callista). All eight faces are now different people, so the cast is eight again. Checked on the portrait sheet `design/cast-portraits.png`.
 
+
+## 2026-11-15 · D2 stage design agent: polish pass decisions
+- **D-D2-1.** One-to-one A: right column exactly as tall as the desktop; face fills it, type box docked at its bottom (level with the desktop's bottom edge). Spotlight uses the same column and desktop size.
+- **D-D2-2.** One-to-one B departs from the polish brief: a centred 4:3 face over the docked type box, desktop as an inset in the face's corner. A narrow column with only a small desktop and the type box always left an empty band; a full-width face tile cropped and upscaled the 512 px square avatar video.
+- **D-D2-3.** Face tiles use the square still (`<name>-sq.jpg`) so still and live video share one crop (`cover`, anchor 40 %) and the video cross-fades in without a jump.
+- **D-D2-4.** Short spotlight strip tiles (and the 160 px bottom strip) are rows / stacks with the portrait circle, not cropped photo bands.
+- **D-D2-5.** Bottom reserve 104 -> 112 for the control pill; max stage width 1600 -> 1680. Changed cells listed in `build/D2-handback.md`.
