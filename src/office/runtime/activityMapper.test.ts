@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clipSentence, hostnameOf, mapToolCall } from './activityMapper.ts';
+import { clipSentence, describeCommand, hostnameOf, mapToolCall } from './activityMapper.ts';
 
 const step = (n: string, i: Record<string, unknown> = {}) => mapToolCall(n, i).step;
 
@@ -13,6 +13,8 @@ describe('activity mapper (employee-runtime.md 4.4)', () => {
     expect(step('mcp__desktop__launch_app', { launch_path: '/usr/bin/xfce4-terminal' })).toBe('Opened Xfce4 terminal');
     expect(step('mcp__desktop__launch_app', { bundle_id: 'org.mozilla.firefox' })).toBe('Opened Firefox');
     expect(step('mcp__desktop__launch_app', { name: 'firefox', urls: ['https://www.example.com/path?q=1'] })).toBe('Opened example.com');
+    expect(step('mcp__desktop__launch_app', { launch_path: 'xfce4-terminal --working-directory=$HOME/work/shop --hold -e "python3 -m unittest -v"' })).toBe('Opened Xfce4 terminal');
+    expect(step('mcp__desktop__launch_app', { name: 'Google Chrome' })).toBe('Opened Google Chrome');
     expect(step('mcp__desktop__launch_app', {})).toBe('Opened an app');
     expect(mapToolCall('mcp__desktop__launch_app', { name: 'firefox' }).failed).toBe("Couldn't open Firefox");
   });
@@ -23,11 +25,97 @@ describe('activity mapper (employee-runtime.md 4.4)', () => {
   });
 
   it('space.shell, space.write_file', () => {
-    expect(step('mcp__space__shell', { command: 'rm -rf /secret && git push' })).toBe('Ran a command');
-    expect(step('mcp__space__write_file', { path: '~/work/site/index.html', content: 'x' })).toBe('Saved index.html');
-    expect(mapToolCall('mcp__space__write_file', { path: '/a/b/notes.txt' }).failed).toBe("Couldn't save notes.txt");
+    expect(step('mcp__space__shell', { command: 'rm -rf /secret && git push' })).toBe('Pushed the branch');
+    expect(step('mcp__space__shell', { command: 'echo working' })).toBe('Ran a command');
+    expect(step('mcp__space__shell', {})).toBe('Ran a command');
+    expect(step('mcp__space__write_file', { path: '~/work/site/index.html', content: 'x' })).toBe('Wrote index.html');
+    expect(mapToolCall('mcp__space__write_file', { path: '/a/b/notes.txt' }).failed).toBe("Couldn't write notes.txt");
     expect(mapToolCall('mcp__space__shell', { command: 'x' }).failed).toBe("Couldn't run a command");
-    expect(step('mcp__space__read_file', { path: '~/x' })).toBeNull();
+    expect(step('mcp__space__read_file', { path: '~/work/shop/cart.js' })).toBe('Read cart.js');
+    expect(mapToolCall('mcp__space__read_file', { path: '/a/b/x.md' }).failed).toBe("Couldn't read x.md");
+    expect(step('mcp__space__read_file', {})).toBe('Read a file');
+    expect(step('mcp__space__edit_file', { path: '~/work/cart.js' })).toBe('Edited cart.js');
+  });
+
+  it('shell commands are named by their purpose', () => {
+    const cases: Array<[string, string]> = [
+      ['npm test', 'Ran the tests'],
+      ['cd ~/work/shop && npm test 2>&1 | tail -20', 'Ran the tests'],
+      ['npm run test -- --watch=false', 'Ran the tests'],
+      ['npx vitest run', 'Ran the tests'],
+      ['pytest -q', 'Ran the tests'],
+      ['python3 -m pytest tests/', 'Ran the tests'],
+      ['node --test', 'Ran the tests'],
+      ['go test ./...', 'Ran the tests'],
+      ['git commit -m "Fix the cart total"', 'Committed the change'],
+      ['git add -A && git commit -m "x && y"', 'Committed the change'],
+      ['git push origin fix-cart', 'Pushed the branch'],
+      ['git checkout -b fix/cart-total', 'Started a branch'],
+      ['git switch -c fix/cart-total', 'Started a branch'],
+      ['git status', 'Checked the repository'],
+      ['git diff HEAD~1', 'Checked the repository'],
+      ['git log --oneline | head', 'Checked the repository'],
+      ['git add .', 'Staged the changes'],
+      ['git init', 'Set up a repository'],
+      ['python3 -m http.server 8000 &', 'Started a local server'],
+      ['nohup npm run dev > /tmp/dev.log 2>&1 &', 'Started a local server'],
+      ['npm start', 'Started a local server'],
+      ['ls -la ~/work', 'Looked through the files'],
+      ['cat package.json', 'Looked through the files'],
+      ['grep -rn total src', 'Looked through the files'],
+      ['find . -name "*.js"', 'Looked through the files'],
+      ['cd ~/work && ls', 'Looked through the files'],
+      ['mkdir -p ~/work/shop/tests', 'Organised files'],
+      ['cp a.txt b.txt', 'Organised files'],
+      ['mv old.js new.js', 'Organised files'],
+      ['python3 solve.py', 'Ran solve.py'],
+      ['python3 ~/work/shop/scripts/seed.py --fast', 'Ran seed.py'],
+      ['node build/index.js', 'Ran index.js'],
+      ['bash ./setup.sh', 'Ran setup.sh'],
+      ['python3 - <<EOF\nimport os\nprint(os.getcwd())\nEOF', 'Ran a Python snippet'],
+      ['python3 -c "print(1)"', 'Ran a Python snippet'],
+      ['curl -s http://localhost:8000/cart', 'Fetched a page'],
+      ['wget https://example.com/a.zip', 'Fetched a page'],
+      ['npm install express', 'Installed express'],
+      ['npm i -D vitest@2.1.0', 'Installed vitest'],
+      ['pip install requests', 'Installed requests'],
+      ['pip3 install -r requirements.txt', 'Installed dependencies'],
+      ['npm install', 'Installed dependencies'],
+      ['sudo apt-get install -y ripgrep', 'Installed ripgrep'],
+      ['npm run build', 'Built the project'],
+      ['sed -i "s/a/b/" src/cart.js', 'Edited cart.js'],
+      ['cat > CHANGELOG.md <<EOF\n## Fixed\n- git push the cart\nEOF', 'Wrote CHANGELOG.md'],
+      ['echo "hello" > notes.txt', 'Wrote notes.txt'],
+      ['bash -lc "cd ~/work/shop && npm test"', 'Ran the tests'],
+      ['DISPLAY=:1 xfce4-terminal &', 'Opened Xfce4 terminal'],
+      ['echo "git push" && cd ~/work', 'Ran a command'],
+      ['cd ~/work', 'Ran a command'],
+    ];
+    for (const [cmd, want] of cases) expect(describeCommand(cmd) ?? 'Ran a command', cmd).toBe(want);
+    expect(describeCommand('')).toBeNull();
+    expect(step('mcp__space__shell', { command: 'git commit -m x' })).toBe('Committed the change');
+  });
+
+  it('shell sentences stay short and never carry a path or the command text', () => {
+    for (const cmd of ['python3 /very/long/path/' + 'x'.repeat(60) + '.py', 'npm install ' + 'p'.repeat(80), 'npm run ' + 'z'.repeat(80)]) {
+      const s = describeCommand(cmd)!;
+      expect(s.length, cmd).toBeLessThanOrEqual(40);
+      expect(s).not.toMatch(/\//);
+    }
+    expect(describeCommand('export API_KEY=sk-secret-123 && curl -H "Authorization: Bearer sk-secret-123" https://x.test')).toBe('Fetched a page');
+    expect(describeCommand('git commit -m "token sk-abc"')).not.toMatch(/sk-/);
+  });
+
+  it('text typed into a terminal and sent with Enter is described like a shell command', () => {
+    expect(step('mcp__desktop__type_text', { text: 'npm test\n' })).toBe('Ran the tests');
+    expect(step('mcp__desktop__type_text', { text: 'npm test' })).toBeNull();
+    expect(step('mcp__desktop__type_text', { text: 'hello world\n' })).toBeNull();
+    expect(mapToolCall('mcp__desktop__type_text', { text: 'npm test\n' }).family).toBe('desktop');
+  });
+
+  it('desktop.kill_app names the app', () => {
+    expect(step('mcp__desktop__kill_app', { name: 'firefox' })).toBe('Closed Firefox');
+    expect(step('mcp__desktop__kill_app', { pid: 12 })).toBeNull();
   });
 
   it('WebSearch and WebFetch', () => {

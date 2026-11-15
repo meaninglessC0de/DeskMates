@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { query as sdkQuery, type McpServerConfig, type Options, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
-import type { Env } from '../../shared/index.ts';
+import { query as sdkQuery, type HookCallback, type McpServerConfig, type Options, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import type { Env, PlanStep } from '../../shared/index.ts';
 import { permissionLine } from '../employees/briefing.ts';
 import type { McpEndpoint } from '../spaces/types.ts';
 import { tracedQuery } from '../sync/tracing.ts';
@@ -21,6 +21,8 @@ import { REPEAT_NOTICE, RepeatDetector } from './watchdog.ts';
 export const NO_KEY_SENTENCE = "I can't start: no API key is set.";
 const SPOKE_TOOLS = new Set(['message_user', 'ask_user', 'finish_task', 'report_stuck']);
 const STDERR_LINES = 30;
+/** Activity sentences that usually mean a plan step has just finished. */
+const MILESTONE = /^(Ran the tests|Committed|Pushed|Started a branch|Wrote |Edited |Opened )/;
 const COST_FILE = 'cost-baseline.json';
 
 export interface ClaudeRuntimeOptions {
@@ -84,6 +86,66 @@ export async function listDesktopToolsLive(endpoint: McpEndpoint, employeeId: st
   }
 }
 
+/** Tool calls without a plan update before the office reminds the employee to tick it (and again after each further stretch of this size). */
+export const PLAN_NUDGE_AFTER = 6;
+
+/** The reminder: short, names the step still open so the model can answer with one TodoWrite. */
+export function planNudgeText(plan: PlanStep[]): string {
+  const open = plan.find((s) => s.status === 'in_progress') ?? plan.find((s) => s.status === 'pending');
+  const title = open ? open.title.replace(/\s+/g, ' ').trim().slice(0, 60) : '';
+  return `Office: tick the plan steps you have finished before you carry on. Your plan has not changed for ${PLAN_NUDGE_AFTER} actions${title ? ` and still shows "${title}" as open` : ''}. Call TodoWrite now with every finished step marked completed and the next one in progress.`;
+}
+
+/**
+ * Keeps the plan ticking on models that write it once and forget it. Counts tool calls since the plan last changed;
+ * `take()` hands out the reminder after every `after` calls of a stale plan, only while the plan has an unticked step.
+ * A plan update, a closed task or the end of the turn starts over.
+ */
+export class PlanNudge {
+  private plan: PlanStep[] | null = null;
+  private calls = 0;
+  private finishWarned = false;
+
+  constructor(private readonly after = PLAN_NUDGE_AFTER) {}
+
+  /** A TodoWrite call: the plan changed (an empty list clears it). */
+  planWritten(plan: PlanStep[]): void {
+    this.plan = plan.length > 0 ? plan : null;
+    this.calls = 0;
+    this.finishWarned = false;
+  }
+
+  /** Any other tool call. A milestone (tests run, a commit, a file written) is likely to have finished a step and counts double. */
+  toolCalled(milestone = false): void {
+    if (this.open()) this.calls += milestone ? 2 : 1;
+  }
+
+  /** The task ended or the turn is over: nothing left to remind about. */
+  reset(): void {
+    this.plan = null;
+    this.calls = 0;
+    this.finishWarned = false;
+  }
+
+  /** Once per plan: finish_task while steps are still open is sent back so the plan is ticked before the report. */
+  blockFinish(): string | null {
+    if (!this.plan || !this.open() || this.finishWarned) return null;
+    this.finishWarned = true;
+    return 'Office: your plan still has open steps. Call TodoWrite to tick the ones you have finished (every step you did), then call finish_task again.';
+  }
+
+  /** The reminder to attach to a tool result, or null. Handing it out starts a new stretch. */
+  take(): string | null {
+    if (!this.plan || !this.open() || this.calls < this.after) return null;
+    this.calls = 0;
+    return planNudgeText(this.plan);
+  }
+
+  private open(): boolean {
+    return this.plan !== null && this.plan.some((s) => s.status !== 'done');
+  }
+}
+
 interface Block {
   type?: string;
   id?: string;
@@ -105,6 +167,7 @@ export class ClaudeRuntime implements EmployeeRuntime {
   private readonly queryFn: QueryFactory;
   private readonly gate: PermissionGate;
   private readonly repeats = new RepeatDetector();
+  private readonly planNudge = new PlanNudge();
   private readonly officeServer;
   private readonly spaceServer;
   private readonly expectDesktop: boolean;
@@ -249,6 +312,8 @@ export class ClaudeRuntime implements EmployeeRuntime {
       strictMcpConfig: true,
       mcpServers: this.servers(false),
       permissionMode: 'default',
+      // a short reminder rides along with a tool result when the plan has gone stale (see PlanNudge)
+      hooks: { PostToolUse: [{ hooks: [this.planReminderHook] }], PreToolUse: [{ matcher: 'mcp__office__finish_task', hooks: [this.planFinishHook] }] },
       canUseTool: this.gate.canUseTool as unknown as Options['canUseTool'],
       disallowedTools: this.disallowed,
       maxTurns: 5000,
@@ -264,6 +329,18 @@ export class ClaudeRuntime implements EmployeeRuntime {
     this.q = q;
     this.consuming = this.consume(gen, q);
   }
+
+  private planReminderHook: HookCallback = async (input) => {
+    if (input.hook_event_name !== 'PostToolUse' || input.tool_name === 'TodoWrite') return {};
+    const text = this.planNudge.take();
+    return text ? { hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: text } } : {};
+  };
+
+  private planFinishHook: HookCallback = async (input) => {
+    if (input.hook_event_name !== 'PreToolUse' || input.tool_name !== 'mcp__office__finish_task') return {};
+    const why = this.planNudge.blockFinish();
+    return why ? { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: why } } : {};
+  };
 
   private async consume(gen: number, q: QueryLike): Promise<void> {
     let error: unknown = null;
@@ -478,6 +555,8 @@ export class ClaudeRuntime implements EmployeeRuntime {
     }
 
     const mapped = mapToolCall(name, input);
+    if (mapped.plan) this.planNudge.planWritten(mapped.plan);
+    else this.planNudge.toolCalled(MILESTONE.test(mapped.step ?? ''));
     if (mapped.plan && mapped.plan.length > 0) this.host.setPlan(mapped.plan);
     if (mapped.family) this.host.toolUsed(mapped.family as ToolFamily);
     if (mapped.step && !mapped.recordedByOffice) {
@@ -530,6 +609,7 @@ export class ClaudeRuntime implements EmployeeRuntime {
     this.fatalReported = false;
     this.pausedMidTurn = this.pausedMidTurn && this.paused;
     this.repeats.reset();
+    this.planNudge.reset();
     this.hostCalls.clear();
     for (const s of this.openSteps.values()) this.host.endStep(s.stepId, 'ok');
     this.openSteps.clear();

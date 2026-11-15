@@ -2,7 +2,7 @@ import { readFileSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Options } from '@anthropic-ai/claude-agent-sdk';
-import { ClaudeRuntime, NO_KEY_SENTENCE, employeeEnv, type ClaudeRuntimeOptions } from './claudeRuntime.ts';
+import { ClaudeRuntime, NO_KEY_SENTENCE, PLAN_NUDGE_AFTER, planNudgeText, PlanNudge, employeeEnv, type ClaudeRuntimeOptions } from './claudeRuntime.ts';
 import { RuntimeUnavailable } from './errors.ts';
 import { createFakeQuery, type FakeOptions, type FakeScript } from './fakeQuery.ts';
 import { buildSystemPrompt } from './prompt.ts';
@@ -346,7 +346,7 @@ describe('tool calls become activity', () => {
     expect(host.plans).toEqual([[{ title: 'Open the site', status: 'in_progress' }, { title: 'Read it', status: 'pending' }]]);
     expect(host.toolFamilies).toEqual(['desktop', 'desktop', 'space', 'desktop', 'web']);
     expect(host.steps.map((s) => [s.sentence, s.status])).toEqual([
-      ['Opened example.com', 'ok'], ['Saved a.txt', 'ok'], ["Couldn't open Nope", 'error'], ['Read docs.python.org', 'ok'],
+      ['Opened example.com', 'ok'], ['Wrote a.txt', 'ok'], ["Couldn't open Nope", 'error'], ['Read docs.python.org', 'ok'],
     ]);
   });
 
@@ -637,5 +637,116 @@ describe('interrupt, pause, errors and restarts', () => {
     const { rig, fake } = await setup(() => {});
     rig.abort.abort();
     await waitUntil(() => fake.last.closed);
+  });
+});
+
+describe('plan reminder (PlanNudge)', () => {
+  const plan = (...st: Array<'done' | 'in_progress' | 'pending'>) => st.map((status, i) => ({ title: `Step ${i + 1}`, status }));
+  const calls = (n: PlanNudge, k: number) => {
+    for (let i = 0; i < k; i++) n.toolCalled();
+  };
+
+  it('reminds after six tool calls since the plan changed, then again after six more', () => {
+    expect(PLAN_NUDGE_AFTER).toBe(6);
+    const n = new PlanNudge();
+    const p = plan('in_progress', 'pending');
+    n.planWritten(p);
+    calls(n, 5);
+    expect(n.take()).toBeNull();
+    calls(n, 1);
+    expect(n.take()).toBe(planNudgeText(p));
+    calls(n, 5);
+    expect(n.take()).toBeNull();
+    calls(n, 1);
+    expect(n.take()).toBe(planNudgeText(p));
+  });
+
+  it('the text starts with the office line, names the open step and stays short', () => {
+    const t = planNudgeText(plan('done', 'in_progress', 'pending'));
+    expect(t.startsWith('Office: tick the plan steps you have finished before you carry on.')).toBe(true);
+    expect(t).toContain('"Step 2"');
+    expect(planNudgeText([{ title: 'x'.repeat(200), status: 'pending' }]).length).toBeLessThan(330);
+  });
+
+  it('a milestone counts double', () => {
+    const n = new PlanNudge();
+    n.planWritten(plan('in_progress', 'pending'));
+    n.toolCalled();
+    n.toolCalled(true);
+    n.toolCalled(true);
+    expect(n.take()).toBeNull(); // 5
+    n.toolCalled();
+    expect(n.take()).toContain('"Step 1"'); // 6
+  });
+
+  it('finish_task is sent back once while steps are open, never when none are', () => {
+    const n = new PlanNudge();
+    expect(n.blockFinish()).toBeNull(); // no plan
+    n.planWritten(plan('done', 'in_progress'));
+    expect(n.blockFinish()).toContain('call finish_task again');
+    expect(n.blockFinish()).toBeNull(); // once
+    n.planWritten(plan('done', 'in_progress'));
+    expect(n.blockFinish()).not.toBeNull(); // a new plan write re-arms it
+    n.planWritten(plan('done', 'done'));
+    expect(n.blockFinish()).toBeNull();
+  });
+
+  it('a plan update starts a new stretch', () => {
+    const n = new PlanNudge();
+    n.planWritten(plan('in_progress', 'pending', 'pending'));
+    calls(n, 5);
+    n.planWritten(plan('done', 'in_progress', 'pending'));
+    calls(n, 5);
+    expect(n.take()).toBeNull();
+    calls(n, 1);
+    expect(n.take()).toContain('"Step 2"');
+  });
+
+  it('never without a plan, with an empty plan, or when every step is ticked', () => {
+    const n = new PlanNudge();
+    calls(n, 10);
+    expect(n.take()).toBeNull();
+    n.planWritten([]);
+    calls(n, 10);
+    expect(n.take()).toBeNull();
+    n.planWritten(plan('done', 'done'));
+    calls(n, 10);
+    expect(n.take()).toBeNull();
+  });
+
+  it('reset (task closed, turn over) clears everything', () => {
+    const n = new PlanNudge();
+    n.planWritten(plan('in_progress'));
+    calls(n, 6);
+    n.reset();
+    expect(n.take()).toBeNull();
+    calls(n, 10);
+    expect(n.take()).toBeNull();
+  });
+
+  it('the runtime counts real tool calls and the PostToolUse hook attaches the reminder', async () => {
+    const hookInput = (tool: string) => ({ hook_event_name: 'PostToolUse', tool_name: tool, tool_input: {}, tool_response: '', tool_use_id: 'x', session_id: 's', transcript_path: '', cwd: '' }) as never;
+    const got: Array<string | undefined> = [];
+    const { say } = await setup(async (t) => {
+      const hook = t.options.hooks!.PostToolUse![0].hooks[0];
+      const ask = async (tool: string) => {
+        const out = (await hook(hookInput(tool), 'x', { signal: new AbortController().signal })) as { hookSpecificOutput?: { additionalContext?: string } };
+        got.push(out.hookSpecificOutput?.additionalContext);
+      };
+      await t.tool('TodoWrite', { todos: [{ content: 'A', status: 'in_progress', activeForm: 'A' }, { content: 'B', status: 'pending', activeForm: 'B' }] });
+      for (let i = 0; i < 6; i++) {
+        await t.tool('mcp__space__shell', { command: `echo ${i}` });
+        await ask('mcp__space__shell');
+      }
+      await t.tool('mcp__space__shell', { command: 'echo more' });
+      await ask('mcp__space__shell');
+      await ask('TodoWrite');
+      t.finish({});
+    });
+    await say('go');
+    expect(got.slice(0, 5).every((x) => x === undefined)).toBe(true);
+    expect(got[5]).toContain('Office: tick the plan steps you have finished before you carry on.');
+    expect(got[6]).toBeUndefined();
+    expect(got[7]).toBeUndefined();
   });
 });
