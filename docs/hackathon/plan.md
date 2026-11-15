@@ -1,6 +1,6 @@
 # Build plan (the one plan; edit in place)
 
-**Status (2026-11-14, 22:30):** research finished, design finished, plan written and independently reviewed (`build/plan-review.md`: 4 blockers and 32 gaps found, all folded back into the specs). The user has made the four scope decisions (section 10). Waiting on the keys and permissions in `spec/preflight.md`. No product code exists yet.
+**Status (2026-11-15, 02:20):** built. The app (now named **Deskmates**) runs end to end in real mode: hire, greeting, tasks with a plan on a real Cua desktop, live desktop view, approvals, teammates, one-to-one call and meeting with Synthesia faces, Team report from Databricks with Genie questions, menu bar and notifications. Two design rounds are in; the Figma file is built. What happened, in order, is in `build/log.md`; what was found and fixed is in `build/issues.md`; what the user needs to know and do is in `build/morning-report.md`; the video plan is `demo-shot-list.md`. Earlier status (2026-11-14, 22:30): research finished, design finished, plan written and independently reviewed (`build/plan-review.md`: 4 blockers and 32 gaps found, all folded back into the specs). The user has made the four scope decisions (section 10). Waiting on the keys and permissions in `spec/preflight.md`. No product code exists yet.
 
 This file is the map. The detail lives in:
 
@@ -17,7 +17,7 @@ This file is the map. The detail lives in:
 
 ## 1. Product in one paragraph
 
-Agent Manager (working name) is a Mac app where you hire a small team of AI employees. Each has a name, a face, a voice, a role and its own Linux desktop running on your Mac, separate from yours. You talk to each one in an iMessage-style thread. Give one a task and it works on its desktop for as long as it takes, showing a short plan and a quiet line for each thing it does, asking you only when its permission level says it should. You can watch any desktop live, take control of it, video-call an employee (a moving face next to its screen), or summon several into a meeting. A Team view shows hours, tasks and cost per employee, mirrored to Databricks. The app lives in the menu bar and notifies you when someone needs you.
+Deskmates (first called Agent Manager) is a Mac app where you hire a small team of AI employees. Each has a name, a face, a voice, a role and its own Linux desktop running on your Mac, separate from yours. You talk to each one in an iMessage-style thread. Give one a task and it works on its desktop for as long as it takes, showing a short plan and a quiet line for each thing it does, asking you only when its permission level says it should. You can watch any desktop live, take control of it, video-call an employee (a moving face next to its screen), or summon several into a meeting. A Team view shows hours, tasks and cost per employee, mirrored to Databricks. The app lives in the menu bar and notifies you when someone needs you.
 
 ## 2. What the research settled
 

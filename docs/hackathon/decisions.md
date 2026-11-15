@@ -148,3 +148,10 @@ Format: `ID · date · source · decision · why`. Never delete entries; to chan
 - **D-D2-7.** One row of two or three people gets square tiles (the video's shape); no face tile exceeds 768 px (1.5 x the 512 px source). Side by side: desktop 16:10 and a square face at one height.
 - **D-D2-8.** A call shows its calling moment (dimmed portrait, DeskLoader, "Calling Maya") for at least 600 ms. Status lines ("Maya didn't answer" with Ask again, "You're muted", "Priya left") live in the caption line; the chip carries Thinking.
 - **D-D2-9.** Not changed, with reasons in `build/D2-round2-handback.md`: top strip stays centred (Electron traffic lights), 1728 one-to-one margin (width-bound), no count in "Start meeting" (ux-spec).
+
+## 2026-11-15 (02:20) · orchestrator
+- **D-041.** Meeting tiles are seated by desk (each person's colour, in hire order), not in the order they were summoned, so four people form the mark. Raised by the stage designer as a question for the user; kept unless the user objects.
+- **D-042.** The Figma file has three pages (Cover, Screens, Brand and foundations) because the Starter plan allows three. Screens are imported from the running app's own markup (`scripts/figma-export.ts`), not redrawn: the file can never drift from the product. When Figma's automated-call limit was reached, the remaining screens went in as one board; the limit was not worked around.
+- **D-043.** An approval raised by the gate for a risky command is titled by the step ("Publish with git push", "Delete files"), never "Run a command", and shows the part of the command that matters.
+- **D-044.** Time worked under an hour is shown in minutes. Take control reads "You have control". A new hire's first message is a hello, not a question, so they start idle.
+- **D-045.** Genie space "Deskmates team" is created by script (`scripts/genie-setup.ts`), with table descriptions, six sample questions and four instructions; answers are shown as plain text.
