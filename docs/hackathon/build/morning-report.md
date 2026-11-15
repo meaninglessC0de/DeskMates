@@ -80,4 +80,19 @@ My estimate from the scripts' own counts is about $4 of the $50 Anthropic cap (t
 
 ## Final real suite
 
-REAL_SUITE_RESULT
+`npx tsx scripts/e2e/real.ts` at 02:17 on the final code (Haiku 5.5, real Cua desktops, 7.5 minutes, $0.036): **10 of 10 pass.**
+
+| # | Scenario | Result |
+| --- | --- | --- |
+| S1 | Hire Maya | Pass: answer in 4 ms, desktop up in 9.8 s, hello by herself |
+| S2 | A real build task | Pass: a four-step plan appears, done message, page in the browser |
+| S3 | Steer mid-task | Pass: delivered, seen after 1.7 s, heading changed, same task |
+| S4 | Approval: approve, then deny | Pass |
+| S5 | Big step: git push asks first | Pass: nothing pushed before the answer |
+| S6 | A question with no context | Pass: one clear question, sorted to the top |
+| S7 | Teammates: a tagline from Priya | Pass: one message each way, tagline on the page |
+| S8 | Stuck and Try again | Pass: stuck with a reason and what he tried |
+| S9 | Pause, restart, reset, remove | Pass: nothing left behind |
+| S10 | Office killed mid-task | Pass: back in 1.5 s, everyone returns, the task finishes |
+
+The first run of this suite, before the fixes, passed 8 of 10 with two more flaky.
