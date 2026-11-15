@@ -462,4 +462,6 @@ async def entrypoint(ctx: JobContext) -> None:
 
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm, agent_name=AGENT_NAME, num_idle_processes=1))
+    # port=0: the worker's own status server takes any free port. The default (8081) fails with "address already in use"
+    # when anything else on the machine holds it, including a second copy of the app; host keeps it off the network.
+    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm, agent_name=AGENT_NAME, num_idle_processes=1, host="127.0.0.1", port=0))

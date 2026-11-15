@@ -33,7 +33,8 @@ const ANSWER_ROWS = 5;
 const PERIOD: Record<TeamRange, string> = { today: 'yesterday', week: 'last week', month: 'last month' };
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-const hours = (ms: number): string => (ms / HOUR).toFixed(1);
+/** Time worked the way a person says it: "12 min" under an hour (a short first day should not read as 0.0), "5.2 h" from an hour up. */
+const worked = (ms: number): string => (ms < HOUR ? `${ms <= 0 ? 0 : Math.max(1, Math.round(ms / 60_000))} min` : `${(ms / HOUR).toFixed(1)} h`);
 
 function delta(now: number, before: number, format: (n: number) => string, period: string): string {
   const d = now - before;
@@ -67,7 +68,7 @@ function Figures({ report, range }: { report: TeamReport; range: TeamRange }) {
   return (
     <HStack gap={8} vAlign="start">
       <StackItem size="fill">
-        <Figure label="Hours worked" value={hours(totals.activeMs)} change={previous ? delta(totals.activeMs / HOUR, previous.activeMs / HOUR, (n) => n.toFixed(1), p) : null} />
+        <Figure label="Time worked" value={worked(totals.activeMs)} change={previous ? delta(totals.activeMs / HOUR, previous.activeMs / HOUR, (n) => `${n.toFixed(1)} h`, p) : null} />
       </StackItem>
       <Divider orientation="vertical" />
       <StackItem size="fill">
@@ -132,12 +133,12 @@ function PeopleTable({ report }: { report: TeamReport }) {
         },
         {
           key: 'hours',
-          header: 'Hours',
+          header: 'Time',
           align: 'end',
           sortable: true,
           renderCell: (r: Row) => (
             <HStack gap={3} vAlign="center" hAlign="end">
-              <Text hasTabularNumbers>{r.hours.toFixed(1)}</Text>
+              <Text hasTabularNumbers>{worked(r.hours * HOUR)}</Text>
               <Share row={r} max={maxHours} />
             </HStack>
           ),

@@ -65,3 +65,31 @@ Format: `I-<n>`, scenario, expected, observed, evidence, best reading of the cau
 
 - After `desktop/reset`, a second process that kept a handle to the old Space gets a stale connection (`healthy` false forever) until it builds a new `Spaces` object. Office itself recovers (S9 passes). The test script creates a fresh one after a reset (`Run.freshSpaces()`). Only relevant if two processes ever talk to the same Space.
 - Run-to-run variance is real: S2 and S3 timings were 14 to 37 s; S10 took 61 s once and 156 s once (cause not investigated).
+
+## I-10 · Live run through the UI (orchestrator, 01:50) · A test run deleted the running app's desktop (high, fixed)
+
+- Observed twice: while the real app ran on 4317 and Maya was working, her desktop vanished ("This desktop does not exist", connection refused). She reported stuck with what she had tried; the office recreated the desktop within a minute and she rebuilt the page by herself (files were lost: a deleted Space keeps nothing).
+- Cause: `scripts/e2e/lib/harness.ts` cleanup deleted every `local:emp-*` Space that was not in its start-of-run baseline, so any desktop created by anyone while a test ran was removed at the end of that test.
+- Fix: cleanup deletes only Spaces the run hired or whose employee folder is in the run's own data folder. The office itself never deletes Spaces it does not know.
+
+## I-11 · Live run · Approval card for a chained command says "Run a command" and shows the wrong part (medium, fixed)
+
+- Observed: Sonnet chained edit, commit and `git push` in one shell command. The card read "Run a command" with the first 120 characters (a `sed`), so the manager could not see that the big step was a push.
+- Fix: `riskyShellStep` in `toolGroups.ts` names the step ("Publish with git push", "Delete files", ...) and shows the part of the chain that matched.
+
+## I-12 · Live run · A new hire ends in "Needs you" (low, fixed)
+
+- Observed: the hire note said "ask what to start on", Sonnet used `ask_user`, so every new hire showed the amber "Needs you" state. Fix: the note asks for a hello with `message_user` and says it is not a question.
+
+## I-13 · Live run · Sidebar time reads "in 51s" for a fresh message (low, fixed)
+
+- Cause: Astryx `Timestamp` reads the current time once unless `isLive` is set, so a later value is in its future. Fix: `isLive` and a key on the value, in the sidebar and the Team "synced" line.
+
+## I-10 · S17 · "Summon meeting" stays enabled when calls are off (medium)
+
+- Found by W11 with `scripts/e2e/ui.ts` (layer 4, mock desktops, an office started with no LiveKit and no Databricks settings; `/api/health` reports `capabilities.calls: "off"`).
+- Expected (test plan S17): with no LiveKit keys the Call and Summon buttons are disabled, each with a one-line reason.
+- Observed: "Call" is disabled with the tooltip "Calls are off", but "Summon meeting" is enabled (and has no reason) as soon as two people are hired; it opens the picker and "Start meeting" would call the office, which answers 409 `calls_off`.
+- Evidence: `shots/e2e-ui/S17/03-summon.png`, `shots/e2e-ui/S17/fail.png`, `page.txt`; ui.ts S17 line.
+- Reading: `TopBar.tsx` computes `callsOff` for the Call button but the Summon button only checks `peers < 2` (and `AppFrame.tsx` disables the `mod+shift+m` hotkey on peers only). Owner: `src/renderer/src/shell/TopBar.tsx` (and `AppFrame.tsx`): disable when `callsOff`, with the tooltip "Calls are off".
+- Note on the Ask box (also S17): the team view does not render it at all without Databricks (ruling R15), so "absent" counts as passing in `ui.ts`; the test plan's "disabled with a reason" wording is superseded by R15.
