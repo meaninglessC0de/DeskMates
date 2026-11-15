@@ -27,6 +27,11 @@ npm run build && npm start
 
 That is the Mac app (window, menu bar, notifications); it starts everything else itself. Two employees from my test run (Maya and Priya) are still there with their history. For a clean start for the video, remove both from their "..." menu.
 
+## What only you can decide
+
+- **The repository is private.** If the hackathon needs a public repository, make it public (or tell me to): `.env.local` and all data folders are untracked and were never committed. The three videos in the repository root (`A_pitch.mp4` and so on, 38 MB) were committed by your other session.
+- **Branch.** Everything is on `build/night-1` (pushed). Nothing was merged into `main`; say the word and I will open the pull request.
+
 ## What only you can check (ten minutes, before recording)
 
 1. **Speak on a call.** I could not use a microphone. The spoken path was tested by a script with a recorded voice (answers in 2 to 3.5 s), not by a person. Check that she hears you, and that each person's voice suits their face in a meeting.
@@ -40,6 +45,7 @@ https://www.figma.com/design/YODWHUmMnsyE4EdtZUF7X4 (in your drafts, "Suhaan M's
 - **Cover** and **Brand and foundations**: done and checked in Figma.
 - **Screens**: a board of all 18 screens (light and dark), each one the app's real markup as editable layers with the right font. Figma's free plan limits how many automated calls can be made, and the limit was reached while the screens were going in. So the page also holds nine loose single screens from before the limit, three of which (the hire dialogs) are missing their dialog. **Please delete those nine loose 1440 x 900 frames named "Deskmates" and keep the big board.** I could not look at the board inside Figma after the limit, only at the same file rendered here (`shots/figma/board.png`), so give it a glance.
 - The free plan also allows only three pages, hence Cover, Screens, Brand.
+- The file is private (your drafts). **Before you submit, set Share to "Anyone with the link can view"**, or judges cannot open it. The README links to it.
 - Everything is reproducible: `npx tsx scripts/figma-export.ts`, `node scripts/figma-board.mjs`, `node scripts/figma-pages.mjs`.
 
 ## Databricks
