@@ -18,6 +18,29 @@ Every custom piece is a small wrapper around Astryx components. Styling is CSS t
 ### Logo
 - The interim two-ring `Mark` was replaced by the brand agent's `ui/Logo.tsx` (Deskmates mark) in the sidebar header; `Mark.tsx` and its CSS were removed.
 
+### `Desks` (`ui/Desks.tsx`), round two
+- **What:** `<Desks people?={{ id, name, portraitUrl }[]} size?={number} onAdd?={() => void} />`. The mark at human scale: a two-by-two `Grid` of `Center` tiles (`data-am-desk="empty|filled|add"`), tile 100 / gap 13 of 213 (gap 6.1 %), 30 % corner radius (closest CSS to the superellipse), the handle as `::after` (42 x 9, 3.5 above centre). Empty desks are the soft tint of their brand slot; a filled desk is the person's tint at full brand strength (`--am-tint-line-*`) with the darker handle (`--am-tint-handle-*`), so the seeded team reads as the logo. `onAdd` turns the first empty desk into an `IconButton` ("Hire a deskmate").
+- **Used in:** first run (empty, 144 px), hire dialog team-full state (filled, 64 px). Two of the three allowed places.
+- **Gap filled:** no capacity or slot motif in Astryx.
+
+### `DeskLoader` (`ui/DeskLoader.tsx`), round two
+- **What:** `<DeskLoader size?={number} label?={string} />`. The mark's four tiles at exact brand colours breathing clockwise (opacity 1 to 0.35, 1.2 s, 0.3 s stagger), static under reduced motion; `role="status"` with the label as its name.
+- **Used in:** app start ("Opening Deskmates"), hire step 2 while finding a candidate, a desktop starting ("Starting Priya's desktop"); the stage agent uses it for "Calling Maya".
+- **Gap filled:** Spinner is the only indeterminate indicator.
+
+### Round-two hooks
+| Hook | On | What it does |
+| --- | --- | --- |
+| `data-am-run="text|other|cont"`, `data-am-avatar-gap` | `ChatMessage`, `Center` | The face sits beside the last bubble of a run (bottom-aligned, lifted off the time line by one supporting line); a run's trailing activity or approval continues in a second `ChatMessage` with an empty avatar slot, 4 px below |
+| composer `:has()` rules | `.astryx-chat-composer` | One-line composer anchored only on Astryx's documented classes; falls back to the stock layout if they change |
+| `data-am-identity-stack`, `data-am-identity="in|out"` | `VStack` | Hire Shuffle: faces cross-fade in one grid cell after the next face is preloaded; text swaps without ghosting |
+| `data-am-arrive` | `ListItem` | A newly hired row rises in once |
+| `data-am-page`, `data-am-page-header` | Team `VStack`, header `HStack` | Team column shares the thread's centred column; header text aligns to it |
+| `data-am-share`, `data-am-share-fill` | `HStack`, `Center` | Team: each person's hours against the busiest, a 56 x 4 bar in their tint |
+| `data-am-stage-root`, `data-am-leaving` | `VStack` in `App.tsx` | The stage stays mounted 230 ms after a call ends and fades out |
+| platform rules | chrome classes | `user-select: none` on chrome, arrow cursor on controls, thin scrollbars, antialiased text |
+| `::selection`, `caret-color` | thread | Brand-blue selection wash; ink caret |
+
 ### Styling hooks (attributes on plain Astryx components, rules in `ui/styles/app.ts`)
 | Hook | On | What it does | Gap |
 | --- | --- | --- | --- |

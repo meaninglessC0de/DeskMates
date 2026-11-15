@@ -11,6 +11,7 @@ out/
 # runtime data and generated output
 data/
 data-w*/
+data-*/
 shots/
 voice/.venv/
 
