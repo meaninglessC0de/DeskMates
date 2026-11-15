@@ -1,6 +1,6 @@
 # V hand-back: what the video session can use (build session, 15 Nov, edit in place)
 
-State at 11:20, commit `42a7bd3` on `main` and `build/night-1`. Each line says whether it was run. Details: `V-desks-handback.md`, `V-pipeline-handback.md`.
+State at 11:27. Each line says whether it was run. **11:22: the app was rebuilt and restarted on the demo data with the debug port; 11:23 to 11:25: the four-person run was done on Sonnet 5.5 and finished (see "The four-person run" below).** Details: `V-desks-handback.md`, `V-pipeline-handback.md`.
 
 ## The one thing to know first
 
@@ -23,8 +23,8 @@ DATA_DIR=data-demo DESKMATES_CDP_PORT=9333 npm start
 | Desks view | Built. Type checks, 438 tests, purity and the Astryx doctor (no failures) pass. **Seen against the real office** through a browser client at 1440 x 900: three live desktops fill their tiles, pills and faces in place, the fourth desk is a "Hire" tile, no console errors (`shots/desks/live-faces-on.png`). Not yet seen inside the Mac window, nor with four streams at 2560 x 1600. |
 | Tray item "Show desks" (Shift+Cmd+D) | In the code and in the shell test's expected labels. The shell test has not been re-run (it starts the app). |
 | Hook `window.__deskmatesDemo` | Present in the page (checked). `openDesks`, `setFaces`, Esc and `F` exercised. `pin`, `say`, `startCall`, `summon`, `endCall`, `approve` not yet exercised on a real call. |
-| Debug port `DESKMATES_CDP_PORT` | In the code (`src/main/index.ts`), 127.0.0.1 only, off unless set. Not yet tried. |
-| Pipeline `scripts/demo/run.ts` | Seed and script committed. **Maya's path run on a real desktop** (Haiku): hello in 16 s, pending push approval about half a minute after the task, terminal with "Ran 50 tests … OK" on her screen (`shots/demo/maya.jpg`). Ines, Priya and Jonas are written, not run. The four-person Sonnet run is not done. |
+| Debug port `DESKMATES_CDP_PORT` | Works: `http://127.0.0.1:9333/json/version` answers and lists the app's page. Driving it with Playwright is the video session's side. |
+| Pipeline `scripts/demo/run.ts` | Seed and script committed. **Maya's path run on a real desktop** (Haiku): hello in 16 s, pending push approval about half a minute after the task, terminal with "Ran 50 tests … OK" on her screen (`shots/demo/maya.jpg`). **The four-person run on Sonnet 5.5 is done** (below). |
 
 ## Driving the app
 
@@ -56,6 +56,19 @@ Flags: `--only maya,ines`, `--skip-hire`, `--skip-seed`, `--reuse`, `--timeout-m
 
 Known gap: if anyone other than Maya raises an approval, the script does not answer it and that person waits until the timeout.
 
+## The four-person run (11:23 to 11:25, Sonnet 5.5, real desktops, app on `data-demo`)
+
+Hires: all four at their desks with a hello in 53 seconds. Tasks sent at 11:23:49; everything finished by 11:25:15.
+
+| Person | Result on the desktop (frame looked at, `shots/demo/run/<name>.jpg`) | Minutes | Cost |
+| --- | --- | --- | --- |
+| Maya | Terminal in `~/work/shop`: "Ran 50 tests … OK". Commit on `fix/checkout-discount`. Push approval pending ("Push fix/checkout-discount") | 0.4 | $0.10 |
+| Priya | Launch post open in Firefox as plain Markdown, with Jonas's line about Shopify in it | 1.3 | $0.10 |
+| Jonas | "Hosted shop builders" pricing chart in Firefox: Shopify, Squarespace, BigCommerce, from their public pages | 1.3 | $0.19 |
+| Ines | Version A and Version B phone mockups side by side in Firefox | 0.4 | $0.08 |
+
+One teammate message each way between Priya and Jonas. Total $0.47. The work is quick, so a "mid-task" shot needs a follow-up message to each person at the moment of recording.
+
 ## Calls and the meeting: what is known
 
 - This morning the user made real calls with a microphone and a three-person meeting on this build; the logs show greetings, answers, and faces and voices switching between Maya and Jonas.
@@ -63,9 +76,8 @@ Known gap: if anyone other than Maya raises an approval, the script does not ans
 - A line said in a call can reach the worker straight away: the call mind has a `tell_worker` tool, and this morning Maya used it mid-call. That is the path for "Version B. Ship it."
 - Typed lines (`say`) use the voice library's own typed-input path, which interrupts and answers aloud like speech. Read in the installed library and wired in the hook; not yet tried on a real call.
 
-## Still to do after 12:00 (needs the app restarted on the demo data)
+## Still to do
 
-1. Rebuild and restart with the debug port; connect over CDP once.
-2. Pipeline on real desktops: Ines alone, Priya and Jonas together, then the one four-person run on Sonnet (about $1 to $3).
-3. On a real call: `say`, `pin`, the greeting after finished work, "Version B. Ship it." reaching Ines's desktop.
-4. Desks view with four live streams at 2560 x 1600 inside the Mac window; fall back to frames if it is not smooth.
+1. On a real call: `say`, `pin`, `startCall` and `summon` through the hook, the greeting after finished work, "Version B. Ship it." reaching Ines's desktop. None tried yet.
+2. Desks view with four live streams at 2560 x 1600 inside the Mac window; fall back to frames if it is not smooth.
+3. Re-run the shell test (`npx tsx scripts/smoke/shell.ts`) for the new tray item; it starts its own copy of the app, so not while a recording is in progress.
