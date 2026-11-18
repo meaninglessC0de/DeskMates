@@ -1,0 +1,80 @@
+{
+ "_doc": "Recorded-clip manifest for DeskmatesV2. A slot with a missing or null entry falls back to the v1 still look. src is relative to public/. 'at' = composition time (s) the clip's 'from' second lines up with (default: slot start). crop = fractions of the source frame {x,y,w,h}. audio=true plays the clip's own audio and skips the v1 WAVs listed in replacesLines. appFaces/appLabels=true: the recording already shows the faces / 'Desk n' pills, so the edit does not draw its own.",
+ "clips": {
+  "intro": null,
+  "desk.maya": {
+   "src": "media/clips/desks.mp4",
+   "from": 0,
+   "at": 24.0,
+   "crop": {
+    "x": 0.06015625,
+    "y": 0.04375,
+    "w": 0.4125,
+    "h": 0.4125
+   },
+   "appFaces": true,
+   "appLabels": true
+  },
+  "desk.priya": {
+   "src": "media/clips/desks.mp4",
+   "from": 0,
+   "at": 24.0,
+   "crop": {
+    "x": 0.52734375,
+    "y": 0.04375,
+    "w": 0.4125,
+    "h": 0.4125
+   },
+   "appFaces": true,
+   "appLabels": true
+  },
+  "desk.jonas": {
+   "src": "media/clips/desks.mp4",
+   "from": 0,
+   "at": 24.0,
+   "crop": {
+    "x": 0.06015625,
+    "y": 0.54375,
+    "w": 0.4125,
+    "h": 0.4125
+   },
+   "appFaces": true,
+   "appLabels": true
+  },
+  "desk.ines": {
+   "src": "media/clips/desks.mp4",
+   "from": 0,
+   "at": 24.0,
+   "crop": {
+    "x": 0.52734375,
+    "y": 0.54375,
+    "w": 0.4125,
+    "h": 0.4125
+   },
+   "appFaces": true,
+   "appLabels": true
+  },
+  "call.maya": {
+   "src": "media/clips/call.mp4",
+   "from": 9.85,
+   "at": 41.9,
+   "audio": true,
+   "replacesLines": [
+    "m01"
+   ]
+  },
+  "meeting": {
+   "src": "media/clips/meeting.mp4"
+  },
+  "team": {
+   "src": "media/clips/team.mp4",
+   "from": 19.0,
+   "at": 91.9
+  },
+  "approve": {
+   "src": "media/clips/approve.mp4",
+   "from": 0,
+   "at": 85.9
+  }
+ }
+}

@@ -1,0 +1,115 @@
+[
+ {
+  "kind": "file",
+  "file": "n01",
+  "v": 0.6
+ },
+ {
+  "kind": "file",
+  "file": "n02",
+  "v": 6.2
+ },
+ {
+  "kind": "file",
+  "file": "n03",
+  "v": 14.0
+ },
+ {
+  "kind": "file",
+  "file": "n04",
+  "v": 20.0
+ },
+ {
+  "kind": "file",
+  "file": "n05",
+  "v": 28.6
+ },
+ {
+  "kind": "file",
+  "file": "n06",
+  "v": 39.0
+ },
+ {
+  "kind": "file",
+  "file": "n07",
+  "v": 49.3
+ },
+ {
+  "kind": "file",
+  "file": "s01",
+  "v": 52.5
+ },
+ {
+  "kind": "file",
+  "file": "s02",
+  "v": 55.3
+ },
+ {
+  "kind": "file",
+  "file": "s03",
+  "v": 66.7
+ },
+ {
+  "kind": "file",
+  "file": "s06",
+  "v": 74.95
+ },
+ {
+  "kind": "file",
+  "file": "s04",
+  "v": 81.7
+ },
+ {
+  "kind": "file",
+  "file": "n08",
+  "v": 85.9
+ },
+ {
+  "kind": "file",
+  "file": "n09",
+  "v": 90.8
+ },
+ {
+  "kind": "file",
+  "file": "s05",
+  "v": 93.2
+ },
+ {
+  "kind": "file",
+  "file": "n10",
+  "v": 96.9
+ },
+ {
+  "kind": "file",
+  "file": "n11",
+  "v": 112.7
+ },
+ {
+  "kind": "take",
+  "src": "call",
+  "t0": 10.14,
+  "d": 5.78,
+  "v": 43.2
+ },
+ {
+  "kind": "take",
+  "src": "meeting",
+  "t0": 24.2,
+  "d": 7.48,
+  "v": 57.6
+ },
+ {
+  "kind": "take",
+  "src": "meeting",
+  "t0": 48.32,
+  "d": 4.0,
+  "v": 70.72
+ },
+ {
+  "kind": "take",
+  "src": "meeting",
+  "t0": 73.4,
+  "d": 3.34,
+  "v": 78.1
+ }
+]

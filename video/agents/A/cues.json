@@ -1,0 +1,206 @@
+{
+ "vo": [
+  {
+   "id": "n01",
+   "who": "narrator",
+   "t": 0.6,
+   "text": "This is Sam's Mac. Sam runs a startup with four AI agents."
+  },
+  {
+   "id": "n02",
+   "who": "narrator",
+   "t": 6.0,
+   "text": "A coder, a marketer, a researcher and a designer. All working at once, in one pile of windows."
+  },
+  {
+   "id": "n03",
+   "who": "narrator",
+   "t": 13.4,
+   "text": "Who's doing what? Like every founder, Sam scrolls through logs."
+  },
+  {
+   "id": "n04",
+   "who": "narrator",
+   "t": 19.4,
+   "text": "Now watch what happens when Sam opens Deskmates."
+  },
+  {
+   "id": "n05",
+   "who": "narrator",
+   "t": 27.0,
+   "text": "Every agent gets its own computer. Maya's code goes to her desk. Priya's post to hers. Jonas's research to his. Ines's designs to hers."
+  },
+  {
+   "id": "n06",
+   "who": "narrator",
+   "t": 36.8,
+   "text": "And every agent gets a face."
+  },
+  {
+   "id": "n07",
+   "who": "narrator",
+   "t": 48.9,
+   "text": "So Sam can talk to the team, face to face."
+  },
+  {
+   "id": "s01",
+   "who": "sam",
+   "t": 52.0,
+   "text": "Okay team, standup!"
+  },
+  {
+   "id": "s02",
+   "who": "sam",
+   "t": 54.9,
+   "text": "Maya, show me the fix?"
+  },
+  {
+   "id": "s03",
+   "who": "sam",
+   "t": 67.1,
+   "text": "Jonas?"
+  },
+  {
+   "id": "s06",
+   "who": "sam",
+   "t": 74.6,
+   "text": "Ines, what about onboarding?"
+  },
+  {
+   "id": "s04",
+   "who": "sam",
+   "t": 82.8,
+   "text": "Version B. Ship it."
+  },
+  {
+   "id": "n08",
+   "who": "narrator",
+   "t": 88.3,
+   "text": "Then they get back to work, and they help each other."
+  },
+  {
+   "id": "n09",
+   "who": "narrator",
+   "t": 93.0,
+   "text": "Big steps still come to Sam first."
+  },
+  {
+   "id": "s05",
+   "who": "sam",
+   "t": 95.3,
+   "text": "Approve."
+  },
+  {
+   "id": "n10",
+   "who": "narrator",
+   "t": 97.4,
+   "text": "Every hour, task and dollar is on the record in Databricks, so Sam can just ask."
+  },
+  {
+   "id": "n11",
+   "who": "narrator",
+   "t": 110.6,
+   "text": "Deskmates. Your AI team, with a desk, a face, and a seat at the table."
+  }
+ ],
+ "chars": [
+  {
+   "who": "maya",
+   "src": "call",
+   "from": 10.14,
+   "to": 15.92,
+   "t": 42.2,
+   "text": "Hi Sam, Maya here. I'm on the checkout discount bug, and the push is waiting on your go-ahead."
+  },
+  {
+   "who": "maya",
+   "src": "meeting",
+   "from": 24.2,
+   "to": 31.68,
+   "t": 57.8,
+   "text": "Morning, all. Quick update from me. The checkout discount bug is found and fixed, tests are run, and the commit is on fix/checkout-discount."
+  },
+  {
+   "who": "jonas",
+   "src": "meeting",
+   "from": 48.32,
+   "to": 52.32,
+   "t": 70.42,
+   "text": "The pricing chart is at work/pricing.html"
+  },
+  {
+   "who": "ines",
+   "src": "meeting",
+   "from": 73.4,
+   "to": 76.74,
+   "t": 79.1,
+   "text": "Both versions now have two screens each"
+  }
+ ],
+ "sfx": [
+  {
+   "kind": "click",
+   "t": 23.72
+  },
+  {
+   "kind": "impact",
+   "t": 24.0
+  },
+  {
+   "kind": "woosh",
+   "t": 40.3,
+   "gain": -6
+  },
+  {
+   "kind": "woosh",
+   "t": 49.0,
+   "gain": -8
+  },
+  {
+   "kind": "woosh",
+   "t": 53.0,
+   "gain": -6
+  },
+  {
+   "kind": "woosh",
+   "t": 87.5,
+   "gain": -6
+  },
+  {
+   "kind": "woosh",
+   "t": 97.7,
+   "gain": -8
+  },
+  {
+   "kind": "woosh",
+   "t": 111.9,
+   "gain": -6
+  },
+  {
+   "kind": "pop",
+   "t": 38.0
+  },
+  {
+   "kind": "bubble",
+   "t": 88.9
+  },
+  {
+   "kind": "bubble",
+   "t": 91.0
+  },
+  {
+   "kind": "chime",
+   "t": 93.2,
+   "gain": -12
+  },
+  {
+   "kind": "tick",
+   "t": 96.0
+  },
+  {
+   "kind": "chime",
+   "t": 109.3,
+   "gain": -10
+  }
+ ]
+}

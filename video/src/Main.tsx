@@ -168,11 +168,11 @@ function termLines(t: number): Array<[string, string]> {
   const n = Math.max(0, Math.min(run.length, Math.floor((t % 9) * 1.2)));
   if (t < 41) {
     for (let i = 0; i < n; i++) L.push([`  ✓${run[i].slice(1)}`, '#7ee787']);
-    L.push(['  ⠋ running 48 tests…', '#9da3ad']);
+    L.push(['  ⠋ running 50 tests…', '#9da3ad']);
   } else {
     for (const r of run) L.push([`  ✓${r.slice(1)}`, '#7ee787']);
     L.push(['', '']);
-    L.push(['  48 passing (1.9s)', '#7ee787']);
+    L.push(['Ran 50 tests in 0.002s   OK', '#7ee787']);
     L.push(['~/work/shop $ git commit -m "Apply discount before tax"', '#e6e6e6']);
     L.push(['[fix/checkout-discount 3f2a91c] 2 files changed', '#9da3ad']);
     if (t > 90.6) {
@@ -190,7 +190,7 @@ const Term: React.FC<{ t: number; big?: boolean }> = ({ t, big }) => {
   return (
     <div style={{ position: 'absolute', inset: 0, background: '#15161b', padding: '16px 20px', fontFamily: MONO, fontSize: big ? 20 : 17, lineHeight: big ? '32px' : '28px' }}>
       {show.map(([s, c], i) => (
-        <div key={i} style={{ color: c, whiteSpace: 'pre', fontWeight: s.includes('48 passing') || s.includes('pushed') ? 700 : 400 }}>{s}</div>
+        <div key={i} style={{ color: c, whiteSpace: 'pre', fontWeight: s.includes('Ran 50') || s.includes('pushed') ? 700 : 400 }}>{s}</div>
       ))}
       <span style={{ display: 'inline-block', width: 10, height: 20, background: '#e6e6e6', opacity: Math.floor(t * 2) % 2 ? 1 : 0 }} />
     </div>
@@ -346,7 +346,8 @@ const DeskBody: React.FC<{ k: Key; t: number; inMeeting?: boolean }> = ({ k, t, 
   );
 };
 
-const Desk: React.FC<{ k: Key; t: number; faceHidden: boolean }> = ({ k, t, faceHidden }) => {
+const Desk: React.FC<{ k: Key; t: number; faceHidden: boolean; z: number }> = ({ k, t, faceHidden, z }) => {
+  const pillO = 1 - tw(z, 0.62, 0.9, 0, 1, (x) => x);
   const pos = deskXY(k);
   const fp = tw(t, FACE_POP[k], FACE_POP[k] + 0.45, 0, 1, back);
   const big = k === 'maya' ? tw(t, 41.6, 42.3) * (1 - tw(t, 45.6, 46.4)) : 0;
@@ -359,7 +360,7 @@ const Desk: React.FC<{ k: Key; t: number; faceHidden: boolean }> = ({ k, t, face
           <Face k={k} w={fr.w} h={fr.h} t={t} />
         </Box>
       ) : null}
-      <div style={{ position: 'absolute', left: 40, bottom: 40, display: 'flex', alignItems: 'center', gap: 18, background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '18px 36px 18px 26px', fontFamily: FONT, fontSize: 54, fontWeight: 700, color: '#17181c', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+      <div style={{ position: 'absolute', left: 40, bottom: 40, opacity: pillO, display: 'flex', alignItems: 'center', gap: 18, background: 'rgba(255,255,255,0.92)', borderRadius: 999, padding: '18px 36px 18px 26px', fontFamily: FONT, fontSize: 54, fontWeight: 700, color: '#17181c', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
         <div style={{ width: 26, height: 26, borderRadius: 13, background: P[k].color }} />
         Desk {P[k].desk} · {P[k].name}
       </div>
@@ -408,9 +409,15 @@ const Meeting: React.FC<{ t: number }> = ({ t }) => {
               if (vis <= 0) return null;
               return (
                 <div key={k} style={{ position: 'absolute', inset: 0, opacity: vis, transform: `translateX(${slide}px)` }}>
-                  <div style={{ position: 'absolute', left: 0, top: 0, width: DW, height: DH, transform: `scale(${MAIN.w / DW})`, transformOrigin: '0 0' }}>
-                    <DeskBody k={k} t={t} inMeeting />
-                  </div>
+                  {k === 'maya' ? (
+                    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#1d2b3a' }}>
+                      <Img src={staticFile('img/maya-real.jpg')} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${1 + 0.18 * tw(t, SPOT_IN + 0.8, 63.6)})`, transformOrigin: '0% 82%' }} />
+                    </div>
+                  ) : (
+                    <div style={{ position: 'absolute', left: 0, top: 0, width: DW, height: DH, transform: `scale(${MAIN.w / DW})`, transformOrigin: '0 0' }}>
+                      <DeskBody k={k} t={t} inMeeting />
+                    </div>
+                  )}
                   <div style={{ position: 'absolute', left: 22, top: 56, background: P[k].color, color: '#fff', fontFamily: FONT, fontWeight: 700, fontSize: 20, padding: '8px 18px', borderRadius: 999 }}>{P[k].name} is sharing Desk {P[k].desk}</div>
                 </div>
               );
@@ -719,7 +726,7 @@ export const Main: React.FC = () => {
       {t >= 24.0 ? (
         <AbsoluteFill style={{ opacity: worldO }}>
           <div style={{ position: 'absolute', left: 0, top: 0, width: 3280, height: 2080, transformOrigin: '0 0', transform: `translate(${960 - cam.cx * cam.z}px, ${540 - cam.cy * cam.z}px) scale(${cam.z})` }}>
-            {ORDER.map((k) => <Desk key={k} k={k} t={t} faceHidden={facesInMeeting} />)}
+            {ORDER.map((k) => <Desk key={k} k={k} t={t} faceHidden={facesInMeeting} z={cam.z} />)}
           </div>
         </AbsoluteFill>
       ) : null}

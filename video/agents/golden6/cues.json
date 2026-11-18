@@ -1,0 +1,262 @@
+{
+ "vo": [
+  {
+   "id": "n01",
+   "who": "narrator",
+   "t": 0.6
+  },
+  {
+   "id": "n02",
+   "who": "narrator",
+   "t": 6.0
+  },
+  {
+   "id": "n03",
+   "who": "narrator",
+   "t": 13.4
+  },
+  {
+   "id": "n04",
+   "who": "narrator",
+   "t": 19.4
+  },
+  {
+   "id": "n05",
+   "who": "narrator",
+   "t": 27.0
+  },
+  {
+   "id": "n06",
+   "who": "narrator",
+   "t": 36.8
+  },
+  {
+   "id": "n07",
+   "who": "narrator",
+   "t": 47.0
+  },
+  {
+   "id": "s01",
+   "who": "sam",
+   "t": 50.15
+  },
+  {
+   "id": "s14",
+   "who": "sam",
+   "t": 53.08
+  },
+  {
+   "id": "s12",
+   "who": "sam",
+   "t": 71.43
+  },
+  {
+   "id": "s13",
+   "who": "sam",
+   "t": 85.86
+  },
+  {
+   "id": "s04",
+   "who": "sam",
+   "t": 98.0
+  },
+  {
+   "id": "n08",
+   "who": "narrator",
+   "t": 103.45
+  },
+  {
+   "id": "n09",
+   "who": "narrator",
+   "t": 108.15
+  },
+  {
+   "id": "s05",
+   "who": "sam",
+   "t": 110.65
+  },
+  {
+   "id": "n10",
+   "who": "narrator",
+   "t": 112.55
+  },
+  {
+   "id": "n11",
+   "who": "narrator",
+   "t": 123.9
+  }
+ ],
+ "chars": [
+  {
+   "who": "maya",
+   "src": "call",
+   "from": 21.52,
+   "to": 25.6,
+   "t": 42.0
+  },
+  {
+   "who": "maya",
+   "src": "meeting",
+   "from": 28.64,
+   "to": 40.5,
+   "t": 57.11
+  },
+  {
+   "who": "jonas",
+   "src": "meeting",
+   "from": 47.5,
+   "to": 56.85,
+   "t": 75.85
+  },
+  {
+   "who": "ines",
+   "src": "meeting",
+   "from": 66.46,
+   "to": 73.56,
+   "t": 90.76
+  },
+  {
+   "who": "ines",
+   "src": "meeting",
+   "from": 82.12,
+   "to": 82.95,
+   "t": 100.12
+  }
+ ],
+ "sfx": [
+  {
+   "kind": "click",
+   "t": 23.72
+  },
+  {
+   "kind": "impact",
+   "t": 24.0
+  },
+  {
+   "kind": "sw:long-sweeping-air",
+   "t": 25.3,
+   "gain": -9
+  },
+  {
+   "kind": "sw:fast-air-sweep",
+   "t": 28.95,
+   "gain": -15
+  },
+  {
+   "kind": "sw:fast-small-sweep",
+   "t": 30.75,
+   "gain": -17
+  },
+  {
+   "kind": "sw:fast-air-sweep",
+   "t": 32.15,
+   "gain": -17
+  },
+  {
+   "kind": "sw:fast-small-sweep",
+   "t": 33.85,
+   "gain": -17
+  },
+  {
+   "kind": "sw:transition-windy",
+   "t": 36.0,
+   "gain": -14
+  },
+  {
+   "kind": "pop",
+   "t": 38.2
+  },
+  {
+   "kind": "sw:air-woosh",
+   "t": 41.0,
+   "gain": -10
+  },
+  {
+   "kind": "sw:transition-windy",
+   "t": 47.0,
+   "gain": -14
+  },
+  {
+   "kind": "sw:cinematic-swoosh",
+   "t": 51.0,
+   "gain": -9
+  },
+  {
+   "kind": "sw:fast-small-sweep",
+   "t": 53.2,
+   "gain": -14
+  },
+  {
+   "kind": "sw:fast-small-sweep",
+   "t": 71.45,
+   "gain": -14
+  },
+  {
+   "kind": "sw:fast-small-sweep",
+   "t": 85.85,
+   "gain": -14
+  },
+  {
+   "kind": "sw:fast-air-sweep",
+   "t": 101.4,
+   "gain": -15
+  },
+  {
+   "kind": "sw:cinematic-wind",
+   "t": 102.8,
+   "gain": -10
+  },
+  {
+   "kind": "sw:short-wind",
+   "t": 104.75,
+   "gain": -13
+  },
+  {
+   "kind": "bubble",
+   "t": 104.05
+  },
+  {
+   "kind": "sw:short-wind",
+   "t": 106.85,
+   "gain": -13
+  },
+  {
+   "kind": "bubble",
+   "t": 106.2
+  },
+  {
+   "kind": "sw:tech-slide",
+   "t": 108.75,
+   "gain": -12
+  },
+  {
+   "kind": "chime",
+   "t": 108.5,
+   "gain": -12
+  },
+  {
+   "kind": "tick",
+   "t": 110.85
+  },
+  {
+   "kind": "sw:transition-windy",
+   "t": 113.0,
+   "gain": -12
+  },
+  {
+   "kind": "sw:quick-accent",
+   "t": 122.1,
+   "gain": -11
+  },
+  {
+   "kind": "chime",
+   "t": 122.15,
+   "gain": -2
+  },
+  {
+   "kind": "sw:futuristic-pass",
+   "t": 125.3,
+   "gain": -10
+  }
+ ]
+}

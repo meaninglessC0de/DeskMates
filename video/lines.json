@@ -98,5 +98,30 @@
   "id": "i01",
   "who": "ines",
   "text": "And I made two onboarding designs. Which one should ship?"
+ },
+ {
+  "id": "s06",
+  "who": "sam",
+  "text": "Ines, what about onboarding?"
+ },
+ {
+  "id": "s11",
+  "who": "sam",
+  "text": "Okay team, standup! Maya, how's the checkout fix?"
+ },
+ {
+  "id": "s12",
+  "who": "sam",
+  "text": "Jonas, what did you find on pricing?"
+ },
+ {
+  "id": "s13",
+  "who": "sam",
+  "text": "Ines, which onboarding should we ship?"
+ },
+ {
+  "id": "s14",
+  "who": "sam",
+  "text": "Maya, how's the checkout fix?"
  }
 ]
